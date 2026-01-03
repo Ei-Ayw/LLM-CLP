@@ -20,6 +20,9 @@ def main():
         print("Loading data for TF-IDF + LR...")
         df = pd.read_parquet(TRAIN_FILE).sample(500000) # Use subset for speed
         
+        # Handle NaN values in comment_text
+        df['comment_text'] = df['comment_text'].fillna('')
+        
         vectorizer = TfidfVectorizer(max_features=20000, ngram_range=(1,2))
         X = vectorizer.fit_transform(df['comment_text'])
         y = df['y_tox']
