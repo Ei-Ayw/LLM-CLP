@@ -1,0 +1,20 @@
+# Core Deep Learning
+torch>=1.10.0
+transformers>=4.20.0
+sentencepiece
+accelerate
+
+# Data Processing
+pandas
+numpy
+pyarrow
+scikit-learn
+joblib
+
+# Utilities & Visualization
+tqdm
+matplotlib
+seaborn
+
+# Environment
+python-dotenv
