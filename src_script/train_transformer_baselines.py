@@ -17,7 +17,9 @@ sys.path.append(os.path.join(BASE_DIR, "src_script"))
 
 # Set Hugging Face cache directory and mirror endpoint
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
+os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from data_loader import ToxicityDataset
 
@@ -49,8 +51,8 @@ def main():
     OUTPUT_DIR = os.path.join(BASE_DIR, "src_result")
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=1).to(device)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name, local_files_only=True)
+    model = AutoModelForSequenceClassification.from_pretrained(args.model_name, num_labels=1, local_files_only=True).to(device)
     
     df = pd.read_parquet(TRAIN_FILE).sample(200000)
     dataset = ToxicityDataset(df, tokenizer)
@@ -62,7 +64,7 @@ def main():
     for epoch in range(2):
         print(f"Model: {args.model_name}, Epoch {epoch+1}")
         train_fn(model, loader, optimizer, scheduler, device)
-        save_path = os.path.join(OUTPUT_DIR, f"res_baseline_{args.model_name.replace('-','_')}.pth")
+        save_path = os.path.join(OUTPUT_DIR, f"res_baseline_{args.model_name.replace('-','_').replace('/','_')}.pth")
         torch.save(model.state_dict(), save_path)
 
 if __name__ == "__main__":

@@ -1,0 +1,46 @@
+--- FOUND CASES ---
+CASE 1:
+Text: Even putin left Afghanistan. What specifically is there? Muslims?Camels?brown people? Poor people? What?
+Identity: muslim
+Baseline (BERT) Prob: 0.8759 (FALSE POSITIVE)
+Proposed Prob: 0.1278 (TRUE NEGATIVE)
+------------------------------
+CASE 2:
+Text: I  disagree ...the  way we identify ourselves in the free world is by showing our face , we need to maintain that standard ....if you do not want to  show your face you are assummed to be a criminal .
+ Face covering by Muslim culture is suppression of women plain and simple .
+Identity: muslim
+Baseline (BERT) Prob: 0.7546 (FALSE POSITIVE)
+Proposed Prob: 0.0507 (TRUE NEGATIVE)
+------------------------------
+CASE 3:
+Text: When the school bus cuts across your property to pick up the disrespectful natives that live behind your house, are you gonna try to tell them to stop? And when they don't listen? its your property, what would you do? Disrespectful whites DO live behind his house and cross his property, and shoot, and fish, and boat, and cut down trees and.......where does it stop? Chief Harrison  has been as understanding as he could.... too a point. It kinda makes you a little crazy, and crazy people do crazy things. I KNOW. Try talking it out, and come to a mutual agreement and quit talking about "right of way" and "legal access" and start asking "what would a group of civilized people agree to." In the old days, a white would bring gifts, and ask permission to cross a tribes land. (lewis and clark) Now everyone is talking about what the government allows them to do. Push the government out and lets talk about what would be the neighborly thing to do. (beads and blankets are not the right answer)
+Identity: white
+Baseline (BERT) Prob: 0.8160 (FALSE POSITIVE)
+Proposed Prob: 0.1871 (TRUE NEGATIVE)
+------------------------------
+CASE 4:
+Text: Naive Westerners need to wake up.
+"Terrorism happens because we kill Muslims in the ME" 
+No. 
+The ideology of the caliphate runs much deeper.
+
+"All of this (terrorism) falls into a strategy where IS wants to eradicate what it calls the “grayzone” of coexistence. Its aim is to divide the world along binary lines – Muslim and non-Muslim; Islam and non-Islam; black and white – with absolutely no room for any shades of grey.
+
+“The Muslims in the West will quickly find themselves between one of two choices, they either apostatise and adopt the kufri [infidel] religion propagated by Bush, Obama, Blair, Cameron, Sarkozy and Hollande in the name of Islam so as to live amongst the kuffar [disbelievers] without hardship, or they [migrate] to the Islamic State,” says an editorial in Dabiq magazine. “The option to stand on the sidelines as a mere observer is being lost.”
+
+FYI - Dabiq is the IS english-language mag. 
+
+Stop on-line radicalization? 
+Sure. 
+But there are other tools in the box.
+Identity: white,muslim
+Baseline (BERT) Prob: 0.7899 (FALSE POSITIVE)
+Proposed Prob: 0.1936 (TRUE NEGATIVE)
+------------------------------
+CASE 5:
+Text: If you had said usually old and black, why, someone would say you are a racist.
+Identity: black
+Baseline (BERT) Prob: 0.8125 (FALSE POSITIVE)
+Proposed Prob: 0.2215 (TRUE NEGATIVE)
+------------------------------
+root@7f138faff382:~/lanyun-fs/01_nlp_toxicity_classification# 
