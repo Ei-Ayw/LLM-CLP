@@ -22,7 +22,7 @@ os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-from model_deberta_mtl import DebertaToxicityMTL
+from model_deberta_mtl import DebertaV3MTL
 from data_loader import ToxicityDataset
 
 def main():
@@ -38,7 +38,7 @@ def main():
     MODEL_PATH = "microsoft/deberta-v3-base"
     
     tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
-    model = DebertaToxicityMTL(MODEL_PATH).to(device)
+    model = DebertaV3MTL(MODEL_PATH).to(device)
     model.load_state_dict(torch.load(args.checkpoint, map_location=device))
     model.eval()
 
