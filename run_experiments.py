@@ -5,7 +5,9 @@ import sys
 # Set Hugging Face cache directory and mirror endpoint
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
+os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 # Use generic python command (assumes active environment or correctly linked python)
 PYTHON_EXE = "python"
@@ -17,9 +19,11 @@ def run_cmd(cmd):
     # Cross-platform command running
     cmd_str = " ".join(cmd)
     print(f"\n>>> Running: {cmd_str}")
-    result = subprocess.run(cmd_str, shell=True)
+    # Capture output to help debug failures on server environments
+    result = subprocess.run(cmd_str, shell=True, capture_output=False) 
     if result.returncode != 0:
-        print(f"FAILED: {cmd_str}")
+        print(f"FAILED (return code {result.returncode}): {cmd_str}")
+        print("Please check the error message above.")
 
 def main():
     if not os.path.exists(RES_DIR):

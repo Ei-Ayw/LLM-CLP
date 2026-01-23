@@ -1,5 +1,13 @@
 import os
 import sys
+
+# --- Set Hugging Face mirror and cache FIRST ---
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
+os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["TRANSFORMERS_OFFLINE"] = "1" # 强制开启离线模式，不再检查官网更新
+
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
@@ -9,18 +17,12 @@ import pandas as pd
 from tqdm import tqdm
 
 # Set project paths
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script"))
 
-# Set Hugging Face cache directory and mirror endpoint
-os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-
 from model_deberta_mtl import DebertaToxicityMTL
 from data_loader import ToxicityDataset
-import os
 import numpy as np
 
 def train_fn(model, loader, optimizer, scheduler, device, accumulation_steps=2):
@@ -99,21 +101,21 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
-    model = DebertaToxicityMTL(MODEL_PATH).to(device)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
+    model = DebertaToxicityMTL(MODEL_PATH).to(device) # MTL内部也会调用from_pretrained，会自动继承环境变量
     
     print("Loading datasets...")
     train_df = pd.read_parquet(TRAIN_FILE)
     val_df = pd.read_parquet(VAL_FILE)
     
-    # Optional: sampling for faster iteration (remove for final training)
-    # train_df = train_df.sample(100000).reset_index(drop=True)
+    # Increase sampling for full training (original was 500,000)
+    train_df = train_df.sample(min(1500000, len(train_df))).reset_index(drop=True)
     
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=MAX_LEN)
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=MAX_LEN)
     
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
-    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=4)
+    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
+    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
     
     num_train_steps = int(len(train_ds) / BATCH_SIZE / ACCUMULATION_STEPS * EPOCHS)
     optimizer = AdamW(model.parameters(), lr=LR)

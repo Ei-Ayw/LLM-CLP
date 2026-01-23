@@ -17,7 +17,9 @@ sys.path.append(os.path.join(BASE_DIR, "src_script"))
 
 # Set Hugging Face cache directory and mirror endpoint
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
+os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_deberta_mtl import DebertaToxicityMTL
 from data_loader import ToxicityDataset
@@ -48,7 +50,8 @@ def train_fn(model, loader, optimizer, scheduler, device, ablation_type, accumul
         
         if (i + 1) % accumulation_steps == 0:
             optimizer.step()
-            scheduler.step()
+            if scheduler is not None:
+                scheduler.step()
             optimizer.zero_grad()
             
         total_loss += loss.item() * accumulation_steps
@@ -66,13 +69,13 @@ def main():
     OUTPUT_DIR = os.path.join(BASE_DIR, "src_result")
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
     
     use_pooling = False if args.ablation == "no_pooling" else True
     model = DebertaToxicityMTL(MODEL_PATH, use_attention_pooling=use_pooling).to(device)
     
     # Using a medium-sized subset for ablations to save time
-    train_df = pd.read_parquet(TRAIN_FILE).sample(300000)
+    train_df = pd.read_parquet(TRAIN_FILE).sample(min(300000, 1700000))
     train_ds = ToxicityDataset(train_df, tokenizer)
     train_loader = DataLoader(train_ds, batch_size=8, shuffle=True, num_workers=4)
     

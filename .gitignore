@@ -7,7 +7,7 @@ data/*.parquet
 src_result/*.pth
 src_result/*.joblib
 src_result/*.png
-src_result/*.csv
+# src_result/*.csv
 pretrained_models/
 
 # Python environment

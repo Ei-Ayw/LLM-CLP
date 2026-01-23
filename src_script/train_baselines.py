@@ -17,7 +17,9 @@ sys.path.append(os.path.join(BASE_DIR, "src_script"))
 
 # Set Hugging Face cache directory and mirror endpoint
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
+os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_baselines import BertCNNBiLSTM
 from data_loader import ToxicityDataset
@@ -59,7 +61,7 @@ def main():
     LR = 2e-5
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME, local_files_only=True)
     model = BertCNNBiLSTM(MODEL_NAME).to(device)
     
     train_df = pd.read_parquet(TRAIN_FILE).sample(200000) # Baseline training on subset for speed

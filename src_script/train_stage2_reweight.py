@@ -1,5 +1,13 @@
 import os
 import sys
+
+# --- Set Hugging Face mirror and cache FIRST ---
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
+os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
@@ -9,18 +17,12 @@ import pandas as pd
 from tqdm import tqdm
 
 # Set project paths
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script"))
 
-# Set Hugging Face cache directory and mirror endpoint
-os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-
 from model_deberta_mtl import DebertaToxicityMTL
 from data_loader import ToxicityDataset
-import os
 import numpy as np
 
 def weighted_tox_loss(logits, targets, has_id):
@@ -117,7 +119,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
     
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
     model = DebertaToxicityMTL(MODEL_PATH).to(device)
     
     if os.path.exists(CHECKPOINT_STAGE1):
@@ -127,7 +129,7 @@ def main():
         print("Warning: Stage 1 checkpoint not found. Starting from scratch.")
     
     print("Loading datasets...")
-    train_df = pd.read_parquet(TRAIN_FILE)
+    train_df = pd.read_parquet(TRAIN_FILE).sample(min(1500000, 1800000)) # Increased from 500k
     val_df = pd.read_parquet(VAL_FILE)
     
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=MAX_LEN)

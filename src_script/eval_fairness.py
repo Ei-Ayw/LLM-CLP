@@ -16,7 +16,9 @@ sys.path.append(os.path.join(BASE_DIR, "src_script"))
 
 # Set Hugging Face cache directory and mirror endpoint
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
+os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_deberta_mtl import DebertaToxicityMTL
 from data_loader import ToxicityDataset
@@ -72,18 +74,24 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", type=str, required=True)
-    parser.add_argument("--model_type", type=str, default="deberta_mtl", choices=["deberta_mtl", "deberta_cls", "bert_cnn"])
+    parser.add_argument("--model_type", type=str, default="deberta_mtl", 
+                        choices=["deberta_mtl", "deberta_cls", "bert_cnn", "bert_base", "roberta_base", "deberta_base"])
     parser.add_argument("--output_name", type=str, default="res_fairness_metrics.csv")
     args = parser.parse_args()
 
-    MODEL_PATH = "microsoft/deberta-v3-base" if "deberta" in args.model_type else "bert-base-uncased"
+    if args.model_type == "roberta_base":
+        MODEL_PATH = "roberta-base"
+    elif "deberta" in args.model_type:
+        MODEL_PATH = "microsoft/deberta-v3-base" if ("mtl" in args.model_type or "cls" in args.model_type) else "microsoft/deberta-base"
+    else:
+        MODEL_PATH = "bert-base-uncased"
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     VAL_FILE = os.path.join(BASE_DIR, "data", "val_processed.parquet")
     BATCH_SIZE = 16
     MAX_LEN = 256
     
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
     
     if args.model_type == "deberta_mtl":
         model = DebertaToxicityMTL(MODEL_PATH, use_attention_pooling=True).to(device)
@@ -94,7 +102,7 @@ def main():
         model = BertCNNBiLSTM(MODEL_PATH).to(device)
     else: # bert_base, roberta_base, deberta_base
         from transformers import AutoModelForSequenceClassification
-        model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH, num_labels=1).to(device)
+        model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH, num_labels=1, local_files_only=True).to(device)
 
     if os.path.exists(args.checkpoint):
         model.load_state_dict(torch.load(args.checkpoint, map_location=device))
@@ -116,9 +124,9 @@ def main():
             attention_mask = batch['attention_mask'].to(device)
             outputs = model(input_ids, attention_mask)
             
-            if isinstance(outputs, dict):
+            if isinstance(outputs, dict) and 'logits_tox' in outputs:
                 logits = outputs['logits_tox']
-            else: # AutoModel output
+            else:
                 logits = outputs.logits
                 
             probs.extend(torch.sigmoid(logits).squeeze(-1).cpu().numpy())
