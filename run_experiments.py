@@ -1,92 +1,103 @@
 import os
 import subprocess
+import argparse
 import sys
+import time
 
-# Set Hugging Face cache directory and mirror endpoint
+# =============================================================================
+# ### 实验管理器：run_experiments_manager.py ###
+# 设计说明：
+# 本脚本作为整个项目的“控制塔”，通过参数管理器统一调度各模型的训练、评估与可视化。
+# 支持全量运行或指定模型运行，并确保所有实验均遵循相同的 200k 数据对齐策略。
+# =============================================================================
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
-os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
+SRC_DIR = os.path.join(BASE_DIR, "src_script")
+PYTHON_EXE = sys.executable
 
-# Use generic python command (assumes active environment or correctly linked python)
-PYTHON_EXE = "python"
-SRC_DIR = "src_script"
-RES_DIR = "src_result"
-DATA_DIR = "data"
-
-def run_cmd(cmd):
-    # Cross-platform command running
-    cmd_str = " ".join(cmd)
-    print(f"\n>>> Running: {cmd_str}")
-    # Capture output to help debug failures on server environments
-    result = subprocess.run(cmd_str, shell=True, capture_output=False) 
+def run_script(script_name, args_list):
+    """ 执行指定的脚本并传递参数 """
+    cmd = [PYTHON_EXE, os.path.join(SRC_DIR, script_name)] + args_list
+    print(f"\n[RUNNING] {' '.join(cmd)}")
+    result = subprocess.run(cmd)
     if result.returncode != 0:
-        print(f"FAILED (return code {result.returncode}): {cmd_str}")
-        print("Please check the error message above.")
+        print(f"[ERROR] 脚本 {script_name} 运行失败，返回码: {result.returncode}")
+        # 这里可以选择是否直接退出
+        # sys.exit(1)
 
 def main():
-    if not os.path.exists(RES_DIR):
-        os.makedirs(RES_DIR)
+    parser = argparse.ArgumentParser(description="NLP Toxicity Classification Experiment Manager")
+    parser.add_argument("--mode", type=str, choices=["all", "train", "eval", "viz"], default="all", help="运行模式")
+    parser.add_argument("--sample_size", type=int, default=200000, help="全量实验对齐的样本量")
+    parser.add_argument("--seed", type=int, default=42, help="全局随机种子")
+    parser.add_argument("--skip_classical", action="store_true", help="是否跳过经典的 TF-IDF + LR 实验")
+    args = parser.parse_args()
 
-    # --- [1] DATA PREPROCESS ---
-    run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "data_preprocess.py")])
+    print("="*60)
+    print(f" NLP 毒性分类全量实验管理中心")
+    print(f" 启动时间: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f" 训练数据规模: {args.sample_size} | 随机种子: {args.seed}")
+    print("="*60)
 
-    # --- [2] BASELINE MODELS ---
-    # Group 1: Classical (TF-IDF + LR)
-    run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "train_tfidf_lr.py"), "--mode", "train"])
+    # 1. 数据预处理
+    if args.mode in ["all", "train"]:
+        print("\n>>> [Step 1] 数据预处理")
+        run_script("data_preprocess.py", [])
 
-    # Group 2: Non-Pretrained Deep (BERT+CNN-BiLSTM)
-    run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "train_baselines.py")])
-
-    # Group 3: Transformer Baselines
-    run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "train_transformer_baselines.py"), "--model_name", "bert-base-uncased"])
-    run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "train_transformer_baselines.py"), "--model_name", "roberta-base"])
-    run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "train_transformer_baselines.py"), "--model_name", "microsoft/deberta-base"])
-
-    # --- [3] OUR PROPOSED MODEL (Stage 1 & 2) ---
-    run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "train_stage1.py")])
-    run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "train_stage2_reweight.py")])
-
-    # --- [4] ABLATION STUDIES ---
-    # Ablation 1: Pooling (compare Stage 1 result with no_pooling)
-    run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "train_ablations.py"), "--ablation", "no_pooling"])
-    
-    # Ablation 2: MTL (compare Stage 1 result with no_mtl)
-    run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "train_ablations.py"), "--ablation", "no_mtl"])
-    
-    # Ablation 3: Reweight (compare Stage 1 @ w=1 vs Stage 2 @ w=2.5)
-    # This comparison uses res_stage1_best.pth vs res_stage2_final.pth
-
-    # --- [5] EVALUATION & COMPARISON ---
-    test_suite = [
-        # Main Results
-        {"name": "Proposed_DeBERTa_V3_MTL_Reweight", "cp": f"{RES_DIR}/res_stage2_final.pth", "type": "deberta_mtl"},
+    # 2. 模型训练阶段
+    if args.mode in ["all", "train"]:
+        common_args = ["--sample_size", str(args.sample_size), "--seed", str(args.seed)]
         
-        # Baselines
-        {"name": "Baseline_BERT_CNN_BiLSTM", "cp": f"{RES_DIR}/res_baseline_bert_cnn_epoch3.pth", "type": "bert_cnn"},
-        {"name": "Baseline_BERT_Base", "cp": f"{RES_DIR}/res_baseline_bert_base_uncased.pth", "type": "bert_base"},
-        {"name": "Baseline_RoBERTa_Base", "cp": f"{RES_DIR}/res_baseline_roberta_base.pth", "type": "roberta_base"},
-        {"name": "Baseline_DeBERTa_V1_Base", "cp": f"{RES_DIR}/res_baseline_microsoft_deberta_base.pth", "type": "deberta_base"},
+        # (A) 经典基准：TF-IDF + LR
+        if not args.skip_classical:
+            print("\n>>> [Step 2.1] 训练经典基准 (TF-IDF + LR)")
+            run_script("train_tfidf_lr.py", ["--mode", "train"])
+
+        # (B) 混合架构：BERT + CNN + BiLSTM
+        print("\n>>> [Step 2.2] 训练对比模型 (BERT + CNN + BiLSTM)")
+        run_script("train_bert_cnn_bilstm.py", common_args + ["--epochs", "3"])
+
+        # (C) 核心模型：DeberTa-V3 MTL Stage 1
+        print("\n>>> [Step 2.3] 训练核心模型 (DeberTa-V3 MTL) - Stage 1")
+        run_script("train_deberta_mtl_stage1.py", common_args + ["--epochs", "3"])
         
-        # Ablations
-        {"name": "Ablation_CLS_Only", "cp": f"{RES_DIR}/res_ablation_no_pooling.pth", "type": "deberta_cls"},
-        {"name": "Ablation_Single_Task", "cp": f"{RES_DIR}/res_ablation_no_mtl.pth", "type": "deberta_mtl"},
-        {"name": "Ablation_No_Reweight", "cp": f"{RES_DIR}/res_stage1_best.pth", "type": "deberta_mtl"},
-    ]
+        # (D) 核心模型：DeberTa-V3 MTL Stage 2 (需要自动锁定最新的 S1 权重，或者手动指定)
+        print("\n>>> [Step 2.4] 训练核心模型 (DeberTa-V3 MTL) - Stage 2 (Reweighting)")
+        # 注意：这里需要根据 S1 的输出查找最新的 .pth
+        res_files = [f for f in os.listdir(os.path.join(BASE_DIR, "src_result")) if f.startswith("DebertaV3MTL_S1")]
+        if res_files:
+            latest_s1 = os.path.join(BASE_DIR, "src_result", sorted(res_files)[-1])
+            run_script("train_deberta_mtl_stage2.py", common_args + ["--s1_checkpoint", latest_s1, "--epochs", "2"])
+        else:
+            print("[Warning] 未找到 Stage 1 权重，跳过 Stage 2 训练。")
 
-    for test in test_suite:
-        if os.path.exists(test["cp"]):
-            print(f"\n--- EVALUATING: {test['name']} ---")
-            run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "eval_threshold.py"), 
-                     "--checkpoint", test["cp"], "--model_type", test["type"], 
-                     "--output_name", f"metrics_f1_{test['name']}.csv"])
-            run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "eval_fairness.py"), 
-                     "--checkpoint", test["cp"], "--model_type", test["type"], 
-                     "--output_name", f"metrics_fair_{test['name']}.csv"])
+    # 3. 评估阶段
+    if args.mode in ["all", "eval"]:
+        print("\n>>> [Step 3] 全量指标评估")
+        # 调用 full_evaluation.py 对所有生成的 .pth 进行扫描
+        res_dir = os.path.join(BASE_DIR, "src_result")
+        pths = [f for f in os.listdir(res_dir) if f.endswith(".pth")]
+        
+        for pth in pths:
+            m_type = "deberta_mtl" if "Deberta" in pth else "bert_cnn"
+            run_script("full_evaluation.py", ["--checkpoint", os.path.join(res_dir, pth), "--model_type", m_type, "--output_prefix", pth.replace(".pth", "")])
 
-    # Final Summary Plot
-    run_cmd([PYTHON_EXE, os.path.join(SRC_DIR, "viz_results.py")])
+    # 4. 可视化阶段
+    if args.mode in ["all", "viz"]:
+        print("\n>>> [Step 4] 可视化分析")
+        res_dir = os.path.join(BASE_DIR, "src_result")
+        # 选择最新的 S2 模型进行特征空间可视化
+        s2_files = [f for f in os.listdir(res_dir) if f.startswith("DebertaV3MTL_S2")]
+        if s2_files:
+            latest_s2 = os.path.join(res_dir, sorted(s2_files)[-1])
+            run_script("viz_feature_space.py", ["--checkpoint", latest_s2, "--subgroup", "black", "--output_name", "viz_s2_black.png"])
+        
+        # 运行综合对比图
+        run_script("viz_results.py", [])
+
+    print("\n" + "="*60)
+    print(" 所有实验流程执行完毕。")
+    print("="*60)
 
 if __name__ == "__main__":
     main()
