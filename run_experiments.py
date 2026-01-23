@@ -15,6 +15,12 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SRC_DIR = os.path.join(BASE_DIR, "src_script")
 PYTHON_EXE = sys.executable
 
+# 设置 Hugging Face 离线模式与镜像
+os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
+os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 def run_script(script_name, args_list):
     """ 执行指定的脚本并传递参数 """
     cmd = [PYTHON_EXE, os.path.join(SRC_DIR, script_name)] + args_list

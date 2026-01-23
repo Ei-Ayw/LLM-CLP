@@ -21,7 +21,8 @@ os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-from model_deberta_mtl import DebertaToxicityMTL
+from model_deberta_mtl import DebertaV3MTL
+from model_bert_cnn_bilstm import BertCNNBiLSTM
 from data_loader import ToxicityDataset
 
 def calculate_auc(y_true, y_prob):
@@ -86,15 +87,21 @@ def main():
     parser.add_argument("--output_prefix", type=str, default="full_eval")
     args = parser.parse_args()
 
-    # 模型加载逻辑 (简略版，只保留 MTL 和 Baseline)
+    # 模型加载逻辑：根据 model_type 实例化对应的类并加载权重
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    MODEL_PATH = "microsoft/deberta-v3-base" # 默认
     
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
     if args.model_type == "deberta_mtl":
-        model = DebertaToxicityMTL(MODEL_PATH).to(device)
+        MODEL_PATH = "microsoft/deberta-v3-base"
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
+        model = DebertaV3MTL(MODEL_PATH).to(device)
+    elif args.model_type == "bert_cnn":
+        MODEL_PATH = "bert-base-uncased"
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
+        model = BertCNNBiLSTM(MODEL_PATH).to(device)
     else:
-        # 兼容其他模型类型...
+        # 其他标准 Transformer 基准模型
+        MODEL_PATH = "bert-base-uncased" # 默认 fallback
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
         from transformers import AutoModelForSequenceClassification
         model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH, num_labels=1, local_files_only=True).to(device)
 

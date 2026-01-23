@@ -25,6 +25,8 @@ sys.path.append(os.path.join(BASE_DIR, "src_script"))
 
 # 离线环境变量设置
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
+os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_bert_cnn_bilstm import BertCNNBiLSTM
