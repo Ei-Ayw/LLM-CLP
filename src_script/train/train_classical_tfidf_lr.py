@@ -11,7 +11,7 @@ def main():
     parser.add_argument("--mode", type=str, choices=["train", "eval"], default="train")
     args = parser.parse_args()
 
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     TRAIN_FILE = os.path.join(BASE_DIR, "data", "train_processed.parquet")
     VAL_FILE = os.path.join(BASE_DIR, "data", "val_processed.parquet")
     MODEL_DIR = os.path.join(BASE_DIR, "src_result")

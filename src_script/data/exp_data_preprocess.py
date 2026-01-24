@@ -44,7 +44,7 @@ def preprocess_data(input_path, output_dir):
     print("Preprocessing completed. Files saved to parquet.")
 
 if __name__ == "__main__":
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     INPUT_CSV = os.path.join(BASE_DIR, "data", "train.csv")
     OUTPUT_DIR = os.path.join(BASE_DIR, "data")
     preprocess_data(INPUT_CSV, OUTPUT_DIR)

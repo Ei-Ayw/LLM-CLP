@@ -17,7 +17,7 @@ from datetime import datetime
 # 遵循“一模型一脚本”规范，独立管理 RoBERTa 的实验生命周期。
 # =============================================================================
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script"))
@@ -28,7 +28,7 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_vanilla_roberta import VanillaRoBERTa
-from data_loader import ToxicityDataset, sample_aligned_data
+from exp_data_loader import ToxicityDataset, sample_aligned_data
 
 def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
     model.train()

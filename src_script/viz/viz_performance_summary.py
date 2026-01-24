@@ -38,7 +38,7 @@ def plot_comparison(result_dir, output_path):
     print(f"Comparison plot saved to {output_path}")
 
 def main():
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     RESULT_DIR = os.path.join(BASE_DIR, "src_result")
     OUTPUT_PLOT = os.path.join(RESULT_DIR, "comparison_fairness_auc.png")
     

@@ -28,7 +28,7 @@ from model_bilstm import BiLSTM
 from model_vanilla_bert import VanillaBERT
 from model_vanilla_roberta import VanillaRoBERTa
 from model_vanilla_deberta_v3 import VanillaDeBERTaV3
-from data_loader import ToxicityDataset
+from exp_data_loader import ToxicityDataset
 
 class SimpleTokenDataset(Dataset):
     def __init__(self, texts, labels, vocab, max_len=256):

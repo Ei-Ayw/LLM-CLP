@@ -10,7 +10,7 @@ import os
 import pandas as pd
 
 def main():
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     results_dir = os.path.join(base_dir, "src_result")
     
     # 找到所有公平性指标文件

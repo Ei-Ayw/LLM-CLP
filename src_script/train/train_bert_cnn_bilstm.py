@@ -11,32 +11,32 @@ import numpy as np
 from datetime import datetime
 
 # =============================================================================
-# ### 训练脚本：train_vanilla_bert.py ###
+# ### 训练脚本：train_bert_cnn_bilstm.py ###
 # 设计说明：
-# 本脚本用于训练最基础的原生 BERT 模型。
-# 它是所有 Transformer 改进工作的基石，必须作为第一个对比组（Group 3: Transformer Baselines）。
+# 本脚本用于训练 BertCNNBiLSTM 混合架构模型。
+# 作为本文的重要对比实验，该模型验证了在 BERT 之后增加卷积和循环神经网络对毒性分类的贡献。
 # =============================================================================
 
 # 设置项目路径
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script"))
 
-# 设置 Hugging Face 离线模式与镜像
+# 离线环境变量设置
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
 os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-from model_vanilla_bert import VanillaBERT
-from data_loader import ToxicityDataset, sample_aligned_data
+from model_bert_cnn_bilstm import BertCNNBiLSTM
+from exp_data_loader import ToxicityDataset, sample_aligned_data
 
 def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
     model.train()
     criterion = nn.BCEWithLogitsLoss()
     total_loss = 0
-    pbar = tqdm(loader, desc="[Train BERT]")
+    pbar = tqdm(loader, desc="[Train BertCNN]")
     
     for i, batch in enumerate(pbar):
         ids = batch['input_ids'].to(device)
@@ -60,9 +60,9 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
     return total_loss / len(loader)
 
 def main():
-    parser = argparse.ArgumentParser(description="Vanilla BERT Baseline Training")
-    parser.add_argument("--model_path", type=str, default="bert-base-uncased", help="本地预训练权重路径")
-    parser.add_argument("--sample_size", type=int, default=200000, help="数据对齐样本量")
+    parser = argparse.ArgumentParser(description="BERT + CNN + BiLSTM Baseline Training")
+    parser.add_argument("--model_name", type=str, default="bert-base-uncased")
+    parser.add_argument("--sample_size", type=int, default=200000)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=2e-5)
     parser.add_argument("--epochs", type=int, default=3)
@@ -74,24 +74,24 @@ def main():
     torch.manual_seed(args.seed)
     
     timestamp = datetime.now().strftime("%m%d_%H%M")
-    save_name = f"VanillaBERT_Sample{args.sample_size}_{timestamp}.pth"
+    save_name = f"BertCNNBiLSTM_Sample{args.sample_size}_{timestamp}.pth"
     save_path = os.path.join(BASE_DIR, "src_result", save_name)
 
-    print(f"\n>>> 启动原生 BERT 实验: {save_name}")
+    print(f"\n>>> 启动对比模型实验: {save_name}")
 
     # 加载数据与对齐
     train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
     val_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "val_processed.parquet"))
     train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.seed)
     
-    tokenizer = AutoTokenizer.from_pretrained(args.model_path, local_files_only=True)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name, local_files_only=True)
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len)
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len)
     train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4)
     val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
     # 模型初始化
-    model = VanillaBERT(args.model_path).to(device)
+    model = BertCNNBiLSTM(args.model_name).to(device)
     
     num_steps = int(len(train_ds) / args.batch_size * args.epochs)
     optimizer = AdamW(model.parameters(), lr=args.lr)
@@ -103,6 +103,7 @@ def main():
         print(f"\nEpoch {epoch+1}/{args.epochs}")
         train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, accum_steps=1)
         
+        # 简单评估
         model.eval()
         v_loss = 0
         with torch.no_grad():

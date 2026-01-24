@@ -11,7 +11,7 @@ import seaborn as sns
 from tqdm import tqdm
 
 # 设置项目路径
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script"))
@@ -23,7 +23,7 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_deberta_mtl import DebertaV3MTL
-from data_loader import ToxicityDataset
+from exp_data_loader import ToxicityDataset
 
 def main():
     import argparse
