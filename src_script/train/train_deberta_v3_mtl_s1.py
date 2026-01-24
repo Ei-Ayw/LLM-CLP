@@ -4,11 +4,14 @@ import argparse
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
+from torch.cuda.amp import GradScaler, autocast  # FP16 混合精度
 from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
 from datetime import datetime
+import json
+import matplotlib.pyplot as plt
 
 # =============================================================================
 # ### 核心训练脚本：train_deberta_mtl.py ###
@@ -32,14 +35,16 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 from model_deberta_v3_mtl import DebertaV3MTL
 from exp_data_loader import ToxicityDataset, sample_aligned_data
 
-def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
-    """ 单个 Epoch 的训练逻辑 """
+def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, scaler, only_toxicity=False):
+    """
+    单个 Epoch 的训练逻辑 (支持 FP16 混合精度)
+    scaler: GradScaler 实例，用于 FP16 训练
+    only_toxicity: 消融实验开关，True 时仅训练主任务
+    """
     model.train()
-    # 使用 BCEWithLogitsLoss 进行分类监督，此时 output 没有经过 Sigmoid
     criterion = nn.BCEWithLogitsLoss()
-    
     total_loss = 0
-    pbar = tqdm(loader, desc="[Train]")
+    pbar = tqdm(loader, desc="[Train FP16]")
     
     for i, batch in enumerate(pbar):
         ids = batch['input_ids'].to(device)
@@ -48,27 +53,30 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
         y_sub = batch['y_sub'].to(device)
         y_id = batch['y_id'].to(device)
         
-        # 前向传播
-        out = model(ids, mask)
+        # =====================================================================
+        # FP16 混合精度训练：使用 autocast 自动管理精度
+        # 优势：显存降低约 40%，训练速度提升 40-50%
+        # =====================================================================
+        with autocast():
+            out = model(ids, mask)
+            
+            # 4.1 Loss: L = L_tox + 0.5 * L_sub + 0.2 * L_id
+            l_tox = criterion(out['logits_tox'], y_tox)
+            
+            if only_toxicity:
+                loss = l_tox
+            else:
+                l_sub = criterion(out['logits_sub'], y_sub)
+                l_id = criterion(out['logits_id'], y_id)
+                loss = l_tox + 0.5 * l_sub + 0.2 * l_id
         
-        # 多任务损失决策逻辑
-        l_tox = criterion(out['logits_tox'], y_tox)
-        
-        if args.only_toxicity:
-            # 消融实验：仅使用主任务毒性损失
-            loss = l_tox
-        else:
-            # 完整方案：MTL 权重 L = L_tox + 0.5 * L_sub + 0.2 * L_id
-            l_sub = criterion(out['logits_sub'], y_sub)
-            l_id = criterion(out['logits_id'], y_id)
-            loss = l_tox + 0.5 * l_sub + 0.2 * l_id
-        
-        # 梯度累积
+        # FP16 梯度缩放
         loss = loss / accum_steps
-        loss.backward()
+        scaler.scale(loss).backward()
         
         if (i + 1) % accum_steps == 0:
-            optimizer.step()
+            scaler.step(optimizer)
+            scaler.update()
             scheduler.step()
             optimizer.zero_grad()
             
@@ -99,7 +107,7 @@ def main():
     parser = argparse.ArgumentParser(description="DeBERTa-V3 Multi-Task Training (Stage 1)")
     parser.add_argument("--model_name", type=str, default="microsoft/deberta-v3-base", help="预训练模型路径或名称")
     parser.add_argument("--sample_size", type=int, default=200000, help="统一训练样本量")
-    parser.add_argument("--batch_size", type=int, default=8, help="批处理大小")
+    parser.add_argument("--batch_size", type=int, default=16, help="批处理大小 (3090 24G 可用 16)")
     parser.add_argument("--lr", type=float, default=2e-5, help="学习率")
     parser.add_argument("--epochs", type=int, default=3, help="训练轮数")
     parser.add_argument("--seed", type=int, default=42, help="随机种子，用于数据对齐")
@@ -121,11 +129,11 @@ def main():
     suffix = ""
     if args.no_pooling: suffix += "_NoPooling"
     if args.only_toxicity: suffix += "_OnlyTox"
-    save_name = f"DebertaV3MTL_S1{suffix}_Sample{args.sample_size}_{timestamp}.pth"
-    save_path = os.path.join(BASE_DIR, "src_result", save_name)
+    save_name = f"DebertaV3MTL_S1{suffix}_Sample{args.sample_size}_{timestamp}"
+    save_path = os.path.join(BASE_DIR, "src_result", save_name + ".pth")
 
     print(f"\n>>> 启动实验: {save_name}")
-    print(f">>> 使用设备: {device} | 样本量: {args.sample_size} | Seed: {args.seed}")
+    print(f">>> 使用设备: {device} | 样本量: {args.sample_size} | FP16: 启用")
 
     # 加载数据
     train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
@@ -138,8 +146,8 @@ def main():
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len)
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len)
     
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4)
-    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=4)
+    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size * 2, shuffle=False, num_workers=4, pin_memory=True)
 
     # 模型初始化：通过参数开关控制是否启用 Attention Pooling
     model = DebertaV3MTL(args.model_name, use_attention_pooling=not args.no_pooling).to(device)
@@ -149,12 +157,24 @@ def main():
     optimizer = AdamW(model.parameters(), lr=args.lr)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=int(0.1*num_steps), num_training_steps=num_steps)
 
+    # =========================================================================
+    # FP16 混合精度：GradScaler 用于动态缩放梯度，防止下溢
+    # =========================================================================
+    scaler = GradScaler()
+    
+    # Loss 历史记录 (用于生成曲线图)
+    loss_history = {"train": [], "val": []}
+    
     best_val_loss = float('inf')
     
     for epoch in range(args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
-        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, args.accum_steps)
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, args.accum_steps, scaler, args.only_toxicity)
         val_loss = evaluate(model, val_loader, device)
+        
+        # 记录 Loss
+        loss_history["train"].append(train_loss)
+        loss_history["val"].append(val_loss)
         
         print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
         
@@ -162,6 +182,31 @@ def main():
             best_val_loss = val_loss
             torch.save(model.state_dict(), save_path)
             print(f"  [Save] 更优模型已保存至: {save_path}")
+    
+    # =========================================================================
+    # 保存 Loss 历史 (JSON) 和生成曲线图 (PNG)
+    # =========================================================================
+    loss_json_path = os.path.join(BASE_DIR, "src_result", save_name + "_loss.json")
+    with open(loss_json_path, 'w') as f:
+        json.dump(loss_history, f, indent=2)
+    print(f">>> Loss 历史已保存: {loss_json_path}")
+    
+    # 生成 Loss 曲线图
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, args.epochs + 1), loss_history["train"], 'b-o', label='Train Loss')
+    plt.plot(range(1, args.epochs + 1), loss_history["val"], 'r-o', label='Val Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title(f'Training Loss Curve: {save_name}')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    
+    loss_fig_path = os.path.join(BASE_DIR, "src_result", save_name + "_loss.png")
+    plt.savefig(loss_fig_path, dpi=150)
+    plt.close()
+    print(f">>> Loss 曲线图已保存: {loss_fig_path}")
 
 if __name__ == "__main__":
     main()
+
