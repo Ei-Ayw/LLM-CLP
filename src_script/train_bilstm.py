@@ -25,7 +25,7 @@ sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script"))
 
-from model_classic_deep import BiLSTM
+from model_bilstm import BiLSTM
 from data_loader import sample_aligned_data
 
 # --- 词表构建（与 CNN 保持一致以保证公平对比） ---
