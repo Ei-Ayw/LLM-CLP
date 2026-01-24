@@ -26,7 +26,7 @@ sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script"))
 
-from model_classic_deep import TextCNN
+from model_text_cnn import TextCNN
 from data_loader import sample_aligned_data
 
 # --- 辅助类：简易分词与词表构建 ---

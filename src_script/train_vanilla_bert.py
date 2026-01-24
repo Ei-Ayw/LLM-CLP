@@ -29,7 +29,7 @@ os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-from model_vanilla_transformers import VanillaBERT
+from model_vanilla_bert import VanillaBERT
 from data_loader import ToxicityDataset, sample_aligned_data
 
 def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):

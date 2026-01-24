@@ -22,19 +22,19 @@ os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
+# 动态导入重构后的模型文件
 from model_deberta_mtl import DebertaV3MTL
 from model_bert_cnn_bilstm import BertCNNBiLSTM
-from model_classic_deep import TextCNN, BiLSTM
-from model_vanilla_transformers import VanillaTransformer
+from model_text_cnn import TextCNN
+from model_bilstm import BiLSTM
+from model_vanilla_bert import VanillaBERT
+from model_vanilla_roberta import VanillaRoBERTa
 from data_loader import ToxicityDataset
 
 # --- 辅助：针对经典模型的 Dataset 包装 ---
 class SimpleTokenDataset(Dataset):
     def __init__(self, texts, labels, vocab, max_len=256):
-        self.texts = texts
-        self.labels = labels
-        self.vocab = vocab
-        self.max_len = max_len
+        self.texts, self.labels, self.vocab, self.max_len = texts, labels, vocab, max_len
     def __len__(self): return len(self.texts)
     def __getitem__(self, idx):
         ids = self.vocab.encode(self.texts[idx], self.max_len)
@@ -52,8 +52,7 @@ def scan_thresholds(y_true, y_prob):
     thresholds = np.arange(0.05, 0.96, 0.05)
     best_f1, best_thresh = 0, 0.5
     for thresh in thresholds:
-        y_pred = (y_prob >= thresh).astype(int)
-        f1 = metrics.f1_score(y_true, y_pred)
+        f1 = metrics.f1_score(y_true, (y_prob >= thresh).astype(int))
         if f1 > best_f1: best_f1, best_thresh = f1, thresh
     return best_thresh, best_f1
 
@@ -78,7 +77,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--model_type", type=str, required=True, 
-                        choices=["deberta_mtl", "bert_cnn", "text_cnn", "bilstm", "vanilla"])
+                        choices=["deberta_mtl", "bert_cnn", "text_cnn", "bilstm", "vanilla_bert", "vanilla_roberta"])
     parser.add_argument("--output_prefix", type=str, default="full_eval")
     args = parser.parse_args()
 
@@ -86,19 +85,20 @@ def main():
     VAL_FILE = os.path.join(BASE_DIR, "data", "val_processed.parquet")
     val_df = pd.read_parquet(VAL_FILE)
     
-    # [1] 根据模型类型加载模型与权重
+    # [1] 根据模型类型加载对应的类
     if args.model_type == "deberta_mtl":
         model = DebertaV3MTL("microsoft/deberta-v3-base").to(device)
     elif args.model_type == "bert_cnn":
         model = BertCNNBiLSTM("bert-base-uncased").to(device)
-    elif args.model_type == "vanilla":
-        model = VanillaTransformer("bert-base-uncased").to(device) # 默认以 BERT 评估，如有需要可扩展参数
+    elif args.model_type == "vanilla_bert":
+        model = VanillaBERT("bert-base-uncased").to(device)
+    elif args.model_type == "vanilla_roberta":
+        model = VanillaRoBERTa("roberta-base").to(device)
     elif args.model_type in ["text_cnn", "bilstm"]:
         vocab_path = args.checkpoint.replace(".pth", "_vocab.pkl")
         with open(vocab_path, 'rb') as f: vocab = pickle.load(f)
         vocab_size = len(vocab.stoi)
-        if args.model_type == "text_cnn": model = TextCNN(vocab_size=vocab_size).to(device)
-        else: model = BiLSTM(vocab_size=vocab_size).to(device)
+        model = TextCNN(vocab_size=vocab_size).to(device) if args.model_type == "text_cnn" else BiLSTM(vocab_size=vocab_size).to(device)
     
     model.load_state_dict(torch.load(args.checkpoint, map_location=device))
     model.eval()
@@ -106,18 +106,19 @@ def main():
     # [2] 推理逻辑
     probs, targets = [], []
     if args.model_type in ["text_cnn", "bilstm"]:
-        ds = SimpleTokenDataset(val_df['comment_text'].values, val_df['y_tox'].values, vocab)
-        loader = DataLoader(ds, batch_size=64, shuffle=False)
+        dataset = SimpleTokenDataset(val_df['comment_text'].values, val_df['y_tox'].values, vocab)
+        loader = DataLoader(dataset, batch_size=64, shuffle=False)
         with torch.no_grad():
             for batch in tqdm(loader, desc="Evaluating (Classic)"):
-                ids = batch['ids'].to(device)
-                out = model(ids)
+                out = model(batch['ids'].to(device))
                 probs.extend(torch.sigmoid(out['logits_tox']).squeeze(-1).cpu().numpy())
                 targets.extend(batch['y_tox'].cpu().numpy())
     else:
-        tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-v3-base" if "deberta" in args.checkpoint else "bert-base-uncased", local_files_only=True)
-        ds = ToxicityDataset(val_df, tokenizer)
-        loader = DataLoader(ds, batch_size=16, shuffle=False)
+        # Transformer 类模型会自动识别 checkpoint 名称决定加载哪个基础权重（仅用于 Tokenizer）
+        base_name = "microsoft/deberta-v3-base" if "Deberta" in args.checkpoint else "roberta-base" if "RoBERTa" in args.checkpoint else "bert-base-uncased"
+        tokenizer = AutoTokenizer.from_pretrained(base_name, local_files_only=True)
+        dataset = ToxicityDataset(val_df, tokenizer)
+        loader = DataLoader(dataset, batch_size=16, shuffle=False)
         with torch.no_grad():
             for batch in tqdm(loader, desc="Evaluating (Transformer)"):
                 out = model(batch['input_ids'].to(device), batch['attention_mask'].to(device))
@@ -129,21 +130,17 @@ def main():
 
     # [3] 计算指标
     best_thresh, best_f1 = scan_thresholds(targets >= 0.5, probs)
-    res = {
-        "checkpoint": args.checkpoint,
-        "main_metrics": {
-            "f1": float(best_f1), "accuracy": float(metrics.accuracy_score(targets >= 0.5, (probs >= best_thresh).astype(int))),
-            "pr_auc": float(calculate_pr_auc(targets >= 0.5, probs)), "roc_auc": float(calculate_auc(targets >= 0.5, probs))
-        }
-    }
     bias_df = calculate_fairness_metrics(val_df, ['male', 'female', 'black', 'white', 'muslim', 'jewish', 'christian', 'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness'], 'model_probs')
-    res["bias_metrics"] = {"mean_bias_auc": float(bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.mean()),
-                           "worst_bias_auc": float(bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.min()),
-                           "details": bias_df.to_dict(orient='records')}
-
+    
+    report = {
+        "checkpoint": args.checkpoint, "model_type": args.model_type,
+        "main_metrics": { "f1": float(best_f1), "accuracy": float(metrics.accuracy_score(targets >= 0.5, (probs >= best_thresh).astype(int))), "pr_auc": float(calculate_pr_auc(targets >= 0.5, probs)), "roc_auc": float(calculate_auc(targets >= 0.5, probs)) },
+        "bias_metrics": { "mean_bias_auc": float(bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.mean()), "worst_bias_auc": float(bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.min()), "details": bias_df.to_dict(orient='records') }
+    }
+    
     output_path = os.path.join(BASE_DIR, "src_result", f"{args.output_prefix}_metrics.json")
-    with open(output_path, 'w', encoding='utf-8') as f: json.dump(res, f, indent=4, ensure_ascii=False)
-    print(f"\nEvaluation Report:\nF1: {res['main_metrics']['f1']:.4f}, Mean Bias AUC: {res['bias_metrics']['mean_bias_auc']:.4f}")
+    with open(output_path, 'w', encoding='utf-8') as f: json.dump(report, f, indent=4, ensure_ascii=False)
+    print(f"\n[REPORT] Saved to: {output_path}")
 
 if __name__ == "__main__":
     main()
