@@ -18,10 +18,10 @@ from datetime import datetime
 # =============================================================================
 
 # 设置项目路径
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
-sys.path.append(os.path.join(BASE_DIR, "src_script"))
+sys.path.append(os.path.join(BASE_DIR, "src_script", "data"))
 
 # 离线环境变量设置
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
@@ -30,7 +30,7 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_deberta_v3_mtl import DebertaV3MTL
-from data_loader import ToxicityDataset, sample_aligned_data
+from exp_data_loader import ToxicityDataset, sample_aligned_data
 
 def weighted_toxicity_loss(logits, targets, has_id):
     """
