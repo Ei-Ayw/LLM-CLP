@@ -133,11 +133,11 @@ def main():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     
-    # [1] 数据加载
-    val_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "val_processed.parquet"))
+    # [1] 数据加载 -> 使用独立测试集 (学术严谨性)
+    test_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "test_processed.parquet"))
     ckpt_name = os.path.basename(args.checkpoint)
     print(f"\n>>> 启动评估: {ckpt_name}")
-    print(f">>> 模型类型: {args.model_type} | 设备: {device}")
+    print(f">>> 模型类型: {args.model_type} | 测试集大小: {len(test_df)} | 设备: {device}")
 
     # [2] 模型实例化：根据类型和消融后缀自动适配
     if args.model_type == "deberta_mtl":
@@ -166,7 +166,7 @@ def main():
     # [3] 推理
     probs, targets = [], []
     if args.model_type in ["text_cnn", "bilstm"]:
-        loader = DataLoader(SimpleTokenDataset(val_df['comment_text'].values, val_df['y_tox'].values, vocab), batch_size=64, shuffle=False)
+        loader = DataLoader(SimpleTokenDataset(test_df['comment_text'].values, test_df['y_tox'].values, vocab), batch_size=64, shuffle=False)
         with torch.no_grad():
             for batch in tqdm(loader, desc="[Inference Classic]"):
                 out = model(batch['ids'].to(device))
@@ -176,7 +176,7 @@ def main():
         base_model_name = "microsoft/deberta-v3-base" if "Deberta" in ckpt_name else \
                           "roberta-base" if "RoBERTa" in ckpt_name else "bert-base-uncased"
         tokenizer = AutoTokenizer.from_pretrained(base_model_name, local_files_only=True)
-        loader = DataLoader(ToxicityDataset(val_df, tokenizer), batch_size=16, shuffle=False)
+        loader = DataLoader(ToxicityDataset(test_df, tokenizer), batch_size=16, shuffle=False)
         with torch.no_grad():
             for batch in tqdm(loader, desc="[Inference Transformer]"):
                 out = model(batch['input_ids'].to(device), batch['attention_mask'].to(device))
@@ -185,7 +185,7 @@ def main():
 
     probs = np.array(probs)
     targets = np.array(targets)
-    val_df['model_probs'] = probs
+    test_df['model_probs'] = probs
     y_true_binary = (targets >= 0.5).astype(int)
 
     # ======================= [4] 指标计算 =======================
@@ -199,7 +199,7 @@ def main():
     # B. 偏见/群体鲁棒指标
     identity_cols = ['male', 'female', 'black', 'white', 'muslim', 'jewish', 
                      'christian', 'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness']
-    bias_df = calculate_fairness_metrics(val_df, identity_cols, 'model_probs')
+    bias_df = calculate_fairness_metrics(test_df, identity_cols, 'model_probs')
     
     # Mean Bias AUC: 对所有子群的 3 种 AUC 求均值
     all_bias_auc_values = bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.flatten()
