@@ -2,7 +2,7 @@
 data/*.csv
 data/*.parquet
 !data/.gitkeep
-
+.idea/
 # Models & Results
 src_result/*.pth
 src_result/*.joblib

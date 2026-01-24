@@ -210,6 +210,13 @@ def main():
     roc_auc = calculate_roc_auc(y_true_binary, probs)
     pr_auc = calculate_pr_auc(y_true_binary, probs)
     
+    # A2. 固定阈值 0.5 的指标 (用于公平对比)
+    y_pred_fixed = (probs >= 0.5).astype(int)
+    fixed_f1 = metrics.f1_score(y_true_binary, y_pred_fixed)
+    fixed_accuracy = metrics.accuracy_score(y_true_binary, y_pred_fixed)
+    fixed_precision = metrics.precision_score(y_true_binary, y_pred_fixed, zero_division=0)
+    fixed_recall = metrics.recall_score(y_true_binary, y_pred_fixed, zero_division=0)
+    
     # B. 偏见/群体鲁棒指标
     identity_cols = ['male', 'female', 'black', 'white', 'muslim', 'jewish', 
                      'christian', 'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness']
@@ -251,12 +258,21 @@ def main():
         "checkpoint": args.checkpoint,
         "model_type": args.model_type,
         "optimal_threshold": float(best_thresh),
-        # A. 主任务指标
-        "primary_metrics": {
+        # A. 主任务指标 (最优阈值)
+        "primary_metrics_optimal": {
+            "threshold": float(best_thresh),
             "f1": float(best_f1),
             "accuracy": float(accuracy),
             "roc_auc": float(roc_auc),
             "pr_auc": float(pr_auc)
+        },
+        # A2. 主任务指标 (固定阈值 0.5，用于公平对比)
+        "primary_metrics_fixed_0.5": {
+            "threshold": 0.5,
+            "f1": float(fixed_f1),
+            "accuracy": float(fixed_accuracy),
+            "precision": float(fixed_precision),
+            "recall": float(fixed_recall)
         },
         # B. 偏见指标
         "bias_metrics": {
@@ -274,11 +290,11 @@ def main():
     
     print(f"\n{'='*60}")
     print(f">>> 评估完成: {ckpt_name}")
-    print(f">>> F1: {best_f1:.4f} (Thresh: {best_thresh:.2f})")
-    print(f">>> Accuracy: {accuracy:.4f} | ROC-AUC: {roc_auc:.4f} | PR-AUC: {pr_auc:.4f}")
-    print(f">>> Mean Bias AUC: {mean_bias_auc:.4f} | Worst-group Bias AUC: {worst_bias_auc:.4f}")
-    print(f">>> 阈值扫描曲线: {thresh_plot_path}")
-    print(f">>> 报告已保存至: {output_path}")
+    print(f">>> [最优阈值 {best_thresh:.2f}] F1: {best_f1:.4f} | Acc: {accuracy:.4f}")
+    print(f">>> [固定阈值 0.50] F1: {fixed_f1:.4f} | Acc: {fixed_accuracy:.4f}")
+    print(f">>> ROC-AUC: {roc_auc:.4f} | PR-AUC: {pr_auc:.4f}")
+    print(f">>> Mean Bias AUC: {mean_bias_auc:.4f} | Worst-group: {worst_bias_auc:.4f}")
+    print(f">>> 报告: {output_path}")
     print(f"{'='*60}")
 
 if __name__ == "__main__":
