@@ -29,7 +29,7 @@ os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-from model_deberta_mtl import DebertaV3MTL
+from model_deberta_v3_mtl import DebertaV3MTL
 from data_loader import ToxicityDataset, sample_aligned_data
 
 def weighted_toxicity_loss(logits, targets, has_id):
@@ -74,14 +74,18 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
         
         out = model(ids, mask)
         
-        # 使用身份感知重加权损失
-        l_tox_weighted = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id)
+        if args.no_reweight:
+            # 消融实验：不使用重加权 (w=1.0)
+            l_tox = criterion_aux(out['logits_tox'], y_tox)
+        else:
+            # 完整方案：使用身份感知重加权
+            l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id)
         
         # 辅助任务仍使用标准 BCE
         l_sub = criterion_aux(out['logits_sub'], y_sub)
         l_id = criterion_aux(out['logits_id'], y_id)
         
-        loss = l_tox_weighted + 0.5 * l_sub + 0.2 * l_id
+        loss = l_tox + 0.5 * l_sub + 0.2 * l_id
         
         loss = loss / accum_steps
         loss.backward()
@@ -123,13 +127,15 @@ def main():
     parser.add_argument("--epochs", type=int, default=2, help="第二阶段通常较短")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max_len", type=int, default=256)
+    parser.add_argument("--no_reweight", action="store_true", help="消融实验：禁用重加权逻辑 (w=1.0)")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(args.seed)
     
     timestamp = datetime.now().strftime("%m%d_%H%M")
-    save_name = f"DebertaV3MTL_S2_Sample{args.sample_size}_{timestamp}.pth"
+    suffix = "_NoReweight" if args.no_reweight else ""
+    save_name = f"DebertaV3MTL_S2{suffix}_Sample{args.sample_size}_{timestamp}.pth"
     save_path = os.path.join(BASE_DIR, "src_result", save_name)
 
     print(f"\n>>> 启动 Stage 2 实验: {save_name}")

@@ -29,7 +29,7 @@ os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-from model_deberta_mtl import DebertaV3MTL
+from model_deberta_v3_mtl import DebertaV3MTL
 from data_loader import ToxicityDataset, sample_aligned_data
 
 def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
@@ -51,13 +51,17 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
         # 前向传播
         out = model(ids, mask)
         
-        # 多任务损失加权：L = L_tox + 0.5 * L_sub + 0.2 * L_id
-        # 该权重旨在让主任务占据主导，同时利用辅助任务进行偏见纠偏
+        # 多任务损失决策逻辑
         l_tox = criterion(out['logits_tox'], y_tox)
-        l_sub = criterion(out['logits_sub'], y_sub)
-        l_id = criterion(out['logits_id'], y_id)
         
-        loss = l_tox + 0.5 * l_sub + 0.2 * l_id
+        if args.only_toxicity:
+            # 消融实验：仅使用主任务毒性损失
+            loss = l_tox
+        else:
+            # 完整方案：MTL 权重 L = L_tox + 0.5 * L_sub + 0.2 * L_id
+            l_sub = criterion(out['logits_sub'], y_sub)
+            l_id = criterion(out['logits_id'], y_id)
+            loss = l_tox + 0.5 * l_sub + 0.2 * l_id
         
         # 梯度累积
         loss = loss / accum_steps
@@ -101,15 +105,23 @@ def main():
     parser.add_argument("--seed", type=int, default=42, help="随机种子，用于数据对齐")
     parser.add_argument("--accum_steps", type=int, default=2, help="梯度累积步数")
     parser.add_argument("--max_len", type=int, default=256, help="序列最大长度")
+    
+    # 消融实验开关
+    parser.add_argument("--no_pooling", action="store_true", help="消融实验：禁用 Attention Pooling，仅使用 [CLS]")
+    parser.add_argument("--only_toxicity", action="store_true", help="消融实验：禁用 MTL，仅训练毒性主任务")
+    
     args = parser.parse_args()
 
     # 环境准备
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(args.seed)
     
-    # 结果保存路径（带时间戳和标识）
+    # 结果保存路径
     timestamp = datetime.now().strftime("%m%d_%H%M")
-    save_name = f"DebertaV3MTL_S1_Sample{args.sample_size}_{timestamp}.pth"
+    suffix = ""
+    if args.no_pooling: suffix += "_NoPooling"
+    if args.only_toxicity: suffix += "_OnlyTox"
+    save_name = f"DebertaV3MTL_S1{suffix}_Sample{args.sample_size}_{timestamp}.pth"
     save_path = os.path.join(BASE_DIR, "src_result", save_name)
 
     print(f"\n>>> 启动实验: {save_name}")
@@ -129,8 +141,8 @@ def main():
     train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4)
     val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=4)
 
-    # 模型初始化
-    model = DebertaV3MTL(args.model_name).to(device)
+    # 模型初始化：通过参数开关控制是否启用 Attention Pooling
+    model = DebertaV3MTL(args.model_name, use_attention_pooling=not args.no_pooling).to(device)
     
     # 优化器与调度器
     num_steps = int(len(train_ds) / args.batch_size / args.accum_steps * args.epochs)
