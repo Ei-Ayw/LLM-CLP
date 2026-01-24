@@ -30,6 +30,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script", "data"))
+sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
 
 # 离线环境变量
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
@@ -46,6 +47,7 @@ from model_vanilla_bert import VanillaBERT
 from model_vanilla_roberta import VanillaRoBERTa
 from model_vanilla_deberta_v3 import VanillaDeBERTaV3
 from exp_data_loader import ToxicityDataset
+from path_config import get_eval_path
 
 # ======================= 辅助 Dataset =======================
 class SimpleTokenDataset(Dataset):
@@ -249,7 +251,7 @@ def main():
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     
-    thresh_plot_path = os.path.join(BASE_DIR, "src_result", f"{args.output_prefix}_threshold_scan.png")
+    thresh_plot_path = get_eval_path(f"{args.output_prefix}_threshold_scan.png")
     plt.savefig(thresh_plot_path, dpi=150)
     plt.close()
 
@@ -284,7 +286,7 @@ def main():
         "threshold_scan_history": scan_history
     }
     
-    output_path = os.path.join(BASE_DIR, "src_result", f"{args.output_prefix}_metrics.json")
+    output_path = get_eval_path(f"{args.output_prefix}_metrics.json")
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(report, f, indent=4, ensure_ascii=False)
     

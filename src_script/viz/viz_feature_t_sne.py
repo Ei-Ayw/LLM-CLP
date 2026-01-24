@@ -22,6 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script", "data"))
+sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
 
 # 设置 Hugging Face 离线模型
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
@@ -31,6 +32,7 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_deberta_v3_mtl import DebertaV3MTL
 from exp_data_loader import ToxicityDataset
+from path_config import get_viz_path
 
 # 9 个身份群体 (对应论文的评估标准)
 IDENTITY_COLS = [
@@ -140,7 +142,7 @@ def main():
     plt.suptitle('Feature Space Visualization Across Identity Groups', fontsize=18, fontweight='bold', y=1.02)
     plt.tight_layout()
     
-    output_path = os.path.join(BASE_DIR, "src_result", args.output_name)
+    output_path = get_viz_path(args.output_name)
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f">>> 3x3 多子图已保存: {output_path}")

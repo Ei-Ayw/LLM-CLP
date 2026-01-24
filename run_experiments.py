@@ -11,29 +11,16 @@ import time
 # 本脚本作为整个项目的"控制塔"，通过四级分层子目录调度全量实验流程。
 # 文件夹结构：data/, train/, eval/, viz/
 #
-# 数据划分策略 (学术严谨性):
-# ┌─────────────────────────────────────────────────────────────────────────┐
-# │  原始数据 (train.csv) ──> exp_data_preprocess.py                        │
-# │                                                                         │
-# │  ┌───────────────────┐   ┌──────────────┐   ┌──────────────┐           │
-# │  │   Train (80%)     │   │  Val (10%)   │   │  Test (10%)  │           │
-# │  │ train_processed   │   │ val_processed │   │ test_processed│          │
-# │  │   .parquet        │   │   .parquet    │   │   .parquet   │           │
-# │  └───────────────────┘   └──────────────┘   └──────────────┘           │
-# │        ↓                       ↓                    ↓                   │
-# │   模型训练用              训练过程验证/         最终评估指标            │
-# │  (sample_size控制)        Early Stopping        (从未见过)             │
-# └─────────────────────────────────────────────────────────────────────────┘
-#
-# 实验矩阵 (精简到文档要求):
-#   Group 1: 传统强基线    - TF-IDF + Logistic Regression
-#   Group 2: 混合强对照    - BERT + CNN + BiLSTM
-#   Group 3: Transformer   - BERT, RoBERTa, DeBERTa-v3 (本文基座)
-#   Group 4: 本文方案      - DeBERTa-v3 MTL (两阶段) + 消融实验
+# 输出目录结构 (src_result/):
+# ├── models/      # 存储 .pth 模型权重 (Best Model)
+# ├── logs/        # 存储训练过程的 Loss 数据与曲线
+# ├── eval/        # 存储评估报告与阈值曲线
+# └── viz/         # 存储最终的可视化图表 (t-SNE等)
 # =============================================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RES_DIR = os.path.join(BASE_DIR, "src_result")
+MODEL_DIR = os.path.join(RES_DIR, "models")
 PYTHON_EXE = sys.executable
 
 # 核心离线环境配置
@@ -50,8 +37,9 @@ def run_script(folder, script_name, args_list):
     subprocess.run(cmd)
 
 def find_best_s1():
-    files = sorted([f for f in os.listdir(RES_DIR) if f.startswith("DebertaV3MTL_S1_Sample") and f.endswith(".pth")])
-    return os.path.join(RES_DIR, files[-1]) if files else None
+    if not os.path.exists(MODEL_DIR): return None
+    files = sorted([f for f in os.listdir(MODEL_DIR) if f.startswith("DebertaV3MTL_S1_Sample") and f.endswith(".pth")])
+    return os.path.join(MODEL_DIR, files[-1]) if files else None
 
 def main():
     parser = argparse.ArgumentParser()
@@ -59,6 +47,10 @@ def main():
     parser.add_argument("--sample_size", type=int, default=200000)
     parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
+
+    # 预先创建结果子目录 (防御式编程)
+    for d in ["models", "logs", "eval", "viz"]:
+        os.makedirs(os.path.join(RES_DIR, d), exist_ok=True)
 
     common = ["--sample_size", str(args.sample_size), "--seed", str(args.seed)]
 
@@ -100,25 +92,28 @@ def main():
     # --- Phase 3: Evaluation ---
     if args.mode in ["all", "eval", "ablation"]:
         print("\n>>> 全自动化评估引擎启动...")
-        for pth in [f for f in os.listdir(RES_DIR) if f.endswith(".pth")]:
-            # 分类映射逻辑
-            m_type = "deberta_mtl" if "DebertaV3MTL" in pth else \
-                     "bert_cnn" if "BertCNN" in pth else \
-                     "text_cnn" if "TextCNN" in pth else \
-                     "bilstm" if "BiLSTM" in pth else \
-                     "vanilla_bert" if "VanillaBERT" in pth else \
-                     "vanilla_roberta" if "VanillaRoBERTa" in pth else \
-                     "vanilla_deberta" if "VanillaDeBERTa" in pth else "vanilla"
-            
-            run_script("eval", "eval_universal_runner.py", ["--checkpoint", os.path.join(RES_DIR, pth), "--model_type", m_type, "--output_prefix", pth.replace(".pth", "")])
+        if os.path.exists(MODEL_DIR):
+            pths = [f for f in os.listdir(MODEL_DIR) if f.endswith(".pth")]
+            for pth in sorted(pths):
+                # 分类映射逻辑
+                m_type = "deberta_mtl" if "DebertaV3MTL" in pth else \
+                         "bert_cnn" if "BertCNN" in pth else \
+                         "text_cnn" if "TextCNN" in pth else \
+                         "bilstm" if "BiLSTM" in pth else \
+                         "vanilla_bert" if "VanillaBERT" in pth else \
+                         "vanilla_roberta" if "VanillaRoBERTa" in pth else \
+                         "vanilla_deberta" if "VanillaDeBERTa" in pth else "vanilla"
+                
+                run_script("eval", "eval_universal_runner.py", ["--checkpoint", os.path.join(MODEL_DIR, pth), "--model_type", m_type, "--output_prefix", pth.replace(".pth", "")])
 
     # --- Phase 4: Viz ---
     if args.mode in ["all", "viz"]:
         run_script("viz", "viz_performance_summary.py", [])
         # 寻找 S2 正式权重进行可视化
-        files = sorted([f for f in os.listdir(RES_DIR) if f.startswith("DebertaV3MTL_S2_Sample") and "No" not in f and f.endswith(".pth")])
-        if files:
-            run_script("viz", "viz_feature_t_sne.py", ["--checkpoint", os.path.join(RES_DIR, files[-1]), "--output_name", "viz_final_paper.png"])
+        if os.path.exists(MODEL_DIR):
+            files = sorted([f for f in os.listdir(MODEL_DIR) if f.startswith("DebertaV3MTL_S2_Sample") and "No" not in f and f.endswith(".pth")])
+            if files:
+                run_script("viz", "viz_feature_t_sne.py", ["--checkpoint", os.path.join(MODEL_DIR, files[-1]), "--output_name", "viz_final_paper.png"])
 
     print("\n[FINISH] Professional Hierarchical Lifecycle Management Completed.")
 

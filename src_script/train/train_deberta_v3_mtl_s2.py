@@ -21,10 +21,11 @@ import matplotlib.pyplot as plt
 # =============================================================================
 
 # 设置项目路径
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script", "data"))
+sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
 
 # 离线环境变量设置
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
@@ -34,6 +35,7 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_deberta_v3_mtl import DebertaV3MTL
 from exp_data_loader import ToxicityDataset, sample_aligned_data
+from path_config import get_model_path, get_log_path
 
 def weighted_toxicity_loss(logits, targets, has_id):
     """
@@ -138,7 +140,7 @@ def main():
     timestamp = datetime.now().strftime("%m%d_%H%M")
     suffix = "_NoReweight" if args.no_reweight else ""
     save_name = f"DebertaV3MTL_S2{suffix}_Sample{args.sample_size}_{timestamp}"
-    save_path = os.path.join(BASE_DIR, "src_result", save_name + ".pth")
+    save_path = get_model_path(save_name + ".pth")
 
     print(f"\n>>> 启动 Stage 2 实验: {save_name}")
     print(f">>> 加载 Stage 1 权重: {args.s1_checkpoint} | FP16: 启用")
@@ -190,7 +192,7 @@ def main():
             print(f"  [Save] Stage 2 更优模型已保存至: {save_path}")
     
     # 保存 Loss 历史和曲线图
-    loss_json_path = os.path.join(BASE_DIR, "src_result", save_name + "_loss.json")
+    loss_json_path = get_log_path(save_name + "_loss.json")
     with open(loss_json_path, 'w') as f:
         json.dump(loss_history, f, indent=2)
     
@@ -203,9 +205,9 @@ def main():
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
-    plt.savefig(os.path.join(BASE_DIR, "src_result", save_name + "_loss.png"), dpi=150)
+    plt.savefig(get_log_path(save_name + "_loss.png"), dpi=150)
     plt.close()
-    print(f">>> Loss 曲线图已保存")
+    print(f">>> Loss 曲线图已保存: {get_log_path(save_name + '_loss.png')}")
 
 if __name__ == "__main__":
     main()
