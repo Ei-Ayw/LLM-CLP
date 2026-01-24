@@ -48,6 +48,14 @@ class DebertaV3MTL(nn.Module):
         # 加载预训练配置与权重
         self.config = DebertaV2Config.from_pretrained(model_path_or_name, local_files_only=True)
         self.deberta = DebertaV2Model.from_pretrained(model_path_or_name, local_files_only=True)
+        
+        # =====================================================================
+        # 梯度检查点 (Gradient Checkpointing) - 针对 3090 24G 优化
+        # 原理：用计算换显存，不保存中间激活值而是重新计算
+        # 效果：显存降低约 50%，允许 batch_size 从 16 提升到 32
+        # =====================================================================
+        self.deberta.gradient_checkpointing_enable()
+        
         self.use_attention_pooling = use_attention_pooling
         
         hidden_size = self.config.hidden_size

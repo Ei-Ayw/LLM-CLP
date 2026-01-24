@@ -123,7 +123,7 @@ def main():
     parser.add_argument("--s1_checkpoint", type=str, required=True, help="第一阶段训练好的权重路径")
     parser.add_argument("--model_name", type=str, default="microsoft/deberta-v3-base")
     parser.add_argument("--sample_size", type=int, default=200000)
-    parser.add_argument("--batch_size", type=int, default=16, help="批处理大小 (3090 24G 可用 16)")
+    parser.add_argument("--batch_size", type=int, default=32, help="批处理大小 (3090 24G + 梯度检查点 可用 32)")
     parser.add_argument("--lr", type=float, default=1e-5, help="第二阶段通常使用更小的学习率")
     parser.add_argument("--epochs", type=int, default=2, help="第二阶段通常较短")
     parser.add_argument("--seed", type=int, default=42)
