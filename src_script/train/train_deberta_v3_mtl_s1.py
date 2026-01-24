@@ -107,7 +107,7 @@ def main():
     parser = argparse.ArgumentParser(description="DeBERTa-V3 Multi-Task Training (Stage 1)")
     parser.add_argument("--model_name", type=str, default="microsoft/deberta-v3-base", help="预训练模型路径或名称")
     parser.add_argument("--sample_size", type=int, default=200000, help="统一训练样本量")
-    parser.add_argument("--batch_size", type=int, default=16, help="批处理大小 (3090 24G 可用 16)")
+    parser.add_argument("--batch_size", type=int, default=32, help="批处理大小 (3090 24G + 梯度检查点 可用 32)")
     parser.add_argument("--lr", type=float, default=2e-5, help="学习率")
     parser.add_argument("--epochs", type=int, default=3, help="训练轮数")
     parser.add_argument("--seed", type=int, default=42, help="随机种子，用于数据对齐")
