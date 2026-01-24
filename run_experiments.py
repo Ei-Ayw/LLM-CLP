@@ -6,11 +6,30 @@ import time
 
 # =============================================================================
 # ### 实验管理器：run_experiments.py (专业分层架构版) ###
+# =============================================================================
 # 设计说明：
-# 本脚本作为整个项目的“控制塔”，通过四级分层子目录调度全量实验流程。
+# 本脚本作为整个项目的"控制塔"，通过四级分层子目录调度全量实验流程。
 # 文件夹结构：data/, train/, eval/, viz/
-# 涵盖五大实验矩阵：
-# 1. 经典统计 2. 传统深度学习 3. 强对照组 4. 原生 Transformer 5. 本文方案及其消融。
+#
+# 数据划分策略 (学术严谨性):
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │  原始数据 (train.csv) ──> exp_data_preprocess.py                        │
+# │                                                                         │
+# │  ┌───────────────────┐   ┌──────────────┐   ┌──────────────┐           │
+# │  │   Train (80%)     │   │  Val (10%)   │   │  Test (10%)  │           │
+# │  │ train_processed   │   │ val_processed │   │ test_processed│          │
+# │  │   .parquet        │   │   .parquet    │   │   .parquet   │           │
+# │  └───────────────────┘   └──────────────┘   └──────────────┘           │
+# │        ↓                       ↓                    ↓                   │
+# │   模型训练用              训练过程验证/         最终评估指标            │
+# │  (sample_size控制)        Early Stopping        (从未见过)             │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
+# 实验矩阵 (精简到文档要求):
+#   Group 1: 传统强基线    - TF-IDF + Logistic Regression
+#   Group 2: 混合强对照    - BERT + CNN + BiLSTM
+#   Group 3: Transformer   - BERT, RoBERTa, DeBERTa-v3 (本文基座)
+#   Group 4: 本文方案      - DeBERTa-v3 MTL (两阶段) + 消融实验
 # =============================================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -45,7 +64,7 @@ def main():
 
     # --- Phase 1: Data & Models Training ---
     if args.mode in ["all", "train"]:
-        # Data Preprocess
+        # 数据预处理: 生成 train_processed / val_processed / test_processed (80/10/10)
         run_script("data", "exp_data_preprocess.py", [])
 
         # Group 1: Classical Strong Baseline (TF-IDF + LR)

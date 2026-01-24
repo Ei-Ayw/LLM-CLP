@@ -6,13 +6,35 @@ import os
 def preprocess_data(input_path, output_dir):
     print(f"Loading data from {input_path}...")
     # 由于数据量大，仅读取需要的列
+    # =========================================================================
+    # 3.3 辅助标签 2: identity（多标签）- 用于偏见评估与 Stage 2 身份感知重加权
+    # 选取 9 个经典且覆盖面大的身份属性列：
+    #   - 性别: male, female
+    #   - 种族: black, white
+    #   - 宗教: muslim, jewish, christian
+    #   - 性取向: homosexual_gay_or_lesbian
+    #   - 心理健康: psychiatric_or_mental_illness
+    # 处理方式: NaN 填 0, 保留原始 0~1 软标签 (更稳健)
+    # =========================================================================
     identity_cols = [
         'male', 'female', 'black', 'white', 'muslim', 'jewish', 'christian', 
         'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness'
     ]
+    # =========================================================================
+    # 3.2 辅助标签 1: subtypes（多标签）- 用于多任务学习 (MTL)
+    # 选取 6 个够用且常见的毒性子类别：
+    #   - severe_toxicity (严重毒性)
+    #   - obscene (淫秽)
+    #   - threat (威胁)
+    #   - insult (侮辱)
+    #   - identity_attack (身份攻击)
+    #   - sexual_explicit (性暗示)
+    # 处理方式: NaN 填 0, 直接用原始 0~1 作为软标签 (更稳)
+    # =========================================================================
     subtype_cols = [
         'severe_toxicity', 'obscene', 'threat', 'insult', 'identity_attack', 'sexual_explicit'
     ]
+    # 3.1 主任务标签: toxicity 二分类 (用 target >= 0.5 二值化)
     target_col = 'target'
     text_col = 'comment_text'
     

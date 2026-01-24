@@ -4,11 +4,14 @@ import argparse
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
+from torch.cuda.amp import GradScaler, autocast  # FP16 混合精度
 from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
 from datetime import datetime
+import json
+import matplotlib.pyplot as plt
 
 # =============================================================================
 # ### 核心训练脚本：train_deberta_mtl_stage2.py ###
@@ -56,13 +59,13 @@ def weighted_toxicity_loss(logits, targets, has_id):
     # 应用加权并手动计算均值
     return (loss * weights).mean()
 
-def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
-    """ 单个 Epoch 的重加权训练逻辑 """
+def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, scaler, no_reweight=False):
+    """ 单个 Epoch 的重加权训练逻辑 (支持 FP16) """
     model.train()
     criterion_aux = nn.BCEWithLogitsLoss()
     
     total_loss = 0
-    pbar = tqdm(loader, desc="[Train S2]")
+    pbar = tqdm(loader, desc="[Train S2 FP16]")
     
     for i, batch in enumerate(pbar):
         ids = batch['input_ids'].to(device)
@@ -72,26 +75,24 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
         y_id = batch['y_id'].to(device)
         has_id = batch['has_id'].to(device)
         
-        out = model(ids, mask)
-        
-        if args.no_reweight:
-            # 消融实验：不使用重加权 (w=1.0)
-            l_tox = criterion_aux(out['logits_tox'], y_tox)
-        else:
-            # 完整方案：使用身份感知重加权
-            l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id)
-        
-        # 辅助任务仍使用标准 BCE
-        l_sub = criterion_aux(out['logits_sub'], y_sub)
-        l_id = criterion_aux(out['logits_id'], y_id)
-        
-        loss = l_tox + 0.5 * l_sub + 0.2 * l_id
+        with autocast():
+            out = model(ids, mask)
+            
+            if no_reweight:
+                l_tox = criterion_aux(out['logits_tox'], y_tox)
+            else:
+                l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id)
+            
+            l_sub = criterion_aux(out['logits_sub'], y_sub)
+            l_id = criterion_aux(out['logits_id'], y_id)
+            loss = l_tox + 0.5 * l_sub + 0.2 * l_id
         
         loss = loss / accum_steps
-        loss.backward()
+        scaler.scale(loss).backward()
         
         if (i + 1) % accum_steps == 0:
-            optimizer.step()
+            scaler.step(optimizer)
+            scaler.update()
             scheduler.step()
             optimizer.zero_grad()
             
@@ -122,7 +123,7 @@ def main():
     parser.add_argument("--s1_checkpoint", type=str, required=True, help="第一阶段训练好的权重路径")
     parser.add_argument("--model_name", type=str, default="microsoft/deberta-v3-base")
     parser.add_argument("--sample_size", type=int, default=200000)
-    parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--batch_size", type=int, default=16, help="批处理大小 (3090 24G 可用 16)")
     parser.add_argument("--lr", type=float, default=1e-5, help="第二阶段通常使用更小的学习率")
     parser.add_argument("--epochs", type=int, default=2, help="第二阶段通常较短")
     parser.add_argument("--seed", type=int, default=42)
@@ -136,11 +137,11 @@ def main():
     # 结果保存路径：增加消融标识
     timestamp = datetime.now().strftime("%m%d_%H%M")
     suffix = "_NoReweight" if args.no_reweight else ""
-    save_name = f"DebertaV3MTL_S2{suffix}_Sample{args.sample_size}_{timestamp}.pth"
-    save_path = os.path.join(BASE_DIR, "src_result", save_name)
+    save_name = f"DebertaV3MTL_S2{suffix}_Sample{args.sample_size}_{timestamp}"
+    save_path = os.path.join(BASE_DIR, "src_result", save_name + ".pth")
 
     print(f"\n>>> 启动 Stage 2 实验: {save_name}")
-    print(f">>> 加载 Stage 1 权重: {args.s1_checkpoint}")
+    print(f">>> 加载 Stage 1 权重: {args.s1_checkpoint} | FP16: 启用")
 
     # 加载数据
     train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
@@ -150,8 +151,8 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, local_files_only=True)
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len)
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len)
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4)
-    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=4)
+    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size * 2, shuffle=False, num_workers=4, pin_memory=True)
 
     # 模型初始化并加载第一阶段权重
     model = DebertaV3MTL(args.model_name).to(device)
@@ -165,12 +166,21 @@ def main():
     optimizer = AdamW(model.parameters(), lr=args.lr)
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=num_steps)
 
+    # FP16 GradScaler
+    scaler = GradScaler()
+    
+    # Loss 历史记录
+    loss_history = {"train": [], "val": []}
+    
     best_val_loss = float('inf')
     
     for epoch in range(args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
-        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, accum_steps=2)
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, accum_steps=2, scaler=scaler, no_reweight=args.no_reweight)
         val_loss = evaluate(model, val_loader, device)
+        
+        loss_history["train"].append(train_loss)
+        loss_history["val"].append(val_loss)
         
         print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
         
@@ -178,6 +188,24 @@ def main():
             best_val_loss = val_loss
             torch.save(model.state_dict(), save_path)
             print(f"  [Save] Stage 2 更优模型已保存至: {save_path}")
+    
+    # 保存 Loss 历史和曲线图
+    loss_json_path = os.path.join(BASE_DIR, "src_result", save_name + "_loss.json")
+    with open(loss_json_path, 'w') as f:
+        json.dump(loss_history, f, indent=2)
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, args.epochs + 1), loss_history["train"], 'b-o', label='Train Loss')
+    plt.plot(range(1, args.epochs + 1), loss_history["val"], 'r-o', label='Val Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title(f'Stage 2 Loss Curve: {save_name}')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(os.path.join(BASE_DIR, "src_result", save_name + "_loss.png"), dpi=150)
+    plt.close()
+    print(f">>> Loss 曲线图已保存")
 
 if __name__ == "__main__":
     main()
