@@ -5,10 +5,11 @@ import sys
 import time
 
 # =============================================================================
-# ### 实验管理器：run_experiments.py (物理拆分增强版) ###
+# ### 实验管理器：run_experiments.py (混合驱动版) ###
 # 设计说明：
-# 本脚本严格遵循“一模型一物理文件”原则，调度所有基准实验与消融实验。
-# 涵盖 5 大实验物理阵列。
+# 本脚本遵循用户的最新指示：
+# 1. 基准模型 (Baselines) 采用“一模型一物理文件”结构。
+# 2. 消融实验 (Ablation Studies) 采用“开关式参数”设计。
 # =============================================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -24,58 +25,59 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 def run_script(script_name, args_list):
     cmd = [PYTHON_EXE, os.path.join(SRC_DIR, script_name)] + args_list
-    print(f"\n[PHYSICAL RUN] {' '.join(cmd)}")
+    print(f"\n[RUN] {' '.join(cmd)}")
     subprocess.run(cmd)
 
 def find_latest(prefix):
-    files = sorted([f for f in os.listdir(RES_DIR) if f.startswith(prefix) and f.endswith(".pth")])
+    # 查找特定实验阶段的最优权重，逻辑上优先排除消融后缀
+    files = sorted([f for f in os.listdir(RES_DIR) if f.startswith(prefix) and f.endswith(".pth") and "No" not in f and "Only" not in f])
+    if not files: 
+        # 如果没找到全量版，再尝试找最新产生的
+        files = sorted([f for f in os.listdir(RES_DIR) if f.startswith(prefix) and f.endswith(".pth")])
     return os.path.join(RES_DIR, files[-1]) if files else None
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, choices=["all", "train", "eval", "ablation"], default="all")
     parser.add_argument("--sample_size", type=int, default=200000)
+    parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
 
-    common = ["--sample_size", str(args.sample_size)]
+    common = ["--sample_size", str(args.sample_size), "--seed", str(args.seed)]
 
+    # --- Group 1-3 & Full Scheme Training ---
     if args.mode in ["all", "train"]:
-        # 1. 预处理
         run_script("data_preprocess.py", [])
-
-        # 2. Group 1: Classical
         run_script("run_classical_tfidf_lr.py", ["--mode", "train"])
-
-        # 3. Group 2: DL Classic
-        run_script("train_text_cnn.py", common); run_script("train_bilstm.py", common)
-
-        # 4. Group 3: Transformer Baselines
+        run_script("train_text_cnn.py", common)
+        run_script("train_bilstm.py", common)
         run_script("train_vanilla_bert.py", common)
         run_script("train_vanilla_roberta.py", common)
         run_script("train_vanilla_deberta_v3.py", common)
         run_script("train_bert_cnn_bilstm.py", common)
 
-        # 5. Group 5: Final Scheme (Proposed)
+        print("\n>>> 训练本文全量方案 (Full DebertaV3MTL)")
         run_script("train_deberta_v3_mtl_stage1.py", common)
-        s1_full = find_latest("DebertaV3MTL_S1_Sample") # 这里的 prefix 避开 NoPooling 等
-        if s1_full: run_script("train_deberta_v3_mtl_stage2.py", ["--s1_checkpoint", s1_full] + common)
+        s1_best = find_latest("DebertaV3MTL_S1_Sample")
+        if s1_best: run_script("train_deberta_v3_mtl_stage2.py", ["--s1_checkpoint", s1_best] + common)
 
+    # --- Ablation Phase: 开关驱动模式 ---
     if args.mode in ["all", "ablation"]:
-        # 6. Group 4: Ablation Study Matrix
-        print("\n>>> Running Ablation Matrix (Physical Mode)")
-        run_script("train_deberta_v3_cls_only.py", common)      # Ablation 1
-        run_script("train_deberta_v3_single_task.py", common)   # Ablation 2
-        
-        s1_for_ab3 = find_latest("DebertaV3MTL_S1_Sample")
-        if s1_for_ab3: 
-            run_script("train_deberta_v3_mtl_stage2_no_reweight.py", ["--s1_checkpoint", s1_for_ab3] + common) # Ablation 3
+        print("\n>>> 启动消融实验组 (Switch-based Ablations)")
+        # Ablation 1: No Attention Pooling
+        run_script("train_deberta_v3_mtl_stage1.py", ["--no_pooling"] + common)
+        # Ablation 2: No MTL
+        run_script("train_deberta_v3_mtl_stage1.py", ["--only_toxicity"] + common)
+        # Ablation 3: No Reweighting in S2
+        s1_best = find_latest("DebertaV3MTL_S1_Sample")
+        if s1_best: run_script("train_deberta_v3_mtl_stage2.py", ["--s1_checkpoint", s1_best, "--no_reweight"] + common)
 
+    # --- Evaluation ---
     if args.mode in ["all", "eval", "ablation"]:
-        print("\n>>> Launching Universal Evaluator...")
-        for pth in [f for f in os.listdir(RES_DIR) if f.endswith(".pth")]:
-            m_type = "deberta_mtl" if "DebertaV3MTL_S" in pth else \
-                     "ablation_cls" if "CLSOnly" in pth else \
-                     "ablation_single" if "SingleTask" in pth else \
+        print("\n>>> 全量指标自动化评估...")
+        pths = [f for f in os.listdir(RES_DIR) if f.endswith(".pth")]
+        for pth in pths:
+            m_type = "deberta_mtl" if "DebertaV3MTL" in pth else \
                      "bert_cnn" if "BertCNN" in pth else \
                      "text_cnn" if "TextCNN" in pth else \
                      "bilstm" if "BiLSTM" in pth else \
@@ -84,7 +86,7 @@ def main():
                      "vanilla_deberta" if "VanillaDeBERTa" in pth else "vanilla"
             run_script("full_evaluation.py", ["--checkpoint", os.path.join(RES_DIR, pth), "--model_type", m_type, "--output_prefix", pth.replace(".pth", "")])
 
-    print("\n[COMPLETE] Physical One-Model-One-Script Pipeline Finish.")
+    print("\n[FINISH] Standardized Switch-based Experiment Lifecycle Completed.")
 
 if __name__ == "__main__":
     main()

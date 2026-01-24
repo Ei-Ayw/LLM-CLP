@@ -133,7 +133,10 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(args.seed)
     
-    save_name = f"DebertaV3MTL_S2_Sample{args.sample_size}_{datetime.now().strftime('%m%d_%H%M')}.pth"
+    # 结果保存路径：增加消融标识
+    timestamp = datetime.now().strftime("%m%d_%H%M")
+    suffix = "_NoReweight" if args.no_reweight else ""
+    save_name = f"DebertaV3MTL_S2{suffix}_Sample{args.sample_size}_{timestamp}.pth"
     save_path = os.path.join(BASE_DIR, "src_result", save_name)
 
     print(f"\n>>> 启动 Stage 2 实验: {save_name}")
