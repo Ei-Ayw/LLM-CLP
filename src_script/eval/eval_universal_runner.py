@@ -72,15 +72,29 @@ def scan_thresholds(y_true, y_prob):
     """
     阈值扫描策略：在 0.05 - 0.95 范围内搜索使 F1 最大的阈值。
     论文要求：避免固定 0.5 带来的不公平比较。
+    返回：最优阈值、最优F1、完整扫描记录(用于可视化)
     """
     best_f1, best_thresh = 0, 0.5
+    scan_history = []  # 记录完整扫描过程
+    
     for thresh in np.arange(0.05, 0.96, 0.05):
         y_pred = (y_prob >= thresh).astype(int)
         f1 = metrics.f1_score(y_true, y_pred)
+        precision = metrics.precision_score(y_true, y_pred, zero_division=0)
+        recall = metrics.recall_score(y_true, y_pred, zero_division=0)
+        
+        scan_history.append({
+            'threshold': float(thresh),
+            'f1': float(f1),
+            'precision': float(precision),
+            'recall': float(recall)
+        })
+        
         if f1 > best_f1:
             best_f1 = f1
             best_thresh = thresh
-    return best_thresh, best_f1
+            
+    return best_thresh, best_f1, scan_history
 
 def calculate_fairness_metrics(df, subgroups, model_col):
     """
@@ -189,8 +203,8 @@ def main():
     y_true_binary = (targets >= 0.5).astype(int)
 
     # ======================= [4] 指标计算 =======================
-    # A. 主任务分类指标
-    best_thresh, best_f1 = scan_thresholds(y_true_binary, probs)
+    # A. 主任务分类指标 (含完整阈值扫描记录)
+    best_thresh, best_f1, scan_history = scan_thresholds(y_true_binary, probs)
     y_pred_binary = (probs >= best_thresh).astype(int)
     accuracy = metrics.accuracy_score(y_true_binary, y_pred_binary)
     roc_auc = calculate_roc_auc(y_true_binary, probs)
@@ -208,7 +222,31 @@ def main():
     # Worst-group Bias AUC: 取所有子群 x 3种 AUC 中的最小值
     worst_bias_auc = float(np.nanmin(all_bias_auc_values))
 
-    # ======================= [5] 持久化结果报告 =======================
+    # ======================= [5] 生成阈值扫描曲线图 =======================
+    import matplotlib.pyplot as plt
+    
+    thresholds = [s['threshold'] for s in scan_history]
+    f1_scores = [s['f1'] for s in scan_history]
+    precisions = [s['precision'] for s in scan_history]
+    recalls = [s['recall'] for s in scan_history]
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(thresholds, f1_scores, 'b-o', label='F1 Score', linewidth=2)
+    plt.plot(thresholds, precisions, 'g--s', label='Precision', linewidth=1.5, alpha=0.7)
+    plt.plot(thresholds, recalls, 'r--^', label='Recall', linewidth=1.5, alpha=0.7)
+    plt.axvline(x=best_thresh, color='orange', linestyle=':', linewidth=2, label=f'Best Threshold ({best_thresh:.2f})')
+    plt.xlabel('Threshold', fontsize=12)
+    plt.ylabel('Score', fontsize=12)
+    plt.title(f'Threshold Scan Curve: {ckpt_name}', fontsize=14, fontweight='bold')
+    plt.legend(loc='best')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    
+    thresh_plot_path = os.path.join(BASE_DIR, "src_result", f"{args.output_prefix}_threshold_scan.png")
+    plt.savefig(thresh_plot_path, dpi=150)
+    plt.close()
+
+    # ======================= [6] 持久化结果报告 =======================
     report = {
         "checkpoint": args.checkpoint,
         "model_type": args.model_type,
@@ -225,7 +263,9 @@ def main():
             "mean_bias_auc": mean_bias_auc,
             "worst_group_bias_auc": worst_bias_auc,
             "per_subgroup_details": bias_df.to_dict(orient='records')
-        }
+        },
+        # C. 完整阈值扫描记录
+        "threshold_scan_history": scan_history
     }
     
     output_path = os.path.join(BASE_DIR, "src_result", f"{args.output_prefix}_metrics.json")
@@ -237,8 +277,10 @@ def main():
     print(f">>> F1: {best_f1:.4f} (Thresh: {best_thresh:.2f})")
     print(f">>> Accuracy: {accuracy:.4f} | ROC-AUC: {roc_auc:.4f} | PR-AUC: {pr_auc:.4f}")
     print(f">>> Mean Bias AUC: {mean_bias_auc:.4f} | Worst-group Bias AUC: {worst_bias_auc:.4f}")
+    print(f">>> 阈值扫描曲线: {thresh_plot_path}")
     print(f">>> 报告已保存至: {output_path}")
     print(f"{'='*60}")
 
 if __name__ == "__main__":
     main()
+
