@@ -125,7 +125,7 @@ def main():
     parser.add_argument("--sample_size", type=int, default=200000)
     parser.add_argument("--batch_size", type=int, default=32, help="批处理大小 (3090 24G + 梯度检查点 可用 32)")
     parser.add_argument("--lr", type=float, default=1e-5, help="第二阶段通常使用更小的学习率")
-    parser.add_argument("--epochs", type=int, default=2, help="第二阶段通常较短")
+    parser.add_argument("--epochs", type=int, default=10, help="训练轮数 (统一为 10 epoch)")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max_len", type=int, default=256)
     parser.add_argument("--no_reweight", action="store_true", help="消融实验：禁用重加权逻辑 (w=1.0)")

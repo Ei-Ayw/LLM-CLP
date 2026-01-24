@@ -65,7 +65,7 @@ def main():
     parser.add_argument("--sample_size", type=int, default=200000)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=2e-5)
-    parser.add_argument("--epochs", type=int, default=3)
+    parser.add_argument("--epochs", type=int, default=10, help="训练轮数 (统一为 10 epoch)")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max_len", type=int, default=256)
     args = parser.parse_args()
