@@ -4,10 +4,11 @@ import pandas as pd
 import numpy as np
 from sklearn import metrics
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from transformers import AutoTokenizer
 from tqdm import tqdm
 import json
+import pickle
 
 # 设置项目路径
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,13 +24,25 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_deberta_mtl import DebertaV3MTL
 from model_bert_cnn_bilstm import BertCNNBiLSTM
+from model_classic_deep import TextCNN, BiLSTM
+from model_vanilla_transformers import VanillaTransformer
 from data_loader import ToxicityDataset
 
+# --- 辅助：针对经典模型的 Dataset 包装 ---
+class SimpleTokenDataset(Dataset):
+    def __init__(self, texts, labels, vocab, max_len=256):
+        self.texts = texts
+        self.labels = labels
+        self.vocab = vocab
+        self.max_len = max_len
+    def __len__(self): return len(self.texts)
+    def __getitem__(self, idx):
+        ids = self.vocab.encode(self.texts[idx], self.max_len)
+        return {'ids': torch.tensor(ids, dtype=torch.long), 'y_tox': torch.tensor(self.labels[idx], dtype=torch.float)}
+
 def calculate_auc(y_true, y_prob):
-    try:
-        return metrics.roc_auc_score(y_true, y_prob)
-    except:
-        return np.nan
+    try: return metrics.roc_auc_score(y_true, y_prob)
+    except: return np.nan
 
 def calculate_pr_auc(y_true, y_prob):
     precision, recall, _ = metrics.precision_recall_curve(y_true, y_prob)
@@ -37,148 +50,100 @@ def calculate_pr_auc(y_true, y_prob):
 
 def scan_thresholds(y_true, y_prob):
     thresholds = np.arange(0.05, 0.96, 0.05)
-    best_f1 = 0
-    best_thresh = 0.5
+    best_f1, best_thresh = 0, 0.5
     for thresh in thresholds:
         y_pred = (y_prob >= thresh).astype(int)
         f1 = metrics.f1_score(y_true, y_pred)
-        if f1 > best_f1:
-            best_f1 = f1
-            best_thresh = thresh
+        if f1 > best_f1: best_f1, best_thresh = f1, thresh
     return best_thresh, best_f1
 
 def calculate_fairness_metrics(df, subgroups, model_col):
     records = []
-    y_true = df['target'] >= 0.5
     for subgroup in subgroups:
         sub_mask = df[subgroup] >= 0.5
-        if sub_mask.sum() == 0:
-            continue
-            
-        # Subgroup AUC
+        if sub_mask.sum() == 0: continue
         sub_df = df[sub_mask]
         sub_auc = calculate_auc(sub_df['target'] >= 0.5, sub_df[model_col])
-        
-        # BPSN AUC (Background Positive, Subgroup Negative)
-        bpsn_mask = ((df[subgroup] >= 0.5) & (df['target'] < 0.5)) | \
-                    ((df[subgroup] < 0.5) & (df['target'] >= 0.5))
+        bpsn_mask = ((df[subgroup] >= 0.5) & (df['target'] < 0.5)) | ((df[subgroup] < 0.5) & (df['target'] >= 0.5))
         bpsn_df = df[bpsn_mask]
         bpsn_auc = calculate_auc(bpsn_df['target'] >= 0.5, bpsn_df[model_col])
-        
-        # BNSP AUC (Background Negative, Subgroup Positive)
-        bnsp_mask = ((df[subgroup] >= 0.5) & (df['target'] >= 0.5)) | \
-                    ((df[subgroup] < 0.5) & (df['target'] < 0.5))
+        bnsp_mask = ((df[subgroup] >= 0.5) & (df['target'] >= 0.5)) | ((df[subgroup] < 0.5) & (df['target'] < 0.5))
         bnsp_df = df[bnsp_mask]
         bnsp_auc = calculate_auc(bnsp_df['target'] >= 0.5, bnsp_df[model_col])
-        
-        records.append({
-            'subgroup': subgroup,
-            'subgroup_auc': sub_auc,
-            'bpsn_auc': bpsn_auc,
-            'bnsp_auc': bnsp_auc
-        })
+        records.append({'subgroup': subgroup, 'subgroup_auc': sub_auc, 'bpsn_auc': bpsn_auc, 'bnsp_auc': bnsp_auc})
     return pd.DataFrame(records)
 
 def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", type=str, required=True)
-    parser.add_argument("--model_type", type=str, default="deberta_mtl")
+    parser.add_argument("--model_type", type=str, required=True, 
+                        choices=["deberta_mtl", "bert_cnn", "text_cnn", "bilstm", "vanilla"])
     parser.add_argument("--output_prefix", type=str, default="full_eval")
     args = parser.parse_args()
 
-    # 模型加载逻辑：根据 model_type 实例化对应的类并加载权重
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    VAL_FILE = os.path.join(BASE_DIR, "data", "val_processed.parquet")
+    val_df = pd.read_parquet(VAL_FILE)
     
+    # [1] 根据模型类型加载模型与权重
     if args.model_type == "deberta_mtl":
-        MODEL_PATH = "microsoft/deberta-v3-base"
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
-        model = DebertaV3MTL(MODEL_PATH).to(device)
+        model = DebertaV3MTL("microsoft/deberta-v3-base").to(device)
     elif args.model_type == "bert_cnn":
-        MODEL_PATH = "bert-base-uncased"
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
-        model = BertCNNBiLSTM(MODEL_PATH).to(device)
-    else:
-        # 其他标准 Transformer 基准模型
-        MODEL_PATH = "bert-base-uncased" # 默认 fallback
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, local_files_only=True)
-        from transformers import AutoModelForSequenceClassification
-        model = AutoModelForSequenceClassification.from_pretrained(MODEL_PATH, num_labels=1, local_files_only=True).to(device)
-
+        model = BertCNNBiLSTM("bert-base-uncased").to(device)
+    elif args.model_type == "vanilla":
+        model = VanillaTransformer("bert-base-uncased").to(device) # 默认以 BERT 评估，如有需要可扩展参数
+    elif args.model_type in ["text_cnn", "bilstm"]:
+        vocab_path = args.checkpoint.replace(".pth", "_vocab.pkl")
+        with open(vocab_path, 'rb') as f: vocab = pickle.load(f)
+        vocab_size = len(vocab.stoi)
+        if args.model_type == "text_cnn": model = TextCNN(vocab_size=vocab_size).to(device)
+        else: model = BiLSTM(vocab_size=vocab_size).to(device)
+    
     model.load_state_dict(torch.load(args.checkpoint, map_location=device))
     model.eval()
 
-    # 数据加载
-    VAL_FILE = os.path.join(BASE_DIR, "data", "val_processed.parquet")
-    val_df = pd.read_parquet(VAL_FILE)
-    val_ds = ToxicityDataset(val_df, tokenizer, max_len=256)
-    val_loader = DataLoader(val_ds, batch_size=16, shuffle=False, num_workers=4)
+    # [2] 推理逻辑
+    probs, targets = [], []
+    if args.model_type in ["text_cnn", "bilstm"]:
+        ds = SimpleTokenDataset(val_df['comment_text'].values, val_df['y_tox'].values, vocab)
+        loader = DataLoader(ds, batch_size=64, shuffle=False)
+        with torch.no_grad():
+            for batch in tqdm(loader, desc="Evaluating (Classic)"):
+                ids = batch['ids'].to(device)
+                out = model(ids)
+                probs.extend(torch.sigmoid(out['logits_tox']).squeeze(-1).cpu().numpy())
+                targets.extend(batch['y_tox'].cpu().numpy())
+    else:
+        tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-v3-base" if "deberta" in args.checkpoint else "bert-base-uncased", local_files_only=True)
+        ds = ToxicityDataset(val_df, tokenizer)
+        loader = DataLoader(ds, batch_size=16, shuffle=False)
+        with torch.no_grad():
+            for batch in tqdm(loader, desc="Evaluating (Transformer)"):
+                out = model(batch['input_ids'].to(device), batch['attention_mask'].to(device))
+                probs.extend(torch.sigmoid(out['logits_tox']).squeeze(-1).cpu().numpy())
+                targets.extend(batch['y_tox'].cpu().numpy())
 
-    # 推理
-    probs = []
-    targets = []
-    with torch.no_grad():
-        for batch in tqdm(val_loader, desc="Evaluating"):
-            input_ids = batch['input_ids'].to(device)
-            attention_mask = batch['attention_mask'].to(device)
-            outputs = model(input_ids, attention_mask)
-            
-            logits = outputs['logits_tox'] if isinstance(outputs, dict) else outputs.logits
-            probs.extend(torch.sigmoid(logits).squeeze(-1).cpu().numpy())
-            targets.extend(batch['y_tox'].cpu().numpy())
-
-    probs = np.array(probs)
-    targets = np.array(targets)
+    probs, targets = np.array(probs), np.array(targets)
     val_df['model_probs'] = probs
 
-    # [1] 计算主指标
+    # [3] 计算指标
     best_thresh, best_f1 = scan_thresholds(targets >= 0.5, probs)
-    acc_at_best = metrics.accuracy_score(targets >= 0.5, (probs >= best_thresh).astype(int))
-    pr_auc = calculate_pr_auc(targets >= 0.5, probs)
-    roc_auc = calculate_auc(targets >= 0.5, probs)
-
-    # [2] 计算偏见指标
-    subgroups = ['male', 'female', 'black', 'white', 'muslim', 'jewish', 'christian', 'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness']
-    bias_df = calculate_fairness_metrics(val_df, subgroups, 'model_probs')
-    
-    mean_bias_auc = bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.mean()
-    worst_bias_auc = bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.min()
-
-    # 打印结果
-    print("\n" + "="*40)
-    print(f" EVALUATION REPORT: {args.checkpoint}")
-    print("="*40)
-    print(f"Best Threshold: {best_thresh:.2f}")
-    print(f"F1-Score:       {best_f1:.4f}")
-    print(f"Accuracy:       {acc_at_best:.4f}")
-    print(f"PR-AUC:         {pr_auc:.4f}")
-    print(f"ROC-AUC:        {roc_auc:.4f}")
-    print("-" * 40)
-    print(f"Mean Bias AUC:  {mean_bias_auc:.4f}")
-    print(f"Worst Bias AUC: {worst_bias_auc:.4f}")
-    print("="*40)
-
-    # 保存结果
-    results = {
+    res = {
         "checkpoint": args.checkpoint,
         "main_metrics": {
-            "best_threshold": float(best_thresh),
-            "f1": float(best_f1),
-            "accuracy": float(acc_at_best),
-            "pr_auc": float(pr_auc),
-            "roc_auc": float(roc_auc)
-        },
-        "bias_metrics": {
-            "mean_bias_auc": float(mean_bias_auc),
-            "worst_bias_auc": float(worst_bias_auc),
-            "details": bias_df.to_dict(orient='records')
+            "f1": float(best_f1), "accuracy": float(metrics.accuracy_score(targets >= 0.5, (probs >= best_thresh).astype(int))),
+            "pr_auc": float(calculate_pr_auc(targets >= 0.5, probs)), "roc_auc": float(calculate_auc(targets >= 0.5, probs))
         }
     }
-    
+    bias_df = calculate_fairness_metrics(val_df, ['male', 'female', 'black', 'white', 'muslim', 'jewish', 'christian', 'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness'], 'model_probs')
+    res["bias_metrics"] = {"mean_bias_auc": float(bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.mean()),
+                           "worst_bias_auc": float(bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.min()),
+                           "details": bias_df.to_dict(orient='records')}
+
     output_path = os.path.join(BASE_DIR, "src_result", f"{args.output_prefix}_metrics.json")
-    with open(output_path, 'w', encoding='utf-8') as f:
-        json.dump(results, f, indent=4, ensure_ascii=False)
-    print(f"Results saved to {output_path}")
+    with open(output_path, 'w', encoding='utf-8') as f: json.dump(res, f, indent=4, ensure_ascii=False)
+    print(f"\nEvaluation Report:\nF1: {res['main_metrics']['f1']:.4f}, Mean Bias AUC: {res['bias_metrics']['mean_bias_auc']:.4f}")
 
 if __name__ == "__main__":
     main()
