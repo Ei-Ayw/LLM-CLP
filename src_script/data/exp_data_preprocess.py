@@ -32,16 +32,25 @@ def preprocess_data(input_path, output_dir):
     # 主任务二分类标签
     df['y_tox'] = (df[target_col] >= 0.5).astype(int)
     
-    # 训练/验证集划分 (95/5 比例，因为数据量巨大)
-    train_df, val_df = train_test_split(df, test_size=0.05, random_state=42, stratify=df['y_tox'])
+    # =========================================================================
+    # 三分数据划分 (学术严谨性)
+    # Train: 80% 用于模型训练
+    # Val:   10% 用于训练过程中的验证与早停 (Early Stopping)
+    # Test:  10% 用于最终评估，训练期间从未见过
+    # =========================================================================
+    # 第一步：先分出 80% Train 和 20% 临时集
+    train_df, temp_df = train_test_split(df, test_size=0.20, random_state=42, stratify=df['y_tox'])
+    # 第二步：将临时集对半分为 Val 和 Test (各占总体的 10%)
+    val_df, test_df = train_test_split(temp_df, test_size=0.50, random_state=42, stratify=temp_df['y_tox'])
     
-    print(f"Train size: {len(train_df)}, Val size: {len(val_df)}")
+    print(f"Train size: {len(train_df)} | Val size: {len(val_df)} | Test size: {len(test_df)}")
     
     # 保存结果
     os.makedirs(output_dir, exist_ok=True)
     train_df.to_parquet(os.path.join(output_dir, 'train_processed.parquet'), index=False)
     val_df.to_parquet(os.path.join(output_dir, 'val_processed.parquet'), index=False)
-    print("Preprocessing completed. Files saved to parquet.")
+    test_df.to_parquet(os.path.join(output_dir, 'test_processed.parquet'), index=False)
+    print("Preprocessing completed. Train/Val/Test files saved to parquet.")
 
 if __name__ == "__main__":
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

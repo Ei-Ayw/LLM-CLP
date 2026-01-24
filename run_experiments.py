@@ -48,20 +48,18 @@ def main():
         # Data Preprocess
         run_script("data", "exp_data_preprocess.py", [])
 
-        # Group 1: Classical
+        # Group 1: Classical Strong Baseline (TF-IDF + LR)
         run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
 
-        # Group 2: DL Classic
-        run_script("train", "train_text_cnn.py", common)
-        run_script("train", "train_bilstm.py", common)
+        # Group 2: Hybrid Contrastive Baseline (Strong Contrast)
+        run_script("train", "train_bert_cnn_bilstm.py", common)
 
-        # Group 3: Transformer & Hybrid Baselines
+        # Group 3: Pretrained Transformer Baselines
         run_script("train", "train_vanilla_bert.py", common)
         run_script("train", "train_vanilla_roberta.py", common)
         run_script("train", "train_vanilla_deberta_v3.py", common)
-        run_script("train", "train_bert_cnn_bilstm.py", common)
 
-        # Group 4: Final Scheme (Proposed)
+        # Group 4: Final Scheme (Proposed MTL Model)
         print("\n>>> 训练本文提出方案 (Stage 1 & 2)")
         run_script("train", "train_deberta_v3_mtl_s1.py", common)
         s1_path = find_best_s1()
