@@ -9,6 +9,8 @@ import pandas as pd
 from tqdm import tqdm
 import numpy as np
 from datetime import datetime
+import json
+import matplotlib.pyplot as plt
 
 # =============================================================================
 # ### 训练脚本：train_bert_cnn_bilstm.py ###
@@ -21,7 +23,8 @@ from datetime import datetime
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
-sys.path.append(os.path.join(BASE_DIR, "src_script"))
+sys.path.append(os.path.join(BASE_DIR, "src_script", "data"))
+sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
 
 # 离线环境变量设置
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
@@ -31,6 +34,7 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_bert_cnn_bilstm import BertCNNBiLSTM
 from exp_data_loader import ToxicityDataset, sample_aligned_data
+from path_config import get_model_path, get_log_path
 
 def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
     model.train()
@@ -74,10 +78,10 @@ def main():
     torch.manual_seed(args.seed)
     
     timestamp = datetime.now().strftime("%m%d_%H%M")
-    save_name = f"BertCNNBiLSTM_Sample{args.sample_size}_{timestamp}.pth"
-    save_path = os.path.join(BASE_DIR, "src_result", save_name)
+    save_basename = f"BertCNNBiLSTM_Sample{args.sample_size}_{timestamp}"
+    save_path = get_model_path(save_basename + ".pth")
 
-    print(f"\n>>> 启动对比模型实验: {save_name}")
+    print(f"\n>>> 启动对比模型实验: {save_basename}")
 
     # 加载数据与对齐
     train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
@@ -98,6 +102,7 @@ def main():
     scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=int(0.1*num_steps), num_training_steps=num_steps)
 
     best_val_loss = float('inf')
+    loss_history = {"train": [], "val": []}
     
     for epoch in range(args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
@@ -114,12 +119,32 @@ def main():
                 v_loss += nn.BCEWithLogitsLoss()(out['logits_tox'], y).item()
         val_loss = v_loss / len(val_loader)
         
+        loss_history["train"].append(float(train_loss))
+        loss_history["val"].append(float(val_loss))
         print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
         
         if val_loss < best_val_loss:
             best_val_loss = val_loss
             torch.save(model.state_dict(), save_path)
             print(f"  [Save] 更优模型已保存至: {save_path}")
+
+    # 保存 Loss 历史和曲线图
+    loss_json_path = get_log_path(save_basename + "_loss.json")
+    with open(loss_json_path, 'w') as f:
+        json.dump(loss_history, f, indent=2)
+    
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(1, args.epochs + 1), loss_history["train"], 'b-o', label='Train Loss')
+    plt.plot(range(1, args.epochs + 1), loss_history["val"], 'r-o', label='Val Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title(f'Training Loss Curve: {save_basename}')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(get_log_path(save_basename + "_loss.png"), dpi=150)
+    plt.close()
+    print(f">>> 实验完成，模型与日志已保存。")
 
 if __name__ == "__main__":
     main()

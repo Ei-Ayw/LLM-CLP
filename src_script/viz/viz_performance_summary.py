@@ -3,46 +3,82 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import glob
+import json
+import sys
 
-def plot_comparison(result_dir, output_path):
-    all_files = glob.glob(os.path.join(result_dir, "metrics_fair_*.csv"))
-    if not all_files:
-        print("No fairness metrics files found.")
-        return
+# 设置项目路径
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(BASE_DIR)
+sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
+
+from path_config import get_eval_path, EVAL_DIR, get_viz_path
+
+def collect_metrics():
+    """从 eval 目录收集所有模型的评估结果"""
+    all_json = glob.glob(os.path.join(EVAL_DIR, "*_metrics.json"))
+    if not all_json:
+        print("未发现评估结果文件 (.json)")
+        return None
     
-    dfs = []
-    for f in all_files:
-        model_name = os.path.basename(f).replace("metrics_fair_", "").replace(".csv", "")
-        df = pd.read_csv(f)
-        df['Model'] = model_name
-        dfs.append(df)
+    records = []
+    for f in all_json:
+        try:
+            with open(f, 'r', encoding='utf-8') as jf:
+                data = json.load(jf)
+            
+            # 提取模型名称 (简化版)
+            filename = os.path.basename(f)
+            model_name = filename.replace("_metrics.json", "").split("_Sample")[0]
+            
+            # 提取指标
+            records.append({
+                'Model': model_name,
+                'F1 (Optimal)': data['primary_metrics_optimal']['f1'],
+                'F1 (Fixed 0.5)': data['primary_metrics_fixed_0.5']['f1'],
+                'ROC-AUC': data['primary_metrics_optimal']['roc_auc'],
+                'Mean Bias AUC': data['bias_metrics']['mean_bias_auc']
+            })
+        except Exception as e:
+            print(f"解析 {f} 出错: {e}")
+            
+    return pd.DataFrame(records)
+
+def plot_performance_summary(df):
+    """绘制性能对比摘要图"""
+    if df is None or len(df) == 0: return
+
+    # 绘制 Mean Bias AUC 对比 (公平性核心指标)
+    plt.figure(figsize=(12, 6))
+    df_sorted = df.sort_values(by='Mean Bias AUC', ascending=False)
     
-    total_df = pd.concat(dfs)
+    # 使用 Seaborn 绘制
+    sns.set_style("whitegrid")
+    ax = sns.barplot(data=df_sorted, x='Mean Bias AUC', y='Model', palette='viridis')
     
-    # Calculate Mean Bias AUC for each model
-    summary = []
-    for model in total_df['Model'].unique():
-        m_df = total_df[total_df['Model'] == model]
-        mean_auc = m_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.mean()
-        summary.append({'Model': model, 'Mean_Bias_AUC': mean_auc})
-    
-    summary_df = pd.DataFrame(summary).sort_values(by='Mean_Bias_AUC', ascending=False)
-    
-    plt.figure(figsize=(12, 8))
-    sns.barplot(data=summary_df, x='Mean_Bias_AUC', y='Model', hue='Model', palette='viridis', legend=False)
-    plt.title('Comparison of Mean Bias AUC across Models', fontsize=14)
-    plt.xlim(0.7, 1.0)
+    plt.title('Performance Comparison: Mean Bias AUC (Higher is Better)', fontsize=14, fontweight='bold')
+    plt.xlim(0.8, 1.0) # 假设都在这个区间
+    plt.xlabel('Mean Bias AUC Score')
     plt.grid(axis='x', linestyle='--', alpha=0.7)
+    
+    # 添加数值标注
+    for i, v in enumerate(df_sorted['Mean Bias AUC']):
+        ax.text(v + 0.005, i, f"{v:.4f}", color='black', va='center', fontweight='bold')
+
     plt.tight_layout()
-    plt.savefig(output_path)
-    print(f"Comparison plot saved to {output_path}")
+    output_path = get_viz_path("model_performance_summary.png")
+    plt.savefig(output_path, dpi=300)
+    plt.close()
+    print(f">>> 性能总结图表已保存: {output_path}")
 
 def main():
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    RESULT_DIR = os.path.join(BASE_DIR, "src_result")
-    OUTPUT_PLOT = os.path.join(RESULT_DIR, "comparison_fairness_auc.png")
-    
-    plot_comparison(RESULT_DIR, OUTPUT_PLOT)
+    print(">>> 启动实验性能总结报告生成器...")
+    df = collect_metrics()
+    if df is not None:
+        print("\n实验指标汇总:")
+        print(df.to_string(index=False))
+        plot_performance_summary(df)
+    else:
+        print("未发现足够的数据来生成报告。")
 
 if __name__ == "__main__":
     main()
