@@ -109,7 +109,7 @@ def main():
     parser.add_argument("--sample_size", type=int, default=200000, help="统一训练样本量")
     parser.add_argument("--batch_size", type=int, default=32, help="批处理大小 (3090 24G + 梯度检查点 可用 32)")
     parser.add_argument("--lr", type=float, default=2e-5, help="学习率")
-    parser.add_argument("--epochs", type=int, default=10, help="训练轮数 (统一为 10 epoch)")
+    parser.add_argument("--epochs", type=int, default=6, help="训练轮数 (S1:6 + S2:4 = 10 epoch)")
     parser.add_argument("--seed", type=int, default=42, help="随机种子，用于数据对齐")
     parser.add_argument("--accum_steps", type=int, default=2, help="梯度累积步数")
     parser.add_argument("--max_len", type=int, default=256, help="序列最大长度")
