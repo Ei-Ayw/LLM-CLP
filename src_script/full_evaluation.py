@@ -12,26 +12,26 @@ import pickle
 
 # 设置项目路径
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(BASE_DIR)
-sys.path.append(os.path.join(BASE_DIR, "src_model"))
-sys.path.append(os.path.join(BASE_DIR, "src_script"))
+sys.path.append(BASE_DIR); sys.path.append(os.path.join(BASE_DIR, "src_model")); sys.path.append(os.path.join(BASE_DIR, "src_script"))
 
-# 设置 Hugging Face 离线模式
+# 离线环境变量配置
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
 os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
-# 动态导入重构后的模型文件
-from model_deberta_mtl import DebertaV3MTL
+# 物理导入所有模型类
+from model_deberta_v3_mtl import DebertaV3MTL
 from model_bert_cnn_bilstm import BertCNNBiLSTM
 from model_text_cnn import TextCNN
 from model_bilstm import BiLSTM
 from model_vanilla_bert import VanillaBERT
 from model_vanilla_roberta import VanillaRoBERTa
+from model_vanilla_deberta_v3 import VanillaDeBERTaV3
+from model_deberta_v3_cls_only import DebertaV3CLSOnly
+from model_deberta_v3_single_task import DebertaV3SingleTask
 from data_loader import ToxicityDataset
 
-# --- 辅助：针对经典模型的 Dataset 包装 ---
 class SimpleTokenDataset(Dataset):
     def __init__(self, texts, labels, vocab, max_len=256):
         self.texts, self.labels, self.vocab, self.max_len = texts, labels, vocab, max_len
@@ -44,19 +44,14 @@ def calculate_auc(y_true, y_prob):
     try: return metrics.roc_auc_score(y_true, y_prob)
     except: return np.nan
 
-def calculate_pr_auc(y_true, y_prob):
-    precision, recall, _ = metrics.precision_recall_curve(y_true, y_prob)
-    return metrics.auc(recall, precision)
-
 def scan_thresholds(y_true, y_prob):
-    thresholds = np.arange(0.05, 0.96, 0.05)
     best_f1, best_thresh = 0, 0.5
-    for thresh in thresholds:
+    for thresh in np.arange(0.05, 0.96, 0.05):
         f1 = metrics.f1_score(y_true, (y_prob >= thresh).astype(int))
         if f1 > best_f1: best_f1, best_thresh = f1, thresh
     return best_thresh, best_f1
 
-def calculate_fairness_metrics(df, subgroups, model_col):
+def calculate_fairness(df, subgroups, model_col):
     records = []
     for subgroup in subgroups:
         sub_mask = df[subgroup] >= 0.5
@@ -64,11 +59,9 @@ def calculate_fairness_metrics(df, subgroups, model_col):
         sub_df = df[sub_mask]
         sub_auc = calculate_auc(sub_df['target'] >= 0.5, sub_df[model_col])
         bpsn_mask = ((df[subgroup] >= 0.5) & (df['target'] < 0.5)) | ((df[subgroup] < 0.5) & (df['target'] >= 0.5))
-        bpsn_df = df[bpsn_mask]
-        bpsn_auc = calculate_auc(bpsn_df['target'] >= 0.5, bpsn_df[model_col])
+        bpsn_auc = calculate_auc(df[bpsn_mask]['target'] >= 0.5, df[bpsn_mask][model_col])
         bnsp_mask = ((df[subgroup] >= 0.5) & (df['target'] >= 0.5)) | ((df[subgroup] < 0.5) & (df['target'] < 0.5))
-        bnsp_df = df[bnsp_mask]
-        bnsp_auc = calculate_auc(bnsp_df['target'] >= 0.5, bnsp_df[model_col])
+        bnsp_auc = calculate_auc(df[bnsp_mask]['target'] >= 0.5, df[bnsp_mask][model_col])
         records.append({'subgroup': subgroup, 'subgroup_auc': sub_auc, 'bpsn_auc': bpsn_auc, 'bnsp_auc': bnsp_auc})
     return pd.DataFrame(records)
 
@@ -77,70 +70,59 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--checkpoint", type=str, required=True)
     parser.add_argument("--model_type", type=str, required=True, 
-                        choices=["deberta_mtl", "bert_cnn", "text_cnn", "bilstm", "vanilla_bert", "vanilla_roberta"])
+                        choices=["deberta_mtl", "bert_cnn", "text_cnn", "bilstm", "vanilla_bert", "vanilla_roberta", "vanilla_deberta", "ablation_cls", "ablation_single"])
     parser.add_argument("--output_prefix", type=str, default="full_eval")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    VAL_FILE = os.path.join(BASE_DIR, "data", "val_processed.parquet")
-    val_df = pd.read_parquet(VAL_FILE)
+    val_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "val_processed.parquet"))
     
-    # [1] 根据模型类型加载对应的类
-    if args.model_type == "deberta_mtl":
-        model = DebertaV3MTL("microsoft/deberta-v3-base").to(device)
-    elif args.model_type == "bert_cnn":
-        model = BertCNNBiLSTM("bert-base-uncased").to(device)
-    elif args.model_type == "vanilla_bert":
-        model = VanillaBERT("bert-base-uncased").to(device)
-    elif args.model_type == "vanilla_roberta":
-        model = VanillaRoBERTa("roberta-base").to(device)
+    # [1] 物理映射加载
+    if args.model_type == "deberta_mtl": model = DebertaV3MTL().to(device)
+    elif args.model_type == "bert_cnn": model = BertCNNBiLSTM().to(device)
+    elif args.model_type == "vanilla_bert": model = VanillaBERT().to(device)
+    elif args.model_type == "vanilla_roberta": model = VanillaRoBERTa().to(device)
+    elif args.model_type == "vanilla_deberta": model = VanillaDeBERTaV3().to(device)
+    elif args.model_type == "ablation_cls": model = DebertaV3CLSOnly().to(device)
+    elif args.model_type == "ablation_single": model = DebertaV3SingleTask().to(device)
     elif args.model_type in ["text_cnn", "bilstm"]:
-        vocab_path = args.checkpoint.replace(".pth", "_vocab.pkl")
-        with open(vocab_path, 'rb') as f: vocab = pickle.load(f)
-        vocab_size = len(vocab.stoi)
-        model = TextCNN(vocab_size=vocab_size).to(device) if args.model_type == "text_cnn" else BiLSTM(vocab_size=vocab_size).to(device)
+        with open(args.checkpoint.replace(".pth", "_vocab.pkl"), 'rb') as f: vocab = pickle.load(f)
+        model = TextCNN(vocab_size=len(vocab.stoi)).to(device) if args.model_type == "text_cnn" else BiLSTM(vocab_size=len(vocab.stoi)).to(device)
     
     model.load_state_dict(torch.load(args.checkpoint, map_location=device))
     model.eval()
 
-    # [2] 推理逻辑
+    # [2] 推理流程
     probs, targets = [], []
     if args.model_type in ["text_cnn", "bilstm"]:
-        dataset = SimpleTokenDataset(val_df['comment_text'].values, val_df['y_tox'].values, vocab)
-        loader = DataLoader(dataset, batch_size=64, shuffle=False)
+        loader = DataLoader(SimpleTokenDataset(val_df['comment_text'].values, val_df['y_tox'].values, vocab), batch_size=64)
         with torch.no_grad():
-            for batch in tqdm(loader, desc="Evaluating (Classic)"):
-                out = model(batch['ids'].to(device))
+            for b in tqdm(loader, desc="Eval Classic"):
+                out = model(b['ids'].to(device))
                 probs.extend(torch.sigmoid(out['logits_tox']).squeeze(-1).cpu().numpy())
-                targets.extend(batch['y_tox'].cpu().numpy())
+                targets.extend(b['y_tox'].cpu().numpy())
     else:
-        # Transformer 类模型会自动识别 checkpoint 名称决定加载哪个基础权重（仅用于 Tokenizer）
-        base_name = "microsoft/deberta-v3-base" if "Deberta" in args.checkpoint else "roberta-base" if "RoBERTa" in args.checkpoint else "bert-base-uncased"
-        tokenizer = AutoTokenizer.from_pretrained(base_name, local_files_only=True)
-        dataset = ToxicityDataset(val_df, tokenizer)
-        loader = DataLoader(dataset, batch_size=16, shuffle=False)
+        tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-v3-base" if "deberta" in args.checkpoint.lower() else "roberta-base" if "roberta" in args.checkpoint.lower() else "bert-base-uncased", local_files_only=True)
+        loader = DataLoader(ToxicityDataset(val_df, tokenizer), batch_size=16)
         with torch.no_grad():
-            for batch in tqdm(loader, desc="Evaluating (Transformer)"):
-                out = model(batch['input_ids'].to(device), batch['attention_mask'].to(device))
+            for b in tqdm(loader, desc="Eval Transformer"):
+                out = model(b['input_ids'].to(device), b['attention_mask'].to(device))
                 probs.extend(torch.sigmoid(out['logits_tox']).squeeze(-1).cpu().numpy())
-                targets.extend(batch['y_tox'].cpu().numpy())
+                targets.extend(b['y_tox'].cpu().numpy())
 
+    # [3] 计算与保存
     probs, targets = np.array(probs), np.array(targets)
-    val_df['model_probs'] = probs
-
-    # [3] 计算指标
     best_thresh, best_f1 = scan_thresholds(targets >= 0.5, probs)
-    bias_df = calculate_fairness_metrics(val_df, ['male', 'female', 'black', 'white', 'muslim', 'jewish', 'christian', 'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness'], 'model_probs')
-    
+    bias_df = calculate_fairness(val_df, ['male', 'female', 'black', 'white', 'muslim', 'jewish', 'christian', 'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness'], 'm_probs')
+    val_df['m_probs'] = probs # fix column name order
+    bias_df = calculate_fairness(val_df, ['male', 'female', 'black', 'white', 'muslim', 'jewish', 'christian', 'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness'], 'm_probs')
+
     report = {
-        "checkpoint": args.checkpoint, "model_type": args.model_type,
-        "main_metrics": { "f1": float(best_f1), "accuracy": float(metrics.accuracy_score(targets >= 0.5, (probs >= best_thresh).astype(int))), "pr_auc": float(calculate_pr_auc(targets >= 0.5, probs)), "roc_auc": float(calculate_auc(targets >= 0.5, probs)) },
-        "bias_metrics": { "mean_bias_auc": float(bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.mean()), "worst_bias_auc": float(bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.min()), "details": bias_df.to_dict(orient='records') }
+        "checkpoint": args.checkpoint, "f1": float(best_f1), "roc_auc": float(calculate_auc(targets >= 0.5, probs)),
+        "mean_bias_auc": float(bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.mean())
     }
-    
-    output_path = os.path.join(BASE_DIR, "src_result", f"{args.output_prefix}_metrics.json")
-    with open(output_path, 'w', encoding='utf-8') as f: json.dump(report, f, indent=4, ensure_ascii=False)
-    print(f"\n[REPORT] Saved to: {output_path}")
+    with open(os.path.join(BASE_DIR, "src_result", f"{args.output_prefix}_metrics.json"), 'w') as f: json.dump(report, f, indent=4)
+    print(f"\n[FINISH] Report for {args.model_type} saved.")
 
 if __name__ == "__main__":
     main()
