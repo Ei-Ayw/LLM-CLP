@@ -116,8 +116,12 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(args.seed)
     
-    # 消融逻辑已移除，此处仅执行全量方案
-    save_name = f"DebertaV3MTL_S1_Sample{args.sample_size}_{datetime.now().strftime('%m%d_%H%M')}.pth"
+    # 结果保存路径：根据消融开关动态命名以确保存储标识清晰
+    timestamp = datetime.now().strftime("%m%d_%H%M")
+    suffix = ""
+    if args.no_pooling: suffix += "_NoPooling"
+    if args.only_toxicity: suffix += "_OnlyTox"
+    save_name = f"DebertaV3MTL_S1{suffix}_Sample{args.sample_size}_{timestamp}.pth"
     save_path = os.path.join(BASE_DIR, "src_result", save_name)
 
     print(f"\n>>> 启动实验: {save_name}")
