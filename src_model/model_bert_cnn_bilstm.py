@@ -15,7 +15,7 @@ class BertCNNBiLSTM(nn.Module):
     def __init__(self, model_name_or_path="bert-base-uncased", num_classes=1):
         super().__init__()
         # 加载 BERT 骨干网络
-        self.bert = BertModel.from_pretrained(model_name_or_path, local_files_only=True)
+        self.bert = BertModel.from_pretrained(model_name_or_path)
         embedding_dim = self.bert.config.hidden_size # 通常为 768
         
         # 1D-CNN：提取局部语义（卷积核大小为3，捕捉词与词之间的局部组合）
