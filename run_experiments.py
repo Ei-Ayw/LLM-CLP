@@ -65,13 +65,16 @@ def main():
     parser.add_argument("--mode", type=str, choices=["all", "train", "eval", "ablation", "viz"], default="all")
     parser.add_argument("--sample_size", type=int, default=200000)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
+    parser.add_argument("--patience", type=int, default=1)
+    parser.add_argument("--early_patience", type=int, default=3, help="验证集 Loss 早停等待轮数")
     args = parser.parse_args()
 
     # 预先创建结果子目录 (防御式编程)
     for d in ["models", "logs", "eval", "viz"]:
         os.makedirs(os.path.join(RES_DIR, d), exist_ok=True)
 
-    common = ["--sample_size", str(args.sample_size), "--seed", str(args.seed)]
+    common = ["--sample_size", str(args.sample_size), "--seed", str(args.seed), "--scheduler", args.scheduler, "--patience", str(args.patience), "--early_patience", str(args.early_patience)]
 
     # --- Phase 1: Data & Models Training ---
     if args.mode in ["all", "train"]:
