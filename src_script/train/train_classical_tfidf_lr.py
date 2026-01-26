@@ -19,7 +19,11 @@ def main():
     
     if args.mode == "train":
         print("Loading data for TF-IDF + LR...")
-        df = pd.read_parquet(TRAIN_FILE).sample(500000) # Use subset for speed
+        df = pd.read_parquet(TRAIN_FILE)
+        if len(df) > 500000:
+            df = df.sample(500000, random_state=42)
+        else:
+            df = df.sample(frac=1.0, random_state=42) # Shuffle if small
         
         # Handle NaN values in comment_text
         df['comment_text'] = df['comment_text'].fillna('')

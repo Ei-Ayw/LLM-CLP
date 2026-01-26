@@ -29,7 +29,6 @@ sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
 os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_bert_cnn_bilstm import BertCNNBiLSTM
 from exp_data_loader import ToxicityDataset, sample_aligned_data
@@ -83,7 +82,7 @@ def main():
     val_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "val_processed.parquet"))
     train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.seed)
     
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name, local_files_only=True)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len)
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len)
     

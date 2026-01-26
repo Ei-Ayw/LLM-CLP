@@ -46,7 +46,6 @@ PYTHON_EXE = sys.executable
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
 os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 def run_script(folder, script_name, args_list):
     """ 执行分层目录下的脚本 """
