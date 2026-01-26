@@ -13,8 +13,8 @@ class VanillaRoBERTa(nn.Module):
     """
     def __init__(self, model_path="roberta-base", num_labels=1):
         super().__init__()
-        self.config = AutoConfig.from_pretrained(model_path, num_labels=num_labels, local_files_only=True)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path, config=self.config, local_files_only=True)
+        self.config = AutoConfig.from_pretrained(model_path, num_labels=num_labels)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_path, config=self.config)
         
     def forward(self, input_ids, attention_mask, token_type_ids=None):
         # RoBERTa 不使用 token_type_ids

@@ -46,8 +46,8 @@ class DebertaV3MTL(nn.Module):
     def __init__(self, model_path_or_name="microsoft/deberta-v3-base", num_subtypes=6, num_identities=9, use_attention_pooling=True):
         super().__init__()
         # 加载预训练配置与权重
-        self.config = DebertaV2Config.from_pretrained(model_path_or_name, local_files_only=True)
-        self.deberta = DebertaV2Model.from_pretrained(model_path_or_name, local_files_only=True)
+        self.config = DebertaV2Config.from_pretrained(model_path_or_name)
+        self.deberta = DebertaV2Model.from_pretrained(model_path_or_name)
         
         # =====================================================================
         # 梯度检查点 (Gradient Checkpointing) - 针对 3090 24G 优化

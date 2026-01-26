@@ -13,8 +13,8 @@ class VanillaBERT(nn.Module):
     """
     def __init__(self, model_path="bert-base-uncased", num_labels=1):
         super().__init__()
-        self.config = AutoConfig.from_pretrained(model_path, num_labels=num_labels, local_files_only=True)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path, config=self.config, local_files_only=True)
+        self.config = AutoConfig.from_pretrained(model_path, num_labels=num_labels)
+        self.model = AutoModelForSequenceClassification.from_pretrained(model_path, config=self.config)
         
     def forward(self, input_ids, attention_mask, token_type_ids=None):
         out = self.model(
