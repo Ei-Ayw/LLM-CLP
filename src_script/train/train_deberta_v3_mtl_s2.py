@@ -37,7 +37,7 @@ from model_deberta_v3_mtl import DebertaV3MTL
 from exp_data_loader import ToxicityDataset, sample_aligned_data
 from path_config import get_model_path, get_log_path
 
-def weighted_toxicity_loss(logits, targets, has_id):
+def weighted_toxicity_loss(logits, targets, has_id, w_identity, w_id_toxic):
     """
     身份感知重加权损失函数。
     设计意图：
@@ -49,10 +49,10 @@ def weighted_toxicity_loss(logits, targets, has_id):
     has_id_mask = has_id.unsqueeze(-1).bool()
     is_toxic = targets >= 0.5
     
-    # 场景1: 背景负样本包含身份词 (BPSN 相关) -> 权重 2.5
-    weights[(~is_toxic) & has_id_mask] = 2.5
-    # 场景2: 背景正样本包含身份词 (BNSP 相关) -> 权重 1.5
-    weights[is_toxic & has_id_mask] = 1.5
+    # 场景1: 背景负样本包含身份词 (BPSN 相关) -> 权重 w_identity (默认 2.5)
+    weights[(~is_toxic) & has_id_mask] = w_identity
+    # 场景2: 背景正样本包含身份词 (BNSP 相关) -> 权重 w_id_toxic (默认 1.5)
+    weights[is_toxic & has_id_mask] = w_id_toxic
     
     # 计算基础 BCE 损失（不进行均值聚合）
     criterion = nn.BCEWithLogitsLoss(reduction='none')
@@ -61,7 +61,7 @@ def weighted_toxicity_loss(logits, targets, has_id):
     # 应用加权并手动计算均值
     return (loss * weights).mean()
 
-def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, scaler, no_reweight=False):
+def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, scaler, alpha, beta, w_identity, w_id_toxic, no_reweight=False):
     """ 单个 Epoch 的重加权训练逻辑 (支持 FP16) """
     model.train()
     criterion_aux = nn.BCEWithLogitsLoss()
@@ -83,11 +83,11 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, sc
             if no_reweight:
                 l_tox = criterion_aux(out['logits_tox'], y_tox)
             else:
-                l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id)
+                l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id, w_identity, w_id_toxic)
             
             l_sub = criterion_aux(out['logits_sub'], y_sub)
             l_id = criterion_aux(out['logits_id'], y_id)
-            loss = l_tox + 0.5 * l_sub + 0.2 * l_id
+            loss = l_tox + alpha * l_sub + beta * l_id
         
         loss = loss / accum_steps
         scaler.scale(loss).backward()
@@ -130,6 +130,10 @@ def main():
     parser.add_argument("--epochs", type=int, default=4, help="训练轮数 (S1:6 + S2:4 = 10 epoch)")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max_len", type=int, default=256)
+    parser.add_argument("--alpha", type=float, default=0.5, help="子任务(Subtype)损失权重")
+    parser.add_argument("--beta", type=float, default=0.2, help="子任务(Identity)损失权重")
+    parser.add_argument("--w_identity", type=float, default=2.5, help="身份负样本(Non-Toxic + Identity)重加权权重")
+    parser.add_argument("--w_id_toxic", type=float, default=1.5, help="身份正样本(Toxic + Identity)重加权权重")
     parser.add_argument("--no_reweight", action="store_true", help="消融实验：禁用重加权逻辑 (w=1.0)")
     args = parser.parse_args()
 
@@ -178,7 +182,9 @@ def main():
     
     for epoch in range(args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
-        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, accum_steps=2, scaler=scaler, no_reweight=args.no_reweight)
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, accum_steps=2, scaler=scaler, 
+                                     alpha=args.alpha, beta=args.beta, w_identity=args.w_identity, w_id_toxic=args.w_id_toxic,
+                                     no_reweight=args.no_reweight)
         val_loss = evaluate(model, val_loader, device)
         
         loss_history["train"].append(train_loss)

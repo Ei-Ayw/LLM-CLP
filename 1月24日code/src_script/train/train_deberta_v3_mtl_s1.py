@@ -38,7 +38,7 @@ from model_deberta_v3_mtl import DebertaV3MTL
 from exp_data_loader import ToxicityDataset, sample_aligned_data
 from path_config import get_model_path, get_log_path
 
-def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, scaler, alpha, beta, only_toxicity=False):
+def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, scaler, only_toxicity=False):
     """
     单个 Epoch 的训练逻辑 (支持 FP16 混合精度)
     scaler: GradScaler 实例，用于 FP16 训练
@@ -71,9 +71,7 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, sc
             else:
                 l_sub = criterion(out['logits_sub'], y_sub)
                 l_id = criterion(out['logits_id'], y_id)
-                l_sub = criterion(out['logits_sub'], y_sub)
-                l_id = criterion(out['logits_id'], y_id)
-                loss = l_tox + alpha * l_sub + beta * l_id
+                loss = l_tox + 0.5 * l_sub + 0.2 * l_id
         
         # FP16 梯度缩放
         loss = loss / accum_steps
@@ -118,8 +116,6 @@ def main():
     parser.add_argument("--seed", type=int, default=42, help="随机种子，用于数据对齐")
     parser.add_argument("--accum_steps", type=int, default=2, help="梯度累积步数")
     parser.add_argument("--max_len", type=int, default=256, help="序列最大长度")
-    parser.add_argument("--alpha", type=float, default=0.5, help="子任务(Subtype)损失权重")
-    parser.add_argument("--beta", type=float, default=0.2, help="子任务(Identity)损失权重")
     
     # 消融实验开关
     parser.add_argument("--no_pooling", action="store_true", help="消融实验：禁用 Attention Pooling，仅使用 [CLS]")
@@ -176,9 +172,7 @@ def main():
     
     for epoch in range(args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
-        print(f"\nEpoch {epoch+1}/{args.epochs}")
-        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, args.accum_steps, scaler, args.alpha, args.beta, args.only_toxicity)
-        val_loss = evaluate(model, val_loader, device)
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, args.accum_steps, scaler, args.only_toxicity)
         val_loss = evaluate(model, val_loader, device)
         
         # 记录 Loss
