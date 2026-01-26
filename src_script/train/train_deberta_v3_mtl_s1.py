@@ -155,7 +155,7 @@ def main():
     # 强制数据对齐
     train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.seed)
     
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name, local_files_only=True)
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len)
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len)
     
