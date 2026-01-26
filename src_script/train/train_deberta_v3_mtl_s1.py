@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from torch.optim import AdamW
 from torch.cuda.amp import GradScaler, autocast  # FP16 混合精度
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 import pandas as pd
 from tqdm import tqdm
@@ -37,6 +38,7 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 from model_deberta_v3_mtl import DebertaV3MTL
 from exp_data_loader import ToxicityDataset, sample_aligned_data
 from path_config import get_model_path, get_log_path
+from train_utils import EarlyStopping
 
 def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, scaler, alpha, beta, only_toxicity=False):
     """
@@ -82,7 +84,8 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, sc
         if (i + 1) % accum_steps == 0:
             scaler.step(optimizer)
             scaler.update()
-            scheduler.step()
+            if scheduler is not None and not isinstance(scheduler, ReduceLROnPlateau):
+                scheduler.step()
             optimizer.zero_grad()
             
         total_loss += loss.item() * accum_steps
@@ -112,8 +115,11 @@ def main():
     parser = argparse.ArgumentParser(description="DeBERTa-V3 Multi-Task Training (Stage 1)")
     parser.add_argument("--model_name", type=str, default="microsoft/deberta-v3-base", help="预训练模型路径或名称")
     parser.add_argument("--sample_size", type=int, default=200000, help="统一训练样本量")
-    parser.add_argument("--batch_size", type=int, default=32, help="批处理大小 (3090 24G + 梯度检查点 可用 32)")
+    parser.add_argument("--batch_size", type=int, default=48, help="3090 24G 可用 48+")
     parser.add_argument("--lr", type=float, default=2e-5, help="学习率")
+    parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau", help="学习率调度策略")
+    parser.add_argument("--patience", type=int, default=1, help="Plateau 调度器的耐心值")
+    parser.add_argument("--early_patience", type=int, default=3, help="早停耐心值")
     parser.add_argument("--epochs", type=int, default=6, help="训练轮数 (S1:6 + S2:4 = 10 epoch)")
     parser.add_argument("--seed", type=int, default=42, help="随机种子，用于数据对齐")
     parser.add_argument("--accum_steps", type=int, default=2, help="梯度累积步数")
@@ -162,14 +168,21 @@ def main():
     # 优化器与调度器
     num_steps = int(len(train_ds) / args.batch_size / args.accum_steps * args.epochs)
     optimizer = AdamW(model.parameters(), lr=args.lr)
-    scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=int(0.1*num_steps), num_training_steps=num_steps)
+    
+    if args.scheduler == "plateau":
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True)
+        print(">>> 启用自适应学习率: ReduceLROnPlateau")
+    else:
+        scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=int(0.1*num_steps), num_training_steps=num_steps)
+        print(">>> 启用线性预热学习率: Linear Schedule with Warmup")
 
     # =========================================================================
     # FP16 混合精度：GradScaler 用于动态缩放梯度，防止下溢
     # =========================================================================
     scaler = GradScaler()
     
-    # Loss 历史记录 (用于生成曲线图)
+    # 早停与记录
+    early_stopping = EarlyStopping(patience=args.early_patience)
     loss_history = {"train": [], "val": []}
     
     best_val_loss = float('inf')
@@ -181,6 +194,12 @@ def main():
         val_loss = evaluate(model, val_loader, device)
         val_loss = evaluate(model, val_loader, device)
         
+        # 如果是 Plateau 调度器，在验证集后 Step
+        if isinstance(scheduler, ReduceLROnPlateau):
+            scheduler.step(val_loss)
+            curr_lr = optimizer.param_groups[0]['lr']
+            print(f"  [Scheduler] Adaptive LR Step. Current LR: {curr_lr}")
+            
         # 记录 Loss
         loss_history["train"].append(train_loss)
         loss_history["val"].append(val_loss)
@@ -191,6 +210,10 @@ def main():
             best_val_loss = val_loss
             torch.save(model.state_dict(), save_path)
             print(f"  [Save] 更优模型已保存至: {save_path}")
+            
+        if early_stopping(val_loss):
+            print(f">>> [Early Stop] 验证集 Loss 连续 {args.early_patience} 轮未优化，提前结束。")
+            break
     
     # =========================================================================
     # 保存 Loss 历史 (JSON) 和生成曲线图 (PNG)
