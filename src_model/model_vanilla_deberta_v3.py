@@ -2,20 +2,20 @@ import torch
 import torch.nn as nn
 from transformers import AutoModelForSequenceClassification, AutoConfig
 
-# =============================================================================
-# ### 基准模型：VanillaDeBERTaV3 ###
-# 设计说明：
-# 提供对原生 microsoft/deberta-v3-base 的标准化封装。
-# 不包含任何额外的池化层、多任务头或重加权逻辑，作为论文的最基础对比。
-# =============================================================================
 class VanillaDeBERTaV3(nn.Module):
-    """
-    原生 DeBERTa V3 序列分类模型包装类。
-    """
     def __init__(self, model_path="microsoft/deberta-v3-base", num_labels=1):
         super().__init__()
-        self.config = AutoConfig.from_pretrained(model_path, num_labels=num_labels)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path, config=self.config)
+        try:
+            self.config = AutoConfig.from_pretrained(model_path, num_labels=num_labels)
+            self.model = AutoModelForSequenceClassification.from_pretrained(
+                model_path, 
+                config=self.config,
+                low_cpu_mem_usage=True
+            )
+        except Exception as e:
+            print(f"\n❌ [CRITICAL] 无法加载 DeBERTa-v3 权重: {e}")
+            print(f"👉 提示: 请确保已运行 'python download_models.py' 且下载完整。")
+            raise e
         
     def forward(self, input_ids, attention_mask, token_type_ids=None):
         out = self.model(
@@ -24,6 +24,3 @@ class VanillaDeBERTaV3(nn.Module):
             token_type_ids=token_type_ids
         )
         return {"logits_tox": out.logits}
-
-if __name__ == "__main__":
-    pass

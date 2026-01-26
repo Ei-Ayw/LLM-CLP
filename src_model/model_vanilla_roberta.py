@@ -1,28 +1,26 @@
 import torch
 import torch.nn as nn
 from transformers import AutoModelForSequenceClassification, AutoConfig
+import os
 
-# =============================================================================
-# ### 原生 RoBERTa 包装器 ###
-# 设计说明：
-# 提供对原生 roberta-base 的标准化封装。
-# =============================================================================
 class VanillaRoBERTa(nn.Module):
-    """
-    原生 RoBERTa 序列分类模型包装类。
-    """
     def __init__(self, model_path="roberta-base", num_labels=1):
         super().__init__()
-        self.config = AutoConfig.from_pretrained(model_path, num_labels=num_labels)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_path, config=self.config)
+        try:
+            self.config = AutoConfig.from_pretrained(model_path, num_labels=num_labels)
+            self.model = AutoModelForSequenceClassification.from_pretrained(
+                model_path, 
+                config=self.config,
+                low_cpu_mem_usage=True # 优化大模型加载
+            )
+        except Exception as e:
+            print(f"\n❌ [CRITICAL] 无法加载 RoBERTa 权重: {e}")
+            print(f"👉 提示: 请确保已运行 'python download_models.py' 且下载完整。")
+            raise e
         
     def forward(self, input_ids, attention_mask, token_type_ids=None):
-        # RoBERTa 不使用 token_type_ids
         out = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask
         )
         return {"logits_tox": out.logits}
-
-if __name__ == "__main__":
-    pass

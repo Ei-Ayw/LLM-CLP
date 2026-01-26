@@ -3,6 +3,8 @@ torch>=1.10.0
 transformers>=4.20.0
 sentencepiece
 accelerate
+huggingface_hub[cli]
+safetensors
 
 # Data Processing
 pandas
