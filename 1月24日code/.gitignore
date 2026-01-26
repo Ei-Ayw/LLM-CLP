@@ -1,0 +1,33 @@
+# Data & Datasets
+data/*.csv
+data/*.parquet
+!data/.gitkeep
+.idea/
+# Models & Results
+src_result/*.pth
+src_result/*.joblib
+src_result/*.png
+# src_result/*.csv
+pretrained_models/
+
+# Python environment
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+# 精准排除目标压缩包（推荐，只忽略该文件，不影响其他zip文件）
+jigsaw-unintended-bias-in-toxicity-classification.zip
+
+# 可选：批量排除所有.zip格式压缩包（若项目中其他zip也无需跟踪）
+*.zip
+
+# 2. 排除EDA分析的图片文件（data_eda/下的所有.png）
+data_eda/*.png
+
+# 3. 排除EDA分析的文本结果文件（data_eda/下的所有.txt，若需保留.py代码，仅排除.txt）
+data_eda/*.txt
