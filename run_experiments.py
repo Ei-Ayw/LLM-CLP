@@ -79,7 +79,8 @@ def main():
     # --- Phase 1: Data & Models Training ---
     if args.mode in ["all", "train"]:
         # 数据预处理: 生成 train_processed / val_processed / test_processed (80/10/10)
-        run_script("data", "exp_data_preprocess.py", [])
+        # 优化：直接在预处理阶段进行采样，避免生成庞大的全量中间文件
+        run_script("data", "exp_data_preprocess.py", ["--sample_size", str(args.sample_size), "--seed", str(args.seed)])
 
         # Group 1: Classical Strong Baseline (TF-IDF + LR)
         run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
