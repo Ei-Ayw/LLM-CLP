@@ -19,28 +19,33 @@ echo "Environment activated. Python path: $(which python)"
 echo "Starting PyTorch Installation..."
 echo "Log file: install_pytorch.log"
 
-# 3. 执行安装 (包含所有项目依赖)
-echo "Installing dependencies..." >> install_pytorch.log
+# 3. 执行安装 (使用清华镜像加速)
+echo "Installing dependencies with TUNA mirror..." >> install_pytorch.log
 
 # 基础库与深度学习
+echo "> Installing torch suite..." >> install_pytorch.log
 # pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 >> install_pytorch.log 2>&1
-pip install transformers sentencepiece sacremoses >> install_pytorch.log 2>&1
+
+echo "> Installing transformers suite..." >> install_pytorch.log
+pip install transformers sentencepiece sacremoses -i https://pypi.tuna.tsinghua.edu.cn/simple >> install_pytorch.log 2>&1
 
 # 数据处理与科学计算
-pip install pandas scikit-learn pyarrow tqdm numpy >> install_pytorch.log 2>&1
+echo "> Installing data science stack..." >> install_pytorch.log
+pip install pandas scikit-learn pyarrow tqdm numpy -i https://pypi.tuna.tsinghua.edu.cn/simple >> install_pytorch.log 2>&1
 
 # 文本增强工具
-pip install nltk >> install_pytorch.log 2>&1
+echo "> Installing nltk..." >> install_pytorch.log
+pip install nltk -i https://pypi.tuna.tsinghua.edu.cn/simple >> install_pytorch.log 2>&1
 
 # 可视化
-pip install matplotlib >> install_pytorch.log 2>&1
+echo "> Installing matplotlib..." >> install_pytorch.log
+pip install matplotlib -i https://pypi.tuna.tsinghua.edu.cn/simple >> install_pytorch.log 2>&1
 
 if [ $? -eq 0 ]; then
-    echo "Installation Successful!" >> install_pytorch.log
-    # 简单的验证与资源准备
-    python -c "import torch; print(f'CUDA Available: {torch.cuda.is_available()}')" >> install_pytorch.log
-    # 预下载 NLTK 资源避免多卡训练时竞争报错
+    echo "Summary: Global dependencies installed successfully!" >> install_pytorch.log
+    # 资源下载 (NLTK)
+    echo "> Downloading NLTK resources..." >> install_pytorch.log
     python -c "import nltk; nltk.download('punkt'); nltk.download('wordnet'); nltk.download('averaged_perceptron_tagger'); nltk.download('omw-1.4'); nltk.download('stopwords')" >> install_pytorch.log 2>&1
 else
-    echo "Installation Failed!" >> install_pytorch.log
+    echo "Summary: Some installations failed. Please check install_pytorch.log" >> install_pytorch.log
 fi
