@@ -23,7 +23,7 @@ echo "Log file: install_pytorch.log"
 echo "Installing dependencies..." >> install_pytorch.log
 
 # 基础库与深度学习
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 >> install_pytorch.log 2>&1
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 >> install_pytorch.log 2>&1
 pip install transformers sentencepiece sacremoses >> install_pytorch.log 2>&1
 
 # 数据处理与科学计算
