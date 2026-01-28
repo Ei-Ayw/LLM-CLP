@@ -84,6 +84,10 @@ def main():
     parser.add_argument("--epochs", type=int, default=0, help="训练轮数 (0=默认/早停)")
     parser.add_argument("--no_bar", action="store_true", help="禁用 tqdm 进度条 (nohup模式下推荐)")
     args = parser.parse_args()
+    
+    # 记录实验开始时间戳，用于后续筛选本次实验产出的模型
+    experiment_start_time = datetime.now()
+    print(f"[{experiment_start_time.strftime('%Y-%m-%d %H:%M:%S')}] Experiment Session Started.")
 
     # 处理全量跑逻辑
     effective_sample_size = args.sample_size if args.sample_size > 0 else 10_000_000
@@ -176,6 +180,19 @@ def main():
         print("\n>>> 全自动化评估引擎启动...")
         if os.path.exists(MODEL_DIR):
             pths = [f for f in os.listdir(MODEL_DIR) if f.endswith(".pth")]
+            
+            # --- 筛选逻辑优化：只评估本次实验新生成的模型 ---
+            # 通过文件修改时间 (mtime) 与 experiment_start_time 对比
+            new_pths = []
+            for p in pths:
+                full_p = os.path.join(MODEL_DIR, p)
+                mtime = datetime.fromtimestamp(os.path.getmtime(full_p))
+                if mtime >= experiment_start_time:
+                    new_pths.append(p)
+            
+            pths = new_pths
+            print(f"  > Detected {len(pths)} new checkpoints from this session.")
+
             # 智能筛选：每个模型配置只评估最新的权重
             checkpoint_groups = {}
             for pth in sorted(pths):
@@ -189,6 +206,11 @@ def main():
             print(f">>> 发现 {len(pths)} 个权重文件，筛选出 {len(checkpoint_groups)} 个最新模型进行评估。")
 
             for group, pth in checkpoint_groups.items():
+                # 过滤策略: 跳过 S1 中间权重 (除非是单任务 OnlyTox，它没有 S2)
+                if "_S1_" in pth and "OnlyTox" not in pth:
+                    print(f"  [Skip] 跳过中间阶段权重 S1 (Intermediate Checkpoint): {pth}")
+                    continue
+
                 # 分类映射逻辑
                 m_type = "deberta_mtl" if "DebertaV3MTL" in pth else \
                          "bert_cnn" if "BertCNN" in pth else \
