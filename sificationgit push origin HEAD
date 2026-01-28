@@ -1,0 +1,59 @@
+[33mcommit 735e8bce7b83a102615d67fc6401dd9350aa97ea[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: echo_Eire <zheng1_9@qq.com>
+Date:   Wed Jan 28 23:40:31 2026 +0800
+
+    Optimize: Multi-GPU, SmartEpochs, TF32, FocalLoss, DataAug, StrictAblation
+
+[33mcommit 92bd1beb20b7064478bd79b71048c8c2eba38d17[m
+Author: echo_Eire <zheng1_9@qq.com>
+Date:   Mon Jan 26 12:28:19 2026 +0800
+
+    fix: refactor download script to use snapshot_download and update requirements
+
+[33mcommit c2f4ad43d1ae5b9acc3060f30a4788f0fa4abc65[m
+Author: echo_Eire <zheng1_9@qq.com>
+Date:   Mon Jan 26 12:23:29 2026 +0800
+
+    fix: remove hardcoded local_files_only=True in all model definition files
+
+[33mcommit fa24d6f70cd7b82081e587069df68698bac140a3[m
+Author: echo_Eire <zheng1_9@qq.com>
+Date:   Mon Jan 26 12:20:25 2026 +0800
+
+    fix: resolve sampling error and relax offline model loading constraints
+
+[33mcommit bcc54d04513a5c16179dce8cba60904d8aa0e198[m
+Author: echo_Eire <zheng1_9@qq.com>
+Date:   Mon Jan 26 12:17:52 2026 +0800
+
+    fix: ensure all training scripts handle master arguments and optimize preprocessing data loading
+
+[33mcommit 2600c3108b353cb565c401058d096c578a81fd0d[m
+Author: echo_Eire <zheng1_9@qq.com>
+Date:   Mon Jan 26 12:13:58 2026 +0800
+
+    perf: optimize runtime for RTX 3090 with EarlyStopping and increased batch sizes
+
+[33mcommit 0362977aade18cb1825e8478c61bff7c4bbbe572[m
+Author: echo_Eire <zheng1_9@qq.com>
+Date:   Mon Jan 26 11:55:39 2026 +0800
+
+    feat: Implement two-stage DeBERTaV3 multi-task learning (MTL) scripts with FP16 and ablation experiment support.
+
+[33mcommit 97d99972c8d9b4f7195936eb622765a154f82c6c[m
+Author: echo_Eire <zheng1_9@qq.com>
+Date:   Sat Jan 24 14:06:12 2026 +0800
+
+    feat: restructure src_result into models/logs/eval/viz subdirectories and unify paths
+
+[33mcommit 1f118ca694ca024f5ef6e2ecb38a69843d566270[m
+Author: echo_Eire <zheng1_9@qq.com>
+Date:   Sat Jan 24 13:57:51 2026 +0800
+
+    feat: add fixed 0.5 threshold metrics for fair academic comparison
+
+[33mcommit 521999392c8c6c7d41fc15384f8cb25041fa35db[m
+Author: echo_Eire <zheng1_9@qq.com>
+Date:   Sat Jan 24 13:54:30 2026 +0800
+
+    feat: add threshold scan curve visualization and full scan history to eval report
