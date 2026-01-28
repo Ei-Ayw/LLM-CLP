@@ -41,8 +41,8 @@ os.environ["TRANSFORMERS_OFFLINE"] = "1"
 # 导入模型与数据集定义
 from model_deberta_v3_mtl import DebertaV3MTL
 from model_bert_cnn_bilstm import BertCNNBiLSTM
-from model_text_cnn import TextCNN
-from model_bilstm import BiLSTM
+# from model_text_cnn import TextCNN
+# from model_bilstm import BiLSTM
 from model_vanilla_bert import VanillaBERT
 from model_vanilla_roberta import VanillaRoBERTa
 from model_vanilla_deberta_v3 import VanillaDeBERTaV3
@@ -167,37 +167,37 @@ def main():
         model = VanillaRoBERTa().to(device)
     elif args.model_type == "vanilla_deberta":
         model = VanillaDeBERTaV3().to(device)
-    elif args.model_type in ["text_cnn", "bilstm"]:
-        vocab_path = args.checkpoint.replace(".pth", "_vocab.pkl")
-        with open(vocab_path, 'rb') as f:
-            vocab = pickle.load(f)
-        if args.model_type == "text_cnn":
-            model = TextCNN(vocab_size=len(vocab.stoi)).to(device)
-        else:
-            model = BiLSTM(vocab_size=len(vocab.stoi)).to(device)
+    # elif args.model_type in ["text_cnn", "bilstm"]:
+    #     vocab_path = args.checkpoint.replace(".pth", "_vocab.pkl")
+    #     with open(vocab_path, 'rb') as f:
+    #         vocab = pickle.load(f)
+    #     if args.model_type == "text_cnn":
+    #         model = TextCNN(vocab_size=len(vocab.stoi)).to(device)
+    #     else:
+    #         model = BiLSTM(vocab_size=len(vocab.stoi)).to(device)
     
     model.load_state_dict(torch.load(args.checkpoint, map_location=device))
     model.eval()
 
     # [3] 推理
     probs, targets = [], []
-    if args.model_type in ["text_cnn", "bilstm"]:
-        loader = DataLoader(SimpleTokenDataset(test_df['comment_text'].values, test_df['y_tox'].values, vocab), batch_size=64, shuffle=False)
-        with torch.no_grad():
-            for batch in tqdm(loader, desc="[Inference Classic]"):
-                out = model(batch['ids'].to(device))
-                probs.extend(torch.sigmoid(out['logits_tox']).squeeze(-1).cpu().numpy())
-                targets.extend(batch['y_tox'].cpu().numpy())
-    else:
-        base_model_name = "microsoft/deberta-v3-base" if "Deberta" in ckpt_name else \
-                          "roberta-base" if "RoBERTa" in ckpt_name else "bert-base-uncased"
-        tokenizer = AutoTokenizer.from_pretrained(base_model_name, local_files_only=True)
-        loader = DataLoader(ToxicityDataset(test_df, tokenizer), batch_size=16, shuffle=False)
-        with torch.no_grad():
-            for batch in tqdm(loader, desc="[Inference Transformer]"):
-                out = model(batch['input_ids'].to(device), batch['attention_mask'].to(device))
-                probs.extend(torch.sigmoid(out['logits_tox']).squeeze(-1).cpu().numpy())
-                targets.extend(batch['y_tox'].cpu().numpy())
+    # if args.model_type in ["text_cnn", "bilstm"]:
+    #     loader = DataLoader(SimpleTokenDataset(test_df['comment_text'].values, test_df['y_tox'].values, vocab), batch_size=64, shuffle=False)
+    #     with torch.no_grad():
+    #         for batch in tqdm(loader, desc="[Inference Classic]"):
+    #             out = model(batch['ids'].to(device))
+    #             probs.extend(torch.sigmoid(out['logits_tox']).squeeze(-1).cpu().numpy())
+    #             targets.extend(batch['y_tox'].cpu().numpy())
+    # else:
+    base_model_name = "microsoft/deberta-v3-base" if "Deberta" in ckpt_name else \
+                      "roberta-base" if "RoBERTa" in ckpt_name else "bert-base-uncased"
+    tokenizer = AutoTokenizer.from_pretrained(base_model_name, local_files_only=True)
+    loader = DataLoader(ToxicityDataset(test_df, tokenizer), batch_size=16, shuffle=False)
+    with torch.no_grad():
+        for batch in tqdm(loader, desc="[Inference Transformer]"):
+            out = model(batch['input_ids'].to(device), batch['attention_mask'].to(device))
+            probs.extend(torch.sigmoid(out['logits_tox']).squeeze(-1).cpu().numpy())
+            targets.extend(batch['y_tox'].cpu().numpy())
 
     probs = np.array(probs)
     targets = np.array(targets)

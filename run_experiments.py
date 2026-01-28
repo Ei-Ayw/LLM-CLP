@@ -54,32 +54,64 @@ def run_script(folder, script_name, args_list):
     print(f"\n[HIERARCHY RUN] {folder}/{script_name}: {' '.join(cmd)}")
     subprocess.run(cmd)
 
-def find_best_s1():
+def find_latest_checkpoint(identifier=None):
     if not os.path.exists(MODEL_DIR): return None
-    files = sorted([f for f in os.listdir(MODEL_DIR) if f.startswith("DebertaV3MTL_S1_Sample") and f.endswith(".pth")])
-    return os.path.join(MODEL_DIR, files[-1]) if files else None
+    pths = [f for f in os.listdir(MODEL_DIR) if f.endswith(".pth")]
+    if identifier:
+        pths = [f for f in pths if identifier in f]
+    
+    if not pths: return None
+    # Sort by modification time (newest first)
+    pths.sort(key=lambda x: os.path.getmtime(os.path.join(MODEL_DIR, x)), reverse=True)
+    return os.path.join(MODEL_DIR, pths[0])
+
+def find_best_s1():
+    # Deprecated fallback
+    return find_latest_checkpoint(identifier="S1")
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, choices=["all", "train", "eval", "ablation", "viz"], default="all")
-    parser.add_argument("--sample_size", type=int, default=200000)
+    parser.add_argument("--sample_size", type=int, default=0, help="实验数据采样量 (0表示全量)")
+    # 针对 4x A10 (24GB) 优化：显存充足，使用大 Batch 提高吞吐
+    # MaxLen=128 下，单卡 24G 可支持 Batch=128+，4卡可支持 512+
+    parser.add_argument("--batch_size", type=int, default=512, help="默认基础 Batch Size (优化: 512 for 4x24GB)")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--max_len", type=int, default=128, help="短序列加速，默认 128")
     parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
     parser.add_argument("--patience", type=int, default=1)
     parser.add_argument("--early_patience", type=int, default=3, help="验证集 Loss 早停等待轮数")
+    parser.add_argument("--epochs", type=int, default=0, help="训练轮数 (0=默认/早停)")
+    parser.add_argument("--no_bar", action="store_true", help="禁用 tqdm 进度条 (nohup模式下推荐)")
     args = parser.parse_args()
+
+    # 处理全量跑逻辑
+    effective_sample_size = args.sample_size if args.sample_size > 0 else 10_000_000
+    is_full_mode = args.sample_size <= 0
+    print(f"[{'FULL' if is_full_mode else 'SAMPLED'} MODE] Effective Sample Size: {effective_sample_size}")
+
+    # 自动检测 nohup / 非交互环境
+    if not sys.stdout.isatty():
+        args.no_bar = True
+        print(">>> [Auto-Detect] Non-interactive shell detected. Disabling progress bars.")
 
     # 预先创建结果子目录 (防御式编程)
     for d in ["models", "logs", "eval", "viz"]:
         os.makedirs(os.path.join(RES_DIR, d), exist_ok=True)
 
-    common = ["--sample_size", str(args.sample_size), "--seed", str(args.seed), "--scheduler", args.scheduler, "--patience", str(args.patience), "--early_patience", str(args.early_patience)]
+    common = ["--sample_size", str(effective_sample_size), "--batch_size", str(args.batch_size), "--seed", str(args.seed), "--max_len", str(args.max_len), "--scheduler", args.scheduler, "--patience", str(args.patience), "--early_patience", str(args.early_patience)]
+    
+    if args.epochs > 0:
+        common += ["--epochs", str(args.epochs)]
+        
+    if args.no_bar:
+        common += ["--no_bar"]
 
     # --- Phase 1: Data & Models Training ---
     if args.mode in ["all", "train"]:
         # 数据预处理: 生成 train_processed / val_processed / test_processed (80/10/10)
         # 优化：直接在预处理阶段进行采样，避免生成庞大的全量中间文件
-        run_script("data", "exp_data_preprocess.py", ["--sample_size", str(args.sample_size), "--seed", str(args.seed)])
+        run_script("data", "exp_data_preprocess.py", ["--sample_size", str(effective_sample_size), "--seed", str(args.seed)])
 
         # Group 1: Classical Strong Baseline (TF-IDF + LR)
         run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
@@ -101,22 +133,62 @@ def main():
 
     # --- Phase 2: Ablation (Switch Mode) ---
     if args.mode in ["all", "ablation"]:
-        print("\n>>> 启动消融实验组 (Ablation Matrix)")
-        # Ablation-1: Pooling
-        run_script("train", "train_deberta_v3_mtl_s1.py", ["--no_pooling"] + common)
-        # Ablation-2: MTL
-        run_script("train", "train_deberta_v3_mtl_s1.py", ["--only_toxicity"] + common)
-        # Ablation-3: Reweight
-        s1_path = find_best_s1()
-        if s1_path: 
-            run_script("train", "train_deberta_v3_mtl_s2.py", ["--s1_checkpoint", s1_path, "--no_reweight"] + common)
+        print("\n>>> 启动严格消融实验组 (Strict Ablation Matrix: Full S1+S2 Pipeline)")
+        
+        # 基础命令集
+        base_cmd = common
+
+        # Define Ablation Cases
+        # Format: (CaseName, S1_Extra_Args, S2_Extra_Args)
+        ablations = [
+            ("No_Augmentation", ["--no_aug"], ["--no_aug"]),           # 1. 移除数据增强
+            ("No_Pooling", ["--no_pooling"], ["--no_pooling"]),        # 2. 移除 Attention Pooling
+            ("No_Reweight", [], ["--no_reweight"]),                    # 3. 移除 S2 身份重加权 (S1 正常, S2 无重加权)
+            ("No_Focal", ["--no_focal"], ["--no_focal"]),             # 4. 移除 Focal Loss (如果脚本支持，需确保脚本也加了此参数解析)
+        ]
+
+        for case_name, s1_args, s2_args in ablations:
+            print(f"\n[Ablation Run] Case: {case_name}")
+            
+            # 1. Run Stage 1 for this ablation
+            # 为了区分，我们需要给模型存盘名加后缀，或者依赖脚本内部的时间戳机制
+            # 这里我们通过传入 --suffix 参数让脚本保存时带上标记 (需要在训练脚本里支持)
+            # 或者我们简单地顺序跑，然后根据时间戳最新的去找。
+            
+            # Run S1
+            print(f"  > Running Stage 1 ({case_name})...")
+            run_script("train", "train_deberta_v3_mtl_s1.py", base_cmd + s1_args + ["--ablation_tag", case_name])
+            
+            # Find the S1 checkpoint we just trained
+            # 假设脚本保存的文件名包含 case_name
+            s1_ckpt = find_latest_checkpoint(identifier=f"_{case_name}_")
+            
+            if s1_ckpt:
+                print(f"  > Found S1 Checkpoint: {s1_ckpt}")
+                print(f"  > Running Stage 2 ({case_name})...")
+                # Run S2 using the specific S1 checkpoint
+                run_script("train", "train_deberta_v3_mtl_s2.py", base_cmd + s2_args + ["--s1_checkpoint", s1_ckpt, "--ablation_tag", case_name])
+            else:
+                print(f"  [Error] S1 training for {case_name} failed or checkpoint not found. Skipping S2.")
 
     # --- Phase 3: Evaluation ---
     if args.mode in ["all", "eval", "ablation"]:
         print("\n>>> 全自动化评估引擎启动...")
         if os.path.exists(MODEL_DIR):
             pths = [f for f in os.listdir(MODEL_DIR) if f.endswith(".pth")]
+            # 智能筛选：每个模型配置只评估最新的权重
+            checkpoint_groups = {}
             for pth in sorted(pths):
+                # pattern: ModelName_SampleXXXX_MMDD_HHMM.pth
+                # Split by '_' and remove the last two parts (date, time) to get the group key
+                parts = pth.split('_')
+                if len(parts) >= 3:
+                    group_key = "_".join(parts[:-2])
+                    checkpoint_groups[group_key] = pth
+            
+            print(f">>> 发现 {len(pths)} 个权重文件，筛选出 {len(checkpoint_groups)} 个最新模型进行评估。")
+
+            for group, pth in checkpoint_groups.items():
                 # 分类映射逻辑
                 m_type = "deberta_mtl" if "DebertaV3MTL" in pth else \
                          "bert_cnn" if "BertCNN" in pth else \

@@ -8,10 +8,10 @@ class VanillaRoBERTa(nn.Module):
         super().__init__()
         try:
             self.config = AutoConfig.from_pretrained(model_path, num_labels=num_labels)
+            # 移除 low_cpu_mem_usage=True 以解决 "Cannot copy out of meta tensor" 报错
             self.model = AutoModelForSequenceClassification.from_pretrained(
                 model_path, 
-                config=self.config,
-                low_cpu_mem_usage=True # 优化大模型加载
+                config=self.config
             )
         except Exception as e:
             print(f"\n❌ [CRITICAL] 无法加载 RoBERTa 权重: {e}")

@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from torch.cuda.amp import GradScaler, autocast
 from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 import pandas as pd
 from tqdm import tqdm
@@ -35,7 +36,7 @@ from exp_data_loader import ToxicityDataset, sample_aligned_data
 from path_config import get_model_path, get_log_path
 from train_utils import EarlyStopping
 
-def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
+def train_one_epoch(model, loader, optimizer, scheduler, scaler, device):
     model.train()
     criterion = nn.BCEWithLogitsLoss()
     total_loss = 0
@@ -43,31 +44,43 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps):
     for i, batch in enumerate(pbar):
         ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
         y = batch['y_tox'].to(device).unsqueeze(-1)
-        out = model(ids, mask)
-        loss = criterion(out['logits_tox'], y) / accum_steps
-        loss.backward()
-        if (i + 1) % accum_steps == 0:
-            optimizer.step()
-            if scheduler is not None and not isinstance(scheduler, ReduceLROnPlateau):
-                scheduler.step()
-            optimizer.zero_grad()
-        total_loss += loss.item() * accum_steps
+        
+        optimizer.zero_grad()
+        with autocast(): # 开启自动混合精度
+            out = model(ids, mask)
+            loss = criterion(out['logits_tox'], y)
+        
+        scaler.scale(loss).backward()
+        scaler.step(optimizer)
+        scaler.update()
+        
+        if scheduler is not None and not isinstance(scheduler, ReduceLROnPlateau):
+            scheduler.step()
+            
+        total_loss += loss.item()
         pbar.set_postfix(loss=f"{total_loss/(i+1):.4f}")
     return total_loss / len(loader)
 
 def main():
-    parser = argparse.ArgumentParser(description="BERT + CNN + BiLSTM Baseline Training")
+    parser = argparse.ArgumentParser(description="BERT + CNN + BiLSTM Baseline Training (AMP)")
     parser.add_argument("--model_name", type=str, default="bert-base-uncased")
     parser.add_argument("--sample_size", type=int, default=200000)
-    parser.add_argument("--batch_size", type=int, default=64, help="3090 24G 可提高至 64")
+    parser.add_argument("--batch_size", type=int, default=128, help="AMP+ShortLen 可稳定支持 128")
     parser.add_argument("--lr", type=float, default=2e-5)
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--max_len", type=int, default=256)
+    parser.add_argument("--max_len", type=int, default=128, help="降为 128 显著提速")
     parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
-    parser.add_argument("--patience", type=int, default=1, help="Plateau 调度器的耐心值")
-    parser.add_argument("--early_patience", type=int, default=3, help="早停耐心值")
+    parser.add_argument("--patience", type=int, default=1)
+    parser.add_argument("--early_patience", type=int, default=3)
+    parser.add_argument("--no_bar", action="store_true")
     args = parser.parse_args()
+
+    # 静默模式处理 (for nohup)
+    if args.no_bar:
+        global tqdm
+        from tqdm import tqdm as _tqdm
+        tqdm = lambda *args, **kwargs: _tqdm(*args, **kwargs, disable=True)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(args.seed)
@@ -76,21 +89,27 @@ def main():
     save_basename = f"BertCNNBiLSTM_Sample{args.sample_size}_{timestamp}"
     save_path = get_model_path(save_basename + ".pth")
 
-    print(f"\n>>> 启动对比模型实验: {save_basename}")
+    print(f"\n>>> 启动对比模型实验 (AMP): {save_basename}")
 
     train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
     val_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "val_processed.parquet"))
     train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.seed)
     
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len)
-    val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len)
+    train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len, augment=True) # 增强
+    val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len, augment=False)
     
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4)
-    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=4)
+    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True)
 
     model = BertCNNBiLSTM(args.model_name).to(device)
+    
+    if torch.cuda.device_count() > 1:
+        print(f"Using {torch.cuda.device_count()} GPUs for training BertCNN...")
+        model = nn.DataParallel(model)
+        
     optimizer = AdamW(model.parameters(), lr=args.lr)
+    scaler = GradScaler() # 梯度缩放器
     
     num_steps = int(len(train_ds) / args.batch_size * args.epochs)
     if args.scheduler == "plateau":
@@ -104,7 +123,7 @@ def main():
     
     for epoch in range(args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
-        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, accum_steps=1)
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, scaler, device)
         
         model.eval()
         v_loss = 0
@@ -112,8 +131,9 @@ def main():
             for batch in val_loader:
                 ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
                 y = batch['y_tox'].to(device).unsqueeze(-1)
-                out = model(ids, mask)
-                v_loss += nn.BCEWithLogitsLoss()(out['logits_tox'], y).item()
+                with autocast():
+                    out = model(ids, mask)
+                    v_loss += nn.BCEWithLogitsLoss()(out['logits_tox'], y).item()
         val_loss = v_loss / len(val_loader)
         
         if isinstance(scheduler, ReduceLROnPlateau):
@@ -125,7 +145,8 @@ def main():
         
         if val_loss < best_val_loss:
             best_val_loss = val_loss
-            torch.save(model.state_dict(), save_path)
+            state_dict = model.module.state_dict() if isinstance(model, nn.DataParallel) else model.state_dict()
+            torch.save(state_dict, save_path)
             print(f"  [Save] 更优模型已保存至: {save_path}")
 
         if early_stopping(val_loss):
