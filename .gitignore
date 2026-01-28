@@ -16,7 +16,7 @@ __pycache__/
 *$py.class
 venv/
 .env
-
+.log
 # OS
 .DS_Store
 Thumbs.db

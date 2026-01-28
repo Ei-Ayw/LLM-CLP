@@ -15,7 +15,7 @@ class ToxicityDataset(Dataset):
     """
     通用毒性分类数据集类，封装了文本编码与多任务标签处理。
     """
-    def __init__(self, df, tokenizer, max_len=256):
+    def __init__(self, df, tokenizer, max_len=256, augment=False):
         self.tokenizer = tokenizer
         self.texts = df['comment_text'].values
         # 主任务标签：二分类毒性
@@ -36,12 +36,31 @@ class ToxicityDataset(Dataset):
         # 标识是否包含身份提及
         self.has_id = df['has_identity'].values
         self.max_len = max_len
+        self.augment = augment
+
+    def simple_aug(self, text, p=0.1):
+        """ 简单的随机删除增强 (Random Deletion) """
+        words = text.split()
+        if len(words) <= 1: return text
+        # 随机保留单词，每个单词有 1-p 的概率保留
+        new_words = [w for w in words if np.random.rand() > p]
+        # 如果全部删完了，则至少保留一个
+        if not new_words: return words[np.random.randint(0, len(words))]
+        return " ".join(new_words)
 
     def __len__(self):
         return len(self.texts)
 
     def __getitem__(self, idx):
         text = str(self.texts[idx])
+        y_tox_val = self.y_tox[idx]
+
+        # 数据增强策略: 仅对少数类 (Toxic) 及其子类样本进行随机扰动
+        # 这有助于增加少数类样本的多样性，缓解类别不平衡
+        if self.augment and y_tox_val >= 0.5:
+             # 50% 概率触发增强，避免改变过大
+            if np.random.rand() < 0.5:
+                text = self.simple_aug(text, p=0.1)
         
         # 使用 Transformers 的 encode_plus 进行标准化编码
         inputs = self.tokenizer.encode_plus(
@@ -56,7 +75,7 @@ class ToxicityDataset(Dataset):
         return {
             'input_ids': torch.tensor(inputs['input_ids'], dtype=torch.long),
             'attention_mask': torch.tensor(inputs['attention_mask'], dtype=torch.long),
-            'y_tox': torch.tensor(self.y_tox[idx], dtype=torch.float),
+            'y_tox': torch.tensor(y_tox_val, dtype=torch.float),
             'y_sub': torch.tensor(self.y_sub[idx], dtype=torch.float),
             'y_id': torch.tensor(self.y_id[idx], dtype=torch.float),
             'has_id': torch.tensor(self.has_id[idx], dtype=torch.long)

@@ -1,6 +1,16 @@
 import torch
 import numpy as np
 
+# =============================================================================
+# 全局硬件加速配置 (针对 A10/A100/3090+ 显卡)
+# =============================================================================
+if torch.cuda.is_available():
+    # 开启 TF32 (TensorFloat-32) 加速矩阵运算
+    # 这通常能带来 2-5 倍的性能提升，且精度损失微乎其微
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
+    print("[Hardware] TF32 acceleration enabled for Ampere+ GPUs.")
+
 class EarlyStopping:
     """
     早停机制 (Early Stopping)：

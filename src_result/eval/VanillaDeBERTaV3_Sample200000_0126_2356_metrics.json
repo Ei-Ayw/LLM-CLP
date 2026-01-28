@@ -1,0 +1,195 @@
+{
+    "checkpoint": "/root/lanyun-fs/01_nlp_toxicity_classification/src_result/models/VanillaDeBERTaV3_Sample200000_0126_2356.pth",
+    "model_type": "vanilla_deberta",
+    "optimal_threshold": 0.05,
+    "primary_metrics_optimal": {
+        "threshold": 0.05,
+        "f1": 0.044483985765124565,
+        "accuracy": 0.8926,
+        "roc_auc": 0.4997723894973657,
+        "pr_auc": 0.07957256685108825
+    },
+    "primary_metrics_fixed_0.5": {
+        "threshold": 0.5,
+        "f1": 0.0,
+        "accuracy": 0.9199,
+        "precision": 0.0,
+        "recall": 0.0
+    },
+    "bias_metrics": {
+        "mean_bias_auc": 0.5009434811443811,
+        "worst_group_bias_auc": 0.35652287411081385,
+        "per_subgroup_details": [
+            {
+                "subgroup": "male",
+                "subgroup_auc": 0.44541316526610647,
+                "bpsn_auc": 0.38392003476749237,
+                "bnsp_auc": 0.5520849011536977
+            },
+            {
+                "subgroup": "female",
+                "subgroup_auc": 0.46698646986469866,
+                "bpsn_auc": 0.39371328389118865,
+                "bnsp_auc": 0.5632056451612903
+            },
+            {
+                "subgroup": "black",
+                "subgroup_auc": 0.4680663632359418,
+                "bpsn_auc": 0.3645485414630305,
+                "bnsp_auc": 0.6051273568192818
+            },
+            {
+                "subgroup": "white",
+                "subgroup_auc": 0.5411442899475724,
+                "bpsn_auc": 0.40115592720118054,
+                "bnsp_auc": 0.623599680233494
+            },
+            {
+                "subgroup": "muslim",
+                "subgroup_auc": 0.5055770811318538,
+                "bpsn_auc": 0.4331086376569877,
+                "bnsp_auc": 0.5623700634880687
+            },
+            {
+                "subgroup": "jewish",
+                "subgroup_auc": 0.5467532467532468,
+                "bpsn_auc": 0.35652287411081385,
+                "bnsp_auc": 0.6782053381365647
+            },
+            {
+                "subgroup": "christian",
+                "subgroup_auc": 0.5419367383977183,
+                "bpsn_auc": 0.3790016756327719,
+                "bnsp_auc": 0.6509749947345018
+            },
+            {
+                "subgroup": "homosexual_gay_or_lesbian",
+                "subgroup_auc": 0.45098039215686275,
+                "bpsn_auc": 0.39057075059323093,
+                "bnsp_auc": 0.5567029678618277
+            },
+            {
+                "subgroup": "psychiatric_or_mental_illness",
+                "subgroup_auc": 0.5876010781671158,
+                "bpsn_auc": 0.4784763707340155,
+                "bnsp_auc": 0.5977261223377331
+            }
+        ]
+    },
+    "threshold_scan_history": [
+        {
+            "threshold": 0.05,
+            "f1": 0.044483985765124565,
+            "precision": 0.07739938080495357,
+            "recall": 0.031210986267166042
+        },
+        {
+            "threshold": 0.1,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.15000000000000002,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.2,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.25,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.3,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.35000000000000003,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.4,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.45,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.5,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.55,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.6000000000000001,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.6500000000000001,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.7000000000000001,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.7500000000000001,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.8,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.8500000000000001,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.9000000000000001,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        },
+        {
+            "threshold": 0.9500000000000001,
+            "f1": 0.0,
+            "precision": 0.0,
+            "recall": 0.0
+        }
+    ]
+}

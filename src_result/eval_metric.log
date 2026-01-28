@@ -1,0 +1,50 @@
+
+实验指标汇总:
+                     Model  F1 (Optimal)  F1 (Fixed 0.5)  ROC-AUC  Mean Bias AUC
+             BertCNNBiLSTM      0.676617        0.671376 0.957077       0.907370
+             BertCNNBiLSTM      0.676617        0.671376 0.957077       0.907370
+             BertCNNBiLSTM      0.676617        0.671376 0.957077       0.907370
+ DebertaV3MTL_S1_NoPooling      0.686427        0.679961 0.959316       0.910776
+   DebertaV3MTL_S1_OnlyTox      0.680119        0.659574 0.962061       0.909293
+           DebertaV3MTL_S1      0.683041        0.654075 0.963003       0.910868
+DebertaV3MTL_S2_NoReweight      0.684580        0.682942 0.956243       0.908740
+           DebertaV3MTL_S2      0.681659        0.676787 0.956404       0.912998
+               VanillaBERT      0.668752        0.651078 0.959438       0.905676
+          VanillaDeBERTaV3      0.044484        0.000000 0.499772       0.500943
+            VanillaRoBERTa      0.675545        0.675545 0.960308       0.908128
+/root/lanyun-fs/01_nlp_toxicity_classification/src_script/viz/viz_performance_summary.py:56: FutureWarning: 
+
+Passing `palette` without assigning `hue` is deprecated and will be removed in v0.14.0. Assign the `y` variable to `hue` and set `legend=False` for the same effect.
+
+  ax = sns.barplot(data=df_sorted, x='Mean Bias AUC', y='Model', palette='viridis')
+/root/lanyun-fs/01_nlp_toxicity_classification/src_script/viz/viz_performance_summary.py:67: UserWarning: Tight layout not applied. The left and right margins cannot be made large enough to accommodate all axes decorations.
+  plt.tight_layout()
+>>> 性能总结图表已保存: /root/lanyun-fs/01_nlp_toxicity_classification/src_result/viz/model_performance_summary.png
+
+[HIERARCHY RUN] viz/viz_feature_t_sne.py: /root/miniconda/bin/python /root/lanyun-fs/01_nlp_toxicity_classification/src_script/viz/viz_feature_t_sne.py --checkpoint /root/lanyun-fs/01_nlp_toxicity_classification/src_result/models/DebertaV3MTL_S2_Sample200000_0127_0138.pth --output_name viz_final_paper.png
+/root/miniconda/lib/python3.8/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda/lib/python3.8/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+>>> 加载模型和数据...
+/root/miniconda/lib/python3.8/site-packages/transformers/convert_slow_tokenizer.py:561: UserWarning: The sentencepiece tokenizer that you are converting to a fast tokenizer uses the byte fallback option which is not implemented in the fast tokenizers. In practice this means that the fast version of the tokenizer can produce unknown tokens whereas the sentencepiece version would have converted these unknown tokens into a sequence of byte tokens matching the original piece of text.
+  warnings.warn(
+/root/miniconda/lib/python3.8/site-packages/torch/_utils.py:776: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  return self.fget.__get__(instance, owner)()
+>>> 处理身份群体: Male (1/9)
+huggingface/tokenizers: The current process just got forked, after parallelism has already been used. Disabling parallelism to avoid deadlocks...
+To disable this warning, you can either:
+        - Avoid using `tokenizers` before the fork if possible
+        - Explicitly set the environment variable TOKENIZERS_PARALLELISM=(true | false)
+>>> 处理身份群体: Female (2/9)
+>>> 处理身份群体: Black (3/9)
+>>> 处理身份群体: White (4/9)
+>>> 处理身份群体: Muslim (5/9)
+>>> 处理身份群体: Jewish (6/9)
+>>> 处理身份群体: Christian (7/9)
+>>> 处理身份群体: LGBTQ+ (8/9)
+>>> 处理身份群体: Mental Illness (9/9)
+>>> 3x3 多子图已保存: /root/lanyun-fs/01_nlp_toxicity_classification/src_result/viz/viz_final_paper.png
+
+[FINISH] Professional Hierarchical Lifecycle Management Completed.
+root@00105801dc27:~/lanyun-fs/01_nlp_toxicity_classification# 
