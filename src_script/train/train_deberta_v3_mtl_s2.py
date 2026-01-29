@@ -138,8 +138,8 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len, augment=not args.no_aug) # 开启简单数据增强
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len, augment=False)
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size * 2, shuffle=False, num_workers=4, pin_memory=True)
+    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=8, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size * 2, shuffle=False, num_workers=8, pin_memory=True)
 
     model = DebertaV3MTL(args.model_name).to(device)
     if os.path.exists(args.s1_checkpoint):
