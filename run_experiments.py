@@ -76,7 +76,7 @@ def main():
     parser.add_argument("--sample_size", type=int, default=0, help="实验数据采样量 (0表示全量)")
     # 针对 4x A10 (24GB) 优化：显存充足，使用大 Batch 提高吞吐
     # MaxLen=128 下，单卡 24G 可支持 Batch=128+，4卡可支持 512+
-    parser.add_argument("--batch_size", type=int, default=512, help="默认基础 Batch Size (优化: 512 for 4x24GB)")
+    parser.add_argument("--batch_size", type=int, default=1024, help="默认基础 Batch Size (优化: 1024 for 4x24GB)")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max_len", type=int, default=128, help="短序列加速，默认 128")
     parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
@@ -116,7 +116,7 @@ def main():
     if args.mode in ["all", "train"]:
         # 数据预处理: 生成 train_processed / val_processed / test_processed (80/10/10)
         # 优化：直接在预处理阶段进行采样，避免生成庞大的全量中间文件
-        run_script("data", "exp_data_preprocess.py", ["--sample_size", str(effective_sample_size), "--seed", str(args.seed)])
+        # run_script("data", "exp_data_preprocess.py", ["--sample_size", str(effective_sample_size), "--seed", str(args.seed)])
 
         # Group 1: Classical Strong Baseline (TF-IDF + LR)
         run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])

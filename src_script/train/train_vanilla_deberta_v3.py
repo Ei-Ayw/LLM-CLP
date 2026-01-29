@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torch.cuda.amp import GradScaler, autocast
+# from torch.cuda.amp import GradScaler, autocast
 from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 import pandas as pd
 from tqdm import tqdm
@@ -43,7 +43,7 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device):
         y = batch['y_tox'].to(device).unsqueeze(-1)
         
         optimizer.zero_grad()
-        with autocast():
+        with torch.amp.autocast('cuda'):
             out = model(ids, mask)
             loss = criterion(out['logits_tox'], y)
         
@@ -102,7 +102,7 @@ def main():
         model = nn.DataParallel(model)
         
     optimizer = AdamW(model.parameters(), lr=args.lr)
-    scaler = GradScaler()
+    scaler = torch.amp.GradScaler('cuda')
     
     num_steps = int(len(train_ds) / args.batch_size * args.epochs)
     if args.scheduler == "plateau":
@@ -124,7 +124,7 @@ def main():
             for batch in val_loader:
                 ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
                 y = batch['y_tox'].to(device).unsqueeze(-1)
-                with autocast():
+                with torch.amp.autocast('cuda'):
                     out = model(ids, mask)
                     v_loss += nn.BCEWithLogitsLoss()(out['logits_tox'], y).item()
         val_loss = v_loss / len(val_loader)

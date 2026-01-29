@@ -18,13 +18,12 @@ cd "$PROJECT_DIR"
 cat <<EOF > download_hf.py
 import os
 import pandas as pd
-from datasets import load_dataset, set_caching_enabled
+from datasets import load_dataset
 
 DATA_DIR = "./data"
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# 启用缓存防止重复下载中断
-set_caching_enabled(True)
+# 默认已启用缓存
 
 # 设置 HF 镜像端点 (关键!)
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
