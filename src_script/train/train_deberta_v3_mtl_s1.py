@@ -4,7 +4,7 @@ import argparse
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
-from torch.cuda.amp import GradScaler, autocast
+# from torch.cuda.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 import pandas as pd
@@ -59,7 +59,7 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, sc
         y_sub = batch['y_sub'].to(device)
         y_id = batch['y_id'].to(device)
         
-        with autocast():
+        with torch.amp.autocast('cuda'):
             out = model(ids, mask)
             # Apply Focal Loss (or BCE) to main toxicity task
             l_tox = criterion_tox(out['logits_tox'], y_tox)
@@ -95,7 +95,7 @@ def evaluate(model, loader, device):
             ids = batch['input_ids'].to(device)
             mask = batch['attention_mask'].to(device)
             y_tox = batch['y_tox'].to(device).unsqueeze(-1)
-            with autocast():
+            with torch.amp.autocast('cuda'):
                 out = model(ids, mask)
                 loss = criterion(out['logits_tox'], y_tox)
             total_loss += loss.item()
@@ -169,7 +169,7 @@ def main():
         model = nn.DataParallel(model)
     
     optimizer = AdamW(model.parameters(), lr=args.lr)
-    scaler = GradScaler()
+    scaler = torch.amp.GradScaler('cuda')
     
     num_steps = int(len(train_ds) / args.batch_size / args.accum_steps * args.epochs)
     if args.scheduler == "plateau":

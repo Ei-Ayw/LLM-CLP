@@ -4,7 +4,7 @@ import argparse
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
-from torch.cuda.amp import GradScaler, autocast
+# from torch.cuda.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 import pandas as pd
@@ -54,7 +54,7 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, sc
         ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
         y_tox, y_sub, y_id, has_id = batch['y_tox'].to(device).unsqueeze(-1), batch['y_sub'].to(device), batch['y_id'].to(device), batch['has_id'].to(device)
         
-        with autocast():
+        with torch.amp.autocast('cuda'):
             out = model(ids, mask)
             if no_reweight:
                 l_tox = criterion_aux(out['logits_tox'], y_tox)
@@ -82,7 +82,7 @@ def evaluate(model, loader, device):
         for batch in tqdm(loader, desc="[Eval S2]"):
             ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
             y_tox = batch['y_tox'].to(device).unsqueeze(-1)
-            with autocast():
+            with torch.amp.autocast('cuda'):
                 out = model(ids, mask)
                 loss = criterion(out['logits_tox'], y_tox)
             total_loss += loss.item()
@@ -151,7 +151,7 @@ def main():
         model = nn.DataParallel(model)
 
     optimizer = AdamW(model.parameters(), lr=args.lr)
-    scaler = GradScaler()
+    scaler = torch.amp.GradScaler('cuda')
     
     if args.scheduler == "plateau":
         scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True)
