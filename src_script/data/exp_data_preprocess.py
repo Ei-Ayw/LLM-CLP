@@ -32,16 +32,16 @@ class DataAugmenter:
         self.bt_tok_de_en = None
 
     def download_nltk_resources(self):
-        try:
-            nltk.data.find('corpora/wordnet.zip')
-            nltk.data.find('tokenizers/punkt.zip')
-            nltk.data.find('taggers/averaged_perceptron_tagger.zip')
-        except LookupError:
-            print("Downloading NLTK resources...")
-            nltk.download('wordnet', quiet=True)
-            nltk.download('punkt', quiet=True)
-            nltk.download('averaged_perceptron_tagger', quiet=True)
-            nltk.download('omw-1.4', quiet=True)
+        resources = ['wordnet', 'punkt', 'averaged_perceptron_tagger', 'omw-1.4']
+        for res in resources:
+            try:
+                nltk.data.find(f'corpora/{res}' if res in ['wordnet', 'omw-1.4'] else f'tokenizers/{res}' if res == 'punkt' else f'taggers/{res}')
+            except LookupError:
+                print(f"Downloading NLTK resource: {res}...")
+                try:
+                    nltk.download(res, quiet=True)
+                except Exception as e:
+                    print(f"  [Warning] Failed to download {res}: {e}")
 
     def load_bt_models(self):
         """Lazy load translation models to save memory if not used"""
@@ -245,7 +245,26 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    INPUT_CSV = os.path.join(BASE_DIR, "data", "train.csv")
-    OUTPUT_DIR = os.path.join(BASE_DIR, "data")
+    DATA_DIR = os.path.join(BASE_DIR, "data")
+    INPUT_CSV = os.path.join(DATA_DIR, "train.csv")
+    OUTPUT_DIR = DATA_DIR
+    
+    # 自动解压逻辑
+    if not os.path.exists(INPUT_CSV):
+        import zipfile
+        zip_path = os.path.join(DATA_DIR, "jigsaw-unintended-bias-in-toxicity-classification.zip")
+        if os.path.exists(zip_path):
+            print(f"Detected dataset zip file. Unzipping {zip_path}...")
+            try:
+                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                    zip_ref.extractall(DATA_DIR)
+                print("Unzip successful.")
+            except Exception as e:
+                print(f"Failed to unzip: {e}")
+                exit(1)
+        else:
+            print(f"[Error] Data not found! Please upload 'train.csv' or the dataset zip file to: {DATA_DIR}")
+            print(f"Expected path: {INPUT_CSV}")
+            exit(1)
     
     preprocess_data(INPUT_CSV, OUTPUT_DIR, sample_size=args.sample_size, seed=args.seed, do_augment=not args.no_aug)
