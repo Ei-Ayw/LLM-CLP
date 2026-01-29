@@ -7,30 +7,57 @@ DATA_DIR="$PROJECT_DIR/data"
 mkdir -p "$DATA_DIR"
 
 # 2. 检查并安装 Kaggle CLI
-echo "Checking Kaggle API Client..."
-pip install kaggle -i https://pypi.tuna.tsinghua.edu.cn/simple
+# 2. 使用 Hugging Face Datasets 下载 (最稳方案)
+echo "Installing/Updating 'datasets' library..."
+pip install datasets pandas pyarrow -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-# 3. 自动配置 kaggle.json 凭证
-# 3. 配置 Kaggle 凭证 (使用您的 API Token)
-echo "Configuring Kaggle API Token..."
-export KAGGLE_API_TOKEN=KGAT_5e14fb44dabe299ff6edf8456d989c93
+echo "Downloading dataset from Hugging Face Mirror..."
+cd "$PROJECT_DIR"
 
-# 验证 Token 是否有效 (可选)
-# kaggle competitions list --head 5
+# 创建一个临时的 Python 脚本来处理下载和转换
+cat <<EOF > download_hf.py
+import os
+import pandas as pd
+from datasets import load_dataset, set_caching_enabled
 
-# 4. 下载数据集
-echo "Downloading dataset to $DATA_DIR..."
-cd "$DATA_DIR"
+DATA_DIR = "./data"
+os.makedirs(DATA_DIR, exist_ok=True)
 
-# 使用 Kaggle API 下载
-kaggle competitions download -c jigsaw-unintended-bias-in-toxicity-classification
+# 启用缓存防止重复下载中断
+set_caching_enabled(True)
 
-# 5. 解压
-if [ -f "jigsaw-unintended-bias-in-toxicity-classification.zip" ]; then
-    echo "Unzipping dataset..."
-    unzip -o jigsaw-unintended-bias-in-toxicity-classification.zip
-    echo "Done! Data is ready in $DATA_DIR"
-    ls -lh "$DATA_DIR/train.csv"
+# 设置 HF 镜像端点 (关键!)
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+
+print(f"Downloading from Hugging Face to {DATA_DIR}...")
+try:
+    # 尝试加载 Google Jigsaw Unintended Bias 数据集
+    ds = load_dataset("google/jigsaw_unintended_bias", split="train")
+    print("Download complete. Converting to CSV...")
+    
+    # 转换为 DataFrame
+    df = ds.to_pandas()
+    
+    # 打印列名确认
+    print("Columns found:", df.columns.tolist())
+    
+    # 保存为 train.csv
+    csv_path = os.path.join(DATA_DIR, "train.csv")
+    df.to_csv(csv_path, index=False)
+    print(f"Success! Saved to {csv_path}")
+    
+except Exception as e:
+    print(f"Error: {e}")
+EOF
+
+# 运行 Python 下载脚本
+python download_hf.py
+
+# 清理
+rm download_hf.py
+
+if [ -f "$DATA_DIR/train.csv" ]; then
+    echo "Dataset is ready: $DATA_DIR/train.csv"
 else
-    echo "Download failed. Please check your network or Kaggle API permissions."
+    echo "Download failed."
 fi
