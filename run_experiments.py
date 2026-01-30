@@ -128,14 +128,14 @@ def main():
         # run_script("data", "exp_data_preprocess.py", ["--sample_size", str(effective_sample_size), "--seed", str(args.seed)])
 
         # Group 1: Classical Strong Baseline (TF-IDF + LR)
-        run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
+        # run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
 
         # Group 2: Hybrid Contrastive Baseline (Strong Contrast)
-        run_script("train", "train_bert_cnn_bilstm.py", common)
+        # run_script("train", "train_bert_cnn_bilstm.py", common)
 
         # Group 3: Pretrained Transformer Baselines
         run_script("train", "train_vanilla_bert.py", common)
-        run_script("train", "train_vanilla_roberta.py", common)
+        # run_script("train", "train_vanilla_roberta.py", common)
         run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
 
         print("\n>>> 训练本文提出方案 (Stage 1 & 2)")
