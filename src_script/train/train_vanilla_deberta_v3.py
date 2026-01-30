@@ -82,7 +82,7 @@ def main():
     # [Performance] Hardware Acceleration
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.allow_tf32 = True
-    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.benchmark = False # 禁用 benchmark 防止某些环境下的 Segfault
     torch.manual_seed(args.seed)
     
     timestamp = datetime.now().strftime("%m%d_%H%M")
@@ -97,8 +97,8 @@ def main():
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len)
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len)
     
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True, persistent_workers=True, prefetch_factor=2)
-    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=4, pin_memory=True, persistent_workers=True, prefetch_factor=2)
+    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=0, pin_memory=True)
 
     model = VanillaDeBERTaV3().to(device)
     
@@ -106,7 +106,7 @@ def main():
         print(f"Using {torch.cuda.device_count()} GPUs for training DeBERTaV3...")
         model = nn.DataParallel(model)
         
-    optimizer = AdamW(model.parameters(), lr=args.lr, fused=True)
+    optimizer = AdamW(model.parameters(), lr=args.lr, fused=False) # 禁用 fused 模式，某些 CUDA 环境下会导致 Segfault
     scaler = torch.amp.GradScaler('cuda')
     
     num_steps = int(len(train_ds) / args.batch_size * args.epochs)

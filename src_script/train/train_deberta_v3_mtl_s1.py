@@ -138,7 +138,7 @@ def main():
     # [Performance] Hardware Acceleration
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.allow_tf32 = True
-    torch.backends.cudnn.benchmark = True
+    torch.backends.cudnn.benchmark = False
     torch.manual_seed(args.seed)
     
     timestamp = datetime.now().strftime("%m%d_%H%M")
@@ -164,8 +164,8 @@ def main():
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len, augment=not args.no_aug) # 根据参数决定增强
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len, augment=False)
     
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True, persistent_workers=True, prefetch_factor=2)
-    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size * 2, shuffle=False, num_workers=4, pin_memory=True, persistent_workers=True, prefetch_factor=2)
+    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=True)
+    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size * 2, shuffle=False, num_workers=0, pin_memory=True)
 
     model = DebertaV3MTL(args.model_name, use_attention_pooling=not args.no_pooling).to(device)
     
@@ -173,7 +173,7 @@ def main():
         print(f"Using {torch.cuda.device_count()} GPUs for training...")
         model = nn.DataParallel(model)
     
-    optimizer = AdamW(model.parameters(), lr=args.lr, fused=True)
+    optimizer = AdamW(model.parameters(), lr=args.lr, fused=False)
     scaler = torch.amp.GradScaler('cuda')
     
     num_steps = int(len(train_ds) / args.batch_size / args.accum_steps * args.epochs)
