@@ -39,7 +39,7 @@ from train_utils import EarlyStopping
 
 from loss_functions import BCEFocalLoss
 
-def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, scaler, alpha, beta, only_toxicity=False, use_focal=True):
+def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, alpha, beta, only_toxicity=False, use_focal=True):
     model.train()
     
     # 损失函数配置
@@ -60,24 +60,22 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, sc
         y_sub = batch['y_sub'].to(device)
         y_id = batch['y_id'].to(device)
         
-        with torch.amp.autocast('cuda'):
-            out = model(ids, mask)
-            # Apply Focal Loss (or BCE) to main toxicity task
-            l_tox = criterion_tox(out['logits_tox'], y_tox)
-            
-            if only_toxicity:
-                loss = l_tox
-            else:
-                l_sub = criterion_aux(out['logits_sub'], y_sub)
-                l_id = criterion_aux(out['logits_id'], y_id)
-                loss = l_tox + alpha * l_sub + beta * l_id
+        # with torch.amp.autocast('cuda'): # [Safe Mode] 移除 AMP
+        out = model(ids, mask)
+        l_tox = criterion_tox(out['logits_tox'], y_tox)
+        
+        if only_toxicity:
+            loss = l_tox
+        else:
+            l_sub = criterion_aux(out['logits_sub'], y_sub)
+            l_id = criterion_aux(out['logits_id'], y_id)
+            loss = l_tox + alpha * l_sub + beta * l_id
         
         loss = loss / accum_steps
-        scaler.scale(loss).backward()
+        loss.backward() # [Safe Mode] 直接反向传播
         
         if (i + 1) % accum_steps == 0:
-            scaler.step(optimizer)
-            scaler.update()
+            optimizer.step() # [Safe Mode] 直接更新
             if scheduler is not None and not isinstance(scheduler, ReduceLROnPlateau):
                 scheduler.step()
             optimizer.zero_grad()
@@ -96,9 +94,9 @@ def evaluate(model, loader, device):
             ids = batch['input_ids'].to(device)
             mask = batch['attention_mask'].to(device)
             y_tox = batch['y_tox'].to(device).unsqueeze(-1)
-            with torch.amp.autocast('cuda'):
-                out = model(ids, mask)
-                loss = criterion(out['logits_tox'], y_tox)
+            # with torch.amp.autocast('cuda'): # [Safe Mode]
+            out = model(ids, mask)
+            loss = criterion(out['logits_tox'], y_tox)
             total_loss += loss.item()
     return total_loss / len(loader)
 
@@ -174,7 +172,7 @@ def main():
         model = nn.DataParallel(model)
     
     optimizer = AdamW(model.parameters(), lr=args.lr, fused=False)
-    scaler = torch.amp.GradScaler('cuda')
+    # scaler = torch.amp.GradScaler('cuda')
     
     num_steps = int(len(train_ds) / args.batch_size / args.accum_steps * args.epochs)
     if args.scheduler == "plateau":
@@ -189,7 +187,7 @@ def main():
     for epoch in range(args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
         train_loss = train_one_epoch(
-          model, train_loader, optimizer, scheduler, device, args.accum_steps, scaler, 
+          model, train_loader, optimizer, scheduler, device, args.accum_steps, 
           args.alpha, args.beta, args.only_toxicity, 
           use_focal=not args.no_focal # Pass focal flag
         )

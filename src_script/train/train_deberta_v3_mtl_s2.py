@@ -46,7 +46,7 @@ def weighted_toxicity_loss(logits, targets, has_id, w_identity, w_id_toxic):
     loss = criterion(logits, targets)
     return (loss * weights).mean()
 
-def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, scaler, alpha, beta, w_identity, w_id_toxic, no_reweight=False):
+def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, alpha, beta, w_identity, w_id_toxic, no_reweight=False):
     model.train()
     criterion_aux = nn.BCEWithLogitsLoss()
     total_loss = 0
@@ -55,19 +55,19 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, sc
         ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
         y_tox, y_sub, y_id, has_id = batch['y_tox'].to(device).unsqueeze(-1), batch['y_sub'].to(device), batch['y_id'].to(device), batch['has_id'].to(device)
         
-        with torch.amp.autocast('cuda'):
-            out = model(ids, mask)
-            if no_reweight:
-                l_tox = criterion_aux(out['logits_tox'], y_tox)
-            else:
-                l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id, w_identity, w_id_toxic)
-            l_sub, l_id = criterion_aux(out['logits_sub'], y_sub), criterion_aux(out['logits_id'], y_id)
-            loss = l_tox + alpha * l_sub + beta * l_id
+        # with torch.amp.autocast('cuda'): # [Safe Mode]
+        out = model(ids, mask)
+        if no_reweight:
+            l_tox = criterion_aux(out['logits_tox'], y_tox)
+        else:
+            l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id, w_identity, w_id_toxic)
+        l_sub, l_id = criterion_aux(out['logits_sub'], y_sub), criterion_aux(out['logits_id'], y_id)
+        loss = l_tox + alpha * l_sub + beta * l_id
         
         loss = loss / accum_steps
-        scaler.scale(loss).backward()
+        loss.backward()
         if (i + 1) % accum_steps == 0:
-            scaler.step(optimizer); scaler.update()
+            optimizer.step()
             if scheduler is not None and not isinstance(scheduler, ReduceLROnPlateau):
                 scheduler.step()
             optimizer.zero_grad()
@@ -83,9 +83,9 @@ def evaluate(model, loader, device):
         for batch in tqdm(loader, desc="[Eval S2]"):
             ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
             y_tox = batch['y_tox'].to(device).unsqueeze(-1)
-            with torch.amp.autocast('cuda'):
-                out = model(ids, mask)
-                loss = criterion(out['logits_tox'], y_tox)
+            # with torch.amp.autocast('cuda'): # [Safe Mode]
+            out = model(ids, mask)
+            loss = criterion(out['logits_tox'], y_tox)
             total_loss += loss.item()
     return total_loss / len(loader)
 
@@ -156,7 +156,7 @@ def main():
         model = nn.DataParallel(model)
 
     optimizer = AdamW(model.parameters(), lr=args.lr)
-    scaler = torch.amp.GradScaler('cuda')
+    # scaler = torch.amp.GradScaler('cuda')
     
     if args.scheduler == "plateau":
         scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True)
@@ -168,7 +168,7 @@ def main():
     
     for epoch in range(args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
-        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, 1, scaler, args.alpha, args.beta, args.w_identity, args.w_id_toxic, args.no_reweight)
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, 1, args.alpha, args.beta, args.w_identity, args.w_id_toxic, args.no_reweight)
         val_loss = evaluate(model, val_loader, device)
         if isinstance(scheduler, ReduceLROnPlateau): scheduler.step(val_loss)
         loss_history["train"].append(train_loss); loss_history["val"].append(val_loss)

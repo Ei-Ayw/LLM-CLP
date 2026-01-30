@@ -34,7 +34,7 @@ from exp_data_loader import ToxicityDataset, sample_aligned_data
 from path_config import get_model_path, get_log_path
 from train_utils import EarlyStopping
 
-def train_one_epoch(model, loader, optimizer, scheduler, scaler, device):
+def train_one_epoch(model, loader, optimizer, scheduler, device):
     model.train()
     criterion = nn.BCEWithLogitsLoss()
     total_loss = 0
@@ -44,13 +44,12 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device):
         y = batch['y_tox'].to(device).unsqueeze(-1)
         
         optimizer.zero_grad()
-        with torch.amp.autocast('cuda'):
-            out = model(ids, mask)
-            loss = criterion(out['logits_tox'], y)
+        # [Safe Mode] 移除 AMP，改用全精度 FP32
+        out = model(ids, mask)
+        loss = criterion(out['logits_tox'], y)
         
-        scaler.scale(loss).backward()
-        scaler.step(optimizer)
-        scaler.update()
+        loss.backward()
+        optimizer.step()
         
         if scheduler is not None and not isinstance(scheduler, ReduceLROnPlateau):
             scheduler.step()
@@ -107,7 +106,7 @@ def main():
         model = nn.DataParallel(model)
         
     optimizer = AdamW(model.parameters(), lr=args.lr, fused=False) # 禁用 fused 模式，某些 CUDA 环境下会导致 Segfault
-    scaler = torch.amp.GradScaler('cuda')
+    # scaler = torch.amp.GradScaler('cuda') # [Safe Mode] 移除 Scaler
     
     num_steps = int(len(train_ds) / args.batch_size * args.epochs)
     if args.scheduler == "plateau":
@@ -121,7 +120,8 @@ def main():
 
     for epoch in range(args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
-        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, scaler, device)
+        # [Safe Mode] 移除 scaler 参数
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device)
         
         model.eval()
         v_loss = 0
@@ -129,9 +129,9 @@ def main():
             for batch in val_loader:
                 ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
                 y = batch['y_tox'].to(device).unsqueeze(-1)
-                with torch.amp.autocast('cuda'):
-                    out = model(ids, mask)
-                    v_loss += nn.BCEWithLogitsLoss()(out['logits_tox'], y).item()
+                # [Safe Mode] 全精度 FP32 推理
+                out = model(ids, mask)
+                v_loss += nn.BCEWithLogitsLoss()(out['logits_tox'], y).item()
         val_loss = v_loss / len(val_loader)
         
         if isinstance(scheduler, ReduceLROnPlateau):
