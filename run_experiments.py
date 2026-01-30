@@ -134,7 +134,7 @@ def main():
         # run_script("train", "train_bert_cnn_bilstm.py", common)
 
         # Group 3: Pretrained Transformer Baselines
-        run_script("train", "train_vanilla_bert.py", common)
+        # run_script("train", "train_vanilla_bert.py", common)
         # run_script("train", "train_vanilla_roberta.py", common)
         run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
 
