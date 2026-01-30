@@ -164,8 +164,8 @@ def main():
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len, augment=not args.no_aug) # 根据参数决定增强
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len, augment=False)
     
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=16, pin_memory=True, persistent_workers=True, prefetch_factor=4)
-    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size * 2, shuffle=False, num_workers=16, pin_memory=True, persistent_workers=True, prefetch_factor=4)
+    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=4, pin_memory=True, persistent_workers=True, prefetch_factor=2)
+    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size * 2, shuffle=False, num_workers=4, pin_memory=True, persistent_workers=True, prefetch_factor=2)
 
     model = DebertaV3MTL(args.model_name, use_attention_pooling=not args.no_pooling).to(device)
     
