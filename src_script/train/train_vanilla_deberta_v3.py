@@ -1,5 +1,6 @@
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # [Debug] 强制单卡运行，排除 DataParallel 干扰
 import sys
 import argparse
 import torch
