@@ -7,7 +7,7 @@ class BertCNNBiLSTM(nn.Module):
         super().__init__()
         try:
             # 移除 low_cpu_mem_usage=True 以解决 "Cannot copy out of meta tensor" 报错
-            self.bert = BertModel.from_pretrained(model_name_or_path)
+            self.bert = BertModel.from_pretrained(model_name_or_path, use_safetensors=True)
         except Exception as e:
             print(f"\n❌ [CRITICAL] 无法加载 BertCNN 权重: {e}")
             print(f"👉 提示: 请确保已运行 'python download_models.py' 且下载完整。")

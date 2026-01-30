@@ -10,7 +10,8 @@ class VanillaBERT(nn.Module):
             # 移除 low_cpu_mem_usage=True 以解决 "Cannot copy out of meta tensor" 报错
             self.model = AutoModelForSequenceClassification.from_pretrained(
                 model_path, 
-                config=self.config
+                config=self.config,
+                use_safetensors=True
             )
         except Exception as e:
             print(f"\n❌ [CRITICAL] 无法加载 BERT 权重: {e}")
