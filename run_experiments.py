@@ -41,7 +41,7 @@ from datetime import datetime
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RES_DIR = os.path.join(BASE_DIR, "src_result")
 MODEL_DIR = os.path.join(RES_DIR, "models")
-PYTHON_EXE = sys.executable
+PYTHON_EXE = sys.executable + " -u"
 
 # 核心离线环境配置
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
@@ -51,9 +51,9 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 def run_script(folder, script_name, args_list):
     """ 执行分层目录下的脚本 """
     script_path = os.path.join(BASE_DIR, "src_script", folder, script_name)
-    cmd = [PYTHON_EXE, script_path] + args_list
+    cmd = PYTHON_EXE.split() + [script_path] + args_list
     print(f"\n[HIERARCHY RUN] {folder}/{script_name}: {' '.join(cmd)}")
-    subprocess.run(cmd)
+    subprocess.run(cmd, check=True)
 
 def find_latest_checkpoint(identifier=None):
     if not os.path.exists(MODEL_DIR): return None
