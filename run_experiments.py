@@ -112,6 +112,15 @@ def main():
     if args.no_bar:
         common += ["--no_bar"]
 
+    # 针对 DeBERTaV3 (参数量较大/Attention机制不同) 进行显存特别优化
+    # 强制限制 DeBERTa 系列模型的最大 Batch Size 为 1024，防止 OOM
+    deberta_batch_size = min(args.batch_size, 1024)
+    deberta_common = common[:]
+    if "--batch_size" in deberta_common:
+        idx = deberta_common.index("--batch_size")
+        deberta_common[idx+1] = str(deberta_batch_size)
+
+
     # --- Phase 1: Data & Models Training ---
     if args.mode in ["all", "train"]:
         # 数据预处理: 生成 train_processed / val_processed / test_processed (80/10/10)
@@ -127,21 +136,20 @@ def main():
         # Group 3: Pretrained Transformer Baselines
         run_script("train", "train_vanilla_bert.py", common)
         run_script("train", "train_vanilla_roberta.py", common)
-        run_script("train", "train_vanilla_deberta_v3.py", common)
+        run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
 
-        # Group 4: Final Scheme (Proposed MTL Model)
         print("\n>>> 训练本文提出方案 (Stage 1 & 2)")
-        run_script("train", "train_deberta_v3_mtl_s1.py", common)
+        run_script("train", "train_deberta_v3_mtl_s1.py", deberta_common)
         s1_path = find_best_s1()
         if s1_path: 
-            run_script("train", "train_deberta_v3_mtl_s2.py", ["--s1_checkpoint", s1_path] + common)
+            run_script("train", "train_deberta_v3_mtl_s2.py", ["--s1_checkpoint", s1_path] + deberta_common)
 
     # --- Phase 2: Ablation (Switch Mode) ---
     if args.mode in ["all", "ablation"]:
         print("\n>>> 启动严格消融实验组 (Strict Ablation Matrix: Full S1+S2 Pipeline)")
         
-        # 基础命令集
-        base_cmd = common
+        # 基础命令集 (使用 DeBERTa 专用配置，因为消融实验全都是基于 DeBERTa 的)
+        base_cmd = deberta_common
 
         # Define Ablation Cases
         # Format: (CaseName, S1_Extra_Args, S2_Extra_Args)
