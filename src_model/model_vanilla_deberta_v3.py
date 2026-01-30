@@ -13,9 +13,7 @@ class VanillaDeBERTaV3(nn.Module):
                 config=self.config,
                 use_safetensors=True
             )
-            # 开启梯度检查点以节省显存
-            if hasattr(self.model, "gradient_checkpointing_enable"):
-                self.model.gradient_checkpointing_enable()
+            # [Removed] gradient_checkpointing 与 DataParallel 不兼容，会触发 SIGSEGV
         except Exception as e:
             print(f"\n❌ [CRITICAL] 无法加载 DeBERTa-v3 权重: {e}")
             print(f"👉 提示: 请确保已运行 'python download_models.py' 且下载完整。")
