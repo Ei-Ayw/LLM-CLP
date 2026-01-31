@@ -91,11 +91,40 @@ def get_dataloader(df, tokenizer, batch_size=16, max_len=256, shuffle=True, num_
 
 def sample_aligned_data(df, n_samples=200000, seed=42):
     """
-    根据用户要求，统一对齐所有实验的训练数据量。
+    类别平衡采样策略：
+    - 保留全部有毒样本（y_tox >= 0.5）
+    - 只对正常样本进行下采样，使总数达到 n_samples
+    - 如果有毒样本数量已经超过 n_samples，则只返回有毒样本
     """
-    if len(df) <= n_samples:
-        return df
-    return df.sample(n=n_samples, random_state=seed).reset_index(drop=True)
+    # 分离有毒和正常样本
+    toxic_df = df[df['y_tox'] >= 0.5]
+    normal_df = df[df['y_tox'] < 0.5]
+    
+    n_toxic = len(toxic_df)
+    n_normal = len(normal_df)
+    
+    print(f"  [Data Balance] 原始数据: {len(df)} 条 (有毒: {n_toxic}, 正常: {n_normal})")
+    
+    # 如果有毒样本已经超过目标，直接返回有毒样本
+    if n_toxic >= n_samples:
+        print(f"  [Data Balance] 有毒样本 ({n_toxic}) 已超过目标 ({n_samples})，仅使用有毒样本")
+        return toxic_df.sample(n=n_samples, random_state=seed).reset_index(drop=True)
+    
+    # 计算需要采样多少正常样本
+    n_normal_needed = n_samples - n_toxic
+    
+    if n_normal <= n_normal_needed:
+        # 正常样本不够，全部使用
+        result = pd.concat([toxic_df, normal_df], ignore_index=True)
+        print(f"  [Data Balance] 正常样本不足，使用全部: {len(result)} 条")
+    else:
+        # 对正常样本进行下采样
+        sampled_normal = normal_df.sample(n=n_normal_needed, random_state=seed)
+        result = pd.concat([toxic_df, sampled_normal], ignore_index=True)
+        print(f"  [Data Balance] 平衡采样完成: {len(result)} 条 (有毒: {n_toxic}, 正常: {n_normal_needed})")
+    
+    # 打乱顺序
+    return result.sample(frac=1, random_state=seed).reset_index(drop=True)
 
 if __name__ == "__main__":
     # 单元测试

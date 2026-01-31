@@ -191,7 +191,8 @@ def main():
     if args.scheduler == "plateau":
         scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True)
     else:
-        num_steps = int(len(train_ds) / args.batch_size / 4 * args.epochs)
+        world_size = dist.get_world_size()
+        num_steps = int(len(train_ds) / args.batch_size / world_size * args.epochs)
         scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=num_steps)
 
     early_stopping, best_val_loss = EarlyStopping(patience=args.early_patience), float('inf')
@@ -203,9 +204,14 @@ def main():
         
         train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, 1, args.alpha, args.beta, args.w_identity, args.w_id_toxic, args.no_reweight)
         
-        # 简化验证：只在主进程
+        # [Fix] 所有 Rank 都参与验证，避免 NCCL 超时
+        val_loss = evaluate(model, val_loader, device)
+        
+        # 同步所有 Rank 的验证完成
+        dist.barrier()
+        
+        # 只在主进程处理后续逻辑
         if is_main_process:
-            val_loss = evaluate(model, val_loader, device)
             if isinstance(scheduler, ReduceLROnPlateau): scheduler.step(val_loss)
             loss_history["train"].append(train_loss); loss_history["val"].append(val_loss)
             print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
@@ -216,7 +222,6 @@ def main():
             if early_stopping(val_loss): 
                 print(f">>> [Early Stop] 提前结束。")
         
-        dist.barrier()
         # 同步早停信号
         stop_signal = torch.tensor(1 if (is_main_process and early_stopping.early_stop) else 0).to(device)
         dist.all_reduce(stop_signal, op=dist.ReduceOp.MAX)
