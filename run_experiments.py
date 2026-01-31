@@ -113,7 +113,7 @@ def main():
     parser.add_argument("--sample_size", type=int, default=0, help="实验数据采样量 (0表示全量)")
     # 针对 4x A10 (24GB) 优化：显存充足，使用大 Batch 提高吞吐
     # MaxLen=128 下，单卡 24G 可支持 Batch=128+，4卡可支持 512+
-    parser.add_argument("--batch_size", type=int, default=1280, help="默认基础 Batch Size (长期稳定: 1280 for 4x24GB)")
+    parser.add_argument("--batch_size", type=int, default=96, help="默认基础 Batch Size (3卡 DataParallel 每卡32)")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max_len", type=int, default=128, help="短序列加速，默认 128")
     parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
