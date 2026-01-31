@@ -101,11 +101,17 @@ def evaluate(model, loader, device):
             total_loss += loss.item()
     return total_loss / len(loader)
 
+# DDP Imports
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data.distributed import DistributedSampler
+
 def main():
-    parser = argparse.ArgumentParser(description="DeBERTa-V3 MTL Stage 1 (AMP)")
+    parser = argparse.ArgumentParser(description="DeBERTa-V3 MTL Stage 1 (DDP)")
+    parser.add_argument("--local_rank", type=int, default=os.getenv("LOCAL_RANK", -1)) # DDP 必需
     parser.add_argument("--model_name", type=str, default="microsoft/deberta-v3-base")
     parser.add_argument("--sample_size", type=int, default=200000)
-    parser.add_argument("--batch_size", type=int, default=96, help="3090可用96+")
+    parser.add_argument("--batch_size", type=int, default=16, help="单卡BatchSize，DDP下设为16即可（总=4x16=64）")
     parser.add_argument("--lr", type=float, default=2e-5)
     parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
     parser.add_argument("--patience", type=int, default=1)
@@ -127,13 +133,19 @@ def main():
     
     args = parser.parse_args()
 
-    # 静默模式处理 (for nohup)
-    if args.no_bar:
+    # --- DDP Initialization ---
+    local_rank = int(os.environ["LOCAL_RANK"])
+    torch.cuda.set_device(local_rank)
+    dist.init_process_group(backend="nccl")
+    device = torch.device("cuda", local_rank)
+    is_main_process = (local_rank == 0)
+
+    # 静默模式处理 (仅主进程显示进度条，或者全部静默)
+    if args.no_bar or (not is_main_process):
         global tqdm
         from tqdm import tqdm as _tqdm
         tqdm = lambda *args, **kwargs: _tqdm(*args, **kwargs, disable=True)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # [Performance] Hardware Acceleration
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.allow_tf32 = True
@@ -153,31 +165,47 @@ def main():
     save_name = f"DebertaV3MTL_S1{suffix}_Sample{args.sample_size}_{timestamp}"
     save_path = get_model_path(save_name + ".pth")
 
-    print(f"\n>>> 启动实验: {save_name} | AMP: 开启")
+    if is_main_process:
+        print(f"\n>>> 启动实验: {save_name} | Mode: DDP")
 
     train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
     val_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "val_processed.parquet"))
     train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.seed)
     
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len, augment=not args.no_aug) # 根据参数决定增强
+    train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len, augment=not args.no_aug) 
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len, augment=False)
     
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size * 2, shuffle=False, num_workers=0, pin_memory=True)
+    # --- DDP Data Loading ---
+    train_sampler = DistributedSampler(train_ds, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(
+        train_ds, 
+        batch_size=args.batch_size, 
+        shuffle=False, # Shuffle handled by sampler
+        sampler=train_sampler,
+        num_workers=0, 
+        pin_memory=True
+    )
+    # 验证集简单处理，只让主进程验证，或者都验证但 sampler不shuffle
+    val_loader = torch.utils.data.DataLoader(
+        val_ds, 
+        batch_size=args.batch_size * 2, 
+        shuffle=False, 
+        num_workers=0, 
+        pin_memory=True
+    )
 
     model = DebertaV3MTL(args.model_name, use_attention_pooling=not args.no_pooling).to(device)
     
-    if torch.cuda.device_count() > 1:
-        print(f"Using {torch.cuda.device_count()} GPUs for training...")
-        model = nn.DataParallel(model)
+    # --- DDP Model Wrapping ---
+    model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
     
     optimizer = AdamW(model.parameters(), lr=args.lr, fused=False)
-    # scaler = torch.amp.GradScaler('cuda')
     
-    num_steps = int(len(train_ds) / args.batch_size / args.accum_steps * args.epochs)
+    num_steps = int(len(train_ds) / args.batch_size / 4 / args.accum_steps * args.epochs) # Scale by world size (4)
     if args.scheduler == "plateau":
-        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True)
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True if is_main_process else False)
     else:
         scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=int(0.1*num_steps), num_training_steps=num_steps)
 
@@ -186,43 +214,60 @@ def main():
     best_val_loss = float('inf')
     
     for epoch in range(args.epochs):
-        print(f"\nEpoch {epoch+1}/{args.epochs}")
+        train_sampler.set_epoch(epoch) # Shuffle for DDP
+        
+        if is_main_process: print(f"\nEpoch {epoch+1}/{args.epochs}")
+        
         train_loss = train_one_epoch(
           model, train_loader, optimizer, scheduler, device, args.accum_steps, 
           args.alpha, args.beta, args.only_toxicity, 
-          use_focal=not args.no_focal # Pass focal flag
+          use_focal=not args.no_focal
         )
-        val_loss = evaluate(model, val_loader, device)
         
-        if isinstance(scheduler, ReduceLROnPlateau):
-            scheduler.step(val_loss)
+        # 简化验证逻辑：只在主进程验证 (这样最快且不冲突)
+        if is_main_process:
+            val_loss = evaluate(model, val_loader, device)
             
-        loss_history["train"].append(train_loss)
-        loss_history["val"].append(val_loss)
-        print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+            if isinstance(scheduler, ReduceLROnPlateau):
+                scheduler.step(val_loss)
+                
+            loss_history["train"].append(train_loss)
+            loss_history["val"].append(val_loss)
+            print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+            
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                torch.save(model.module.state_dict(), save_path) # Save module only
+                print(f"  [Save] 更优模型已保存至: {save_path}")
+                
+            if early_stopping(val_loss):
+                print(f">>> [Early Stop] 提前结束。")
+                break
         
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            state_dict = model.module.state_dict() if isinstance(model, nn.DataParallel) else model.state_dict()
-            torch.save(state_dict, save_path)
-            print(f"  [Save] 更优模型已保存至: {save_path}")
-            
-        if early_stopping(val_loss):
-            print(f">>> [Early Stop] 提前结束。")
+        # 同步等待 (防止其他进程跑飞)
+        dist.barrier()
+        # 如果主进程决定早停，这里其实需要广播停止信号，但简化起见，让它们空跑完或手动对齐比较复杂。
+        # 鉴于 DDP 的复杂性，若主进程break，其他进程会在 barrier 处挂起或报错。
+        # 稳妥做法是广播 early_stop_signal。
+        stop_signal = torch.tensor(1 if (is_main_process and early_stopping.early_stop) else 0).to(device)
+        dist.all_reduce(stop_signal, op=dist.ReduceOp.MAX)
+        if stop_signal.item() == 1:
             break
     
-    # 保存结果与曲线图
-    with open(get_log_path(save_name + "_loss.json"), 'w') as f:
-        json.dump(loss_history, f, indent=2)
+    if is_main_process:
+        with open(get_log_path(save_name + "_loss.json"), 'w') as f:
+            json.dump(loss_history, f, indent=2)
+        
+        plt.figure(figsize=(10, 6))
+        plt.plot(range(1, len(loss_history["train"]) + 1), loss_history["train"], 'b-o', label='Train Loss')
+        plt.plot(range(1, len(loss_history["val"]) + 1), loss_history["val"], 'r-o', label='Val Loss')
+        plt.xlabel('Epoch')
+        plt.title(f'S1 Loss Curve: {save_name}')
+        plt.legend(); plt.grid(True, alpha=0.3)
+        plt.savefig(get_log_path(save_name + "_loss.png"), dpi=150); plt.close()
+        print(f">>> 实验完成。")
     
-    plt.figure(figsize=(10, 6))
-    plt.plot(range(1, len(loss_history["train"]) + 1), loss_history["train"], 'b-o', label='Train Loss')
-    plt.plot(range(1, len(loss_history["val"]) + 1), loss_history["val"], 'r-o', label='Val Loss')
-    plt.xlabel('Epoch')
-    plt.title(f'S1 Loss Curve: {save_name}')
-    plt.legend(); plt.grid(True, alpha=0.3)
-    plt.savefig(get_log_path(save_name + "_loss.png"), dpi=150); plt.close()
-    print(f">>> 实验完成。")
+    dist.destroy_process_group()
 
 if __name__ == "__main__":
     main()

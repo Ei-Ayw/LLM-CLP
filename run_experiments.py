@@ -2,6 +2,7 @@ import os
 import subprocess
 import argparse
 import sys
+import torch # Need to detect GPU count for launcher
 import time
 from datetime import datetime
 
@@ -53,10 +54,27 @@ os.environ["NCCL_P2P_DISABLE"] = "1"
 os.environ["NCCL_IB_DISABLE"] = "1"
 
 def run_script(folder, script_name, args_list):
-    """ 执行分层目录下的脚本 """
+    """ 执行分层目录下的脚本 (智能适配 DDP) """
     script_path = os.path.join(BASE_DIR, "src_script", folder, script_name)
-    cmd = PYTHON_EXE.split() + [script_path] + args_list
-    print(f"\n[HIERARCHY RUN] {folder}/{script_name}: {' '.join(cmd)}")
+    
+    # [Smart Mode] 如果是 DeBERTa 训练脚本，自动使用 torchrun 启动 DDP
+    if "deberta" in script_name and "train" in script_name:
+        # 获取显卡数量
+        nproc = torch.cuda.device_count()
+        print(f"\n[HIERARCHY RUN] 🚀 DDP Mode Enabled: {script_name} (Using {nproc} GPUs)")
+        
+        # 构造 torchrun 命令
+        # 相当于: torchrun --nproc_per_node=4 script.py ...
+        cmd = [
+            sys.executable, "-m", "torch.distributed.run",
+            f"--nproc_per_node={nproc}",
+            script_path
+        ] + args_list
+    else:
+        # 普通脚本保持原样
+        cmd = PYTHON_EXE.split() + [script_path] + args_list
+        print(f"\n[HIERARCHY RUN] {folder}/{script_name}: {' '.join(cmd)}")
+    
     subprocess.run(cmd, check=True)
 
 def find_latest_checkpoint(identifier=None):
@@ -132,14 +150,14 @@ def main():
         # run_script("data", "exp_data_preprocess.py", ["--sample_size", str(effective_sample_size), "--seed", str(args.seed)])
 
         # Group 1: Classical Strong Baseline (TF-IDF + LR)
-        run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
+        # run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
 
         # Group 2: Hybrid Contrastive Baseline (Strong Contrast)
-        run_script("train", "train_bert_cnn_bilstm.py", common)
+        # run_script("train", "train_bert_cnn_bilstm.py", common)
 
         # Group 3: Pretrained Transformer Baselines
-        run_script("train", "train_vanilla_bert.py", common)
-        run_script("train", "train_vanilla_roberta.py", common)
+        # run_script("train", "train_vanilla_bert.py", common)
+        # run_script("train", "train_vanilla_roberta.py", common)
         run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
 
         print("\n>>> 训练本文提出方案 (Stage 1 & 2)")
