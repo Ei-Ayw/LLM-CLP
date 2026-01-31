@@ -184,7 +184,7 @@ def preprocess_data(input_path, output_dir, sample_size=None, seed=42, do_augmen
     df['y_tox'] = (df[target_col] >= 0.5).astype(int)
     
     if sample_size and 0 < sample_size < len(df):
-        print(f">>> 类别平衡采样: 保留全部有毒样本，目标总数 {sample_size}...")
+        print(f">>> 类别平衡采样: 目标 50:50 比例，总数 {sample_size}...")
         
         # 分离有毒和正常样本
         toxic_df = df[df['y_tox'] == 1]
@@ -194,17 +194,25 @@ def preprocess_data(input_path, output_dir, sample_size=None, seed=42, do_augmen
         n_normal = len(normal_df)
         print(f"  原始数据: 有毒 {n_toxic} 条, 正常 {n_normal} 条")
         
-        # 计算需要多少正常样本
-        n_normal_needed = max(0, sample_size - n_toxic)
+        # 计算每类需要多少样本 (50:50)
+        n_per_class = sample_size // 2
         
-        if n_normal_needed < n_normal:
-            # 对正常样本进行下采样
-            sampled_normal = normal_df.sample(n=n_normal_needed, random_state=seed)
-            df = pd.concat([toxic_df, sampled_normal], ignore_index=True)
-            print(f"  平衡采样后: 有毒 {n_toxic} 条, 正常 {n_normal_needed} 条, 总计 {len(df)} 条")
+        # 采样有毒样本
+        if n_toxic >= n_per_class:
+            sampled_toxic = toxic_df.sample(n=n_per_class, random_state=seed)
         else:
-            # 正常样本不够，全部使用
-            print(f"  正常样本不足，使用全部: {len(df)} 条")
+            sampled_toxic = toxic_df  # 有毒样本不够，全部使用
+            n_per_class = n_toxic  # 调整正常样本数量以匹配
+        
+        # 采样正常样本
+        if n_normal >= n_per_class:
+            sampled_normal = normal_df.sample(n=n_per_class, random_state=seed)
+        else:
+            sampled_normal = normal_df  # 正常样本不够，全部使用
+        
+        df = pd.concat([sampled_toxic, sampled_normal], ignore_index=True)
+        print(f"  平衡采样后: 有毒 {len(sampled_toxic)} 条, 正常 {len(sampled_normal)} 条, 总计 {len(df)} 条")
+        print(f"  比例: {len(sampled_toxic)/len(df)*100:.1f}% : {len(sampled_normal)/len(df)*100:.1f}%")
         
         # 打乱顺序
         df = df.sample(frac=1, random_state=seed).reset_index(drop=True)
