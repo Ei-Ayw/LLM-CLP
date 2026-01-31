@@ -92,11 +92,17 @@ def get_dataloader(df, tokenizer, batch_size=16, max_len=256, shuffle=True, num_
 def sample_aligned_data(df, n_samples=200000, seed=42):
     """
     类别平衡采样策略：
-    - 保留全部有毒样本（y_tox >= 0.5）
-    - 只对正常样本进行下采样，使总数达到 n_samples
-    - 如果有毒样本数量已经超过 n_samples，则只返回有毒样本
+    - 如果数据已经 <= 目标大小，直接返回（避免重复采样）
+    - 否则进行 50:50 平衡采样
     """
-    # 分离有毒和正常样本
+    # 如果数据已经预处理过了（小于等于目标），直接返回
+    if len(df) <= n_samples:
+        n_toxic = (df['y_tox'] >= 0.5).sum()
+        n_normal = len(df) - n_toxic
+        print(f"  [Data Balance] 数据已预处理: {len(df)} 条 (有毒: {n_toxic}, 正常: {n_normal}) - 跳过采样")
+        return df
+    
+    # 以下是全量数据的平衡采样逻辑
     toxic_df = df[df['y_tox'] >= 0.5]
     normal_df = df[df['y_tox'] < 0.5]
     
@@ -105,23 +111,14 @@ def sample_aligned_data(df, n_samples=200000, seed=42):
     
     print(f"  [Data Balance] 原始数据: {len(df)} 条 (有毒: {n_toxic}, 正常: {n_normal})")
     
-    # 如果有毒样本已经超过目标，直接返回有毒样本
-    if n_toxic >= n_samples:
-        print(f"  [Data Balance] 有毒样本 ({n_toxic}) 已超过目标 ({n_samples})，仅使用有毒样本")
-        return toxic_df.sample(n=n_samples, random_state=seed).reset_index(drop=True)
+    # 50:50 平衡采样
+    n_per_class = n_samples // 2
     
-    # 计算需要采样多少正常样本
-    n_normal_needed = n_samples - n_toxic
+    sampled_toxic = toxic_df.sample(n=min(n_per_class, n_toxic), random_state=seed)
+    sampled_normal = normal_df.sample(n=min(n_per_class, n_normal), random_state=seed)
     
-    if n_normal <= n_normal_needed:
-        # 正常样本不够，全部使用
-        result = pd.concat([toxic_df, normal_df], ignore_index=True)
-        print(f"  [Data Balance] 正常样本不足，使用全部: {len(result)} 条")
-    else:
-        # 对正常样本进行下采样
-        sampled_normal = normal_df.sample(n=n_normal_needed, random_state=seed)
-        result = pd.concat([toxic_df, sampled_normal], ignore_index=True)
-        print(f"  [Data Balance] 平衡采样完成: {len(result)} 条 (有毒: {n_toxic}, 正常: {n_normal_needed})")
+    result = pd.concat([sampled_toxic, sampled_normal], ignore_index=True)
+    print(f"  [Data Balance] 平衡采样完成: {len(result)} 条 (有毒: {len(sampled_toxic)}, 正常: {len(sampled_normal)})")
     
     # 打乱顺序
     return result.sample(frac=1, random_state=seed).reset_index(drop=True)
