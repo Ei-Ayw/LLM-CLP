@@ -52,6 +52,7 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 # [Stable Mode] 强制禁用 NCCL P2P 和 IB 以防止 DataParallel 段错误
 os.environ["NCCL_P2P_DISABLE"] = "1"
 os.environ["NCCL_IB_DISABLE"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"  # [Fix] 只使用 3 张卡
 
 def run_script(folder, script_name, args_list):
     """ 执行分层目录下的脚本 (智能适配 DDP) """
@@ -127,7 +128,7 @@ def main():
     print(f"[{experiment_start_time.strftime('%Y-%m-%d %H:%M:%S')}] Experiment Session Started.")
 
     # 处理全量跑逻辑
-    effective_sample_size = args.sample_size if args.sample_size > 0 else 10_000_000
+    effective_sample_size = args.sample_size if args.sample_size > 0 else 300_000  # [Fix] 减少样本量加速训练
     is_full_mode = args.sample_size <= 0
     print(f"[{'FULL' if is_full_mode else 'SAMPLED'} MODE] Effective Sample Size: {effective_sample_size}")
 
@@ -161,17 +162,17 @@ def main():
     if args.mode in ["all", "train"]:
         # 数据预处理: 生成 train_processed / val_processed / test_processed (80/10/10)
         # 优化：直接在预处理阶段进行采样，避免生成庞大的全量中间文件
-        # run_script("data", "exp_data_preprocess.py", ["--sample_size", str(effective_sample_size), "--seed", str(args.seed)])
+        run_script("data", "exp_data_preprocess.py", ["--sample_size", str(effective_sample_size), "--seed", str(args.seed)])
 
         # Group 1: Classical Strong Baseline (TF-IDF + LR)
-        # run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
+        run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
 
         # Group 2: Hybrid Contrastive Baseline (Strong Contrast)
-        # run_script("train", "train_bert_cnn_bilstm.py", common)
+        run_script("train", "train_bert_cnn_bilstm.py", common)
 
         # Group 3: Pretrained Transformer Baselines
-        # run_script("train", "train_vanilla_bert.py", common)
-        # run_script("train", "train_vanilla_roberta.py", common)
+        run_script("train", "train_vanilla_bert.py", common)
+        run_script("train", "train_vanilla_roberta.py", common)
         run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
 
         print("\n>>> 训练本文提出方案 (Stage 1 & 2)")

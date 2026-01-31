@@ -203,7 +203,8 @@ def main():
     
     optimizer = AdamW(model.parameters(), lr=args.lr, fused=False)
     
-    num_steps = int(len(train_ds) / args.batch_size / 4 / args.accum_steps * args.epochs) # Scale by world size (4)
+    world_size = dist.get_world_size()
+    num_steps = int(len(train_ds) / args.batch_size / world_size / args.accum_steps * args.epochs)
     if args.scheduler == "plateau":
         scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True if is_main_process else False)
     else:
@@ -224,10 +225,14 @@ def main():
           use_focal=not args.no_focal
         )
         
-        # 简化验证逻辑：只在主进程验证 (这样最快且不冲突)
+        # [Fix] 所有 Rank 都参与验证，避免 NCCL 超时
+        val_loss = evaluate(model, val_loader, device)
+        
+        # 同步所有 Rank 的验证完成
+        dist.barrier()
+        
+        # 只在主进程处理后续逻辑
         if is_main_process:
-            val_loss = evaluate(model, val_loader, device)
-            
             if isinstance(scheduler, ReduceLROnPlateau):
                 scheduler.step(val_loss)
                 
@@ -242,13 +247,8 @@ def main():
                 
             if early_stopping(val_loss):
                 print(f">>> [Early Stop] 提前结束。")
-                break
         
-        # 同步等待 (防止其他进程跑飞)
-        dist.barrier()
-        # 如果主进程决定早停，这里其实需要广播停止信号，但简化起见，让它们空跑完或手动对齐比较复杂。
-        # 鉴于 DDP 的复杂性，若主进程break，其他进程会在 barrier 处挂起或报错。
-        # 稳妥做法是广播 early_stop_signal。
+        # 同步早停信号
         stop_signal = torch.tensor(1 if (is_main_process and early_stopping.early_stop) else 0).to(device)
         dist.all_reduce(stop_signal, op=dist.ReduceOp.MAX)
         if stop_signal.item() == 1:

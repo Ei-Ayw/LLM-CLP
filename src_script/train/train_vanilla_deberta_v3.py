@@ -139,7 +139,8 @@ def main():
         
     optimizer = AdamW(model.parameters(), lr=args.lr, fused=False) 
     
-    num_steps = int(len(train_ds) / args.batch_size / 4 * args.epochs)
+    world_size = dist.get_world_size()
+    num_steps = int(len(train_ds) / args.batch_size / world_size * args.epochs)
     if args.scheduler == "plateau":
         scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True if is_main_process else False)
     else:
@@ -155,18 +156,22 @@ def main():
 
         train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device)
         
-        # 简化验证逻辑：只在主进程验证
+        # [Fix] 所有 Rank 都参与验证，避免 NCCL 超时
+        model.eval()
+        v_loss = 0
+        with torch.no_grad():
+            for batch in val_loader:
+                ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
+                y = batch['y_tox'].to(device).unsqueeze(-1)
+                out = model(ids, mask)
+                v_loss += nn.BCEWithLogitsLoss()(out['logits_tox'], y).item()
+        val_loss = v_loss / len(val_loader)
+        
+        # 同步所有 Rank 的验证完成
+        dist.barrier()
+        
+        # 只在主进程处理后续逻辑
         if is_main_process:
-            model.eval()
-            v_loss = 0
-            with torch.no_grad():
-                for batch in val_loader:
-                    ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
-                    y = batch['y_tox'].to(device).unsqueeze(-1)
-                    out = model(ids, mask)
-                    v_loss += nn.BCEWithLogitsLoss()(out['logits_tox'], y).item()
-            val_loss = v_loss / len(val_loader)
-            
             if isinstance(scheduler, ReduceLROnPlateau):
                 scheduler.step(val_loss)
 
@@ -181,9 +186,8 @@ def main():
 
             if early_stopping(val_loss):
                 print(f">>> [Early Stop] 已触发。")
-                break
         
-        dist.barrier()
+        # 同步早停信号
         stop_signal = torch.tensor(1 if (is_main_process and early_stopping.early_stop) else 0).to(device)
         dist.all_reduce(stop_signal, op=dist.ReduceOp.MAX)
         if stop_signal.item() == 1:
