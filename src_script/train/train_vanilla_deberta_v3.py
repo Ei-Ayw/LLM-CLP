@@ -1,6 +1,7 @@
 import os
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # [Debug] 强制单卡运行，排除 DataParallel 干扰
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # [DDP Fix] 必须注释掉，否则 DDP 找不到其他卡
 import sys
 import argparse
 import torch
