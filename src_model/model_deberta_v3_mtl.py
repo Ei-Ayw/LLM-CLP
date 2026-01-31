@@ -27,7 +27,9 @@ class DebertaV3MTL(nn.Module):
             print(f"👉 提示: 请确保已运行 'python download_models.py' 且下载完整。")
             raise e
 
-        self.deberta.gradient_checkpointing_enable()
+        # [Fix] 禁用 gradient checkpointing - 与 DDP 冲突
+        # 如需单卡节省显存，可手动启用: self.deberta.gradient_checkpointing_enable()
+        # self.deberta.gradient_checkpointing_enable()
         self.use_attention_pooling = use_attention_pooling
         hidden_size = self.config.hidden_size
         
