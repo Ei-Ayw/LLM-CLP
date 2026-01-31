@@ -50,6 +50,7 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, al
     model.train()
     criterion_aux = nn.BCEWithLogitsLoss()
     total_loss = 0
+    optimizer.zero_grad() # [Fix] 显式初始化梯度
     pbar = tqdm(loader, desc="[Train S2 AMP]")
     for i, batch in enumerate(pbar):
         ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
