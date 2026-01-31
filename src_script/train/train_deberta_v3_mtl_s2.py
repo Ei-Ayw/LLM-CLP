@@ -184,6 +184,7 @@ def main():
     # --- DDP Model Wrapping ---
     model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
+    model._set_static_graph()  # [Fix] 兼容 gradient checkpointing
 
     optimizer = AdamW(model.parameters(), lr=args.lr)
     # scaler = torch.amp.GradScaler('cuda')

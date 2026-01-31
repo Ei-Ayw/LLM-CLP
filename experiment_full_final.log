@@ -1,0 +1,170 @@
+Loading data from /home/dell/workspace/01_nlp_toxicity_classification/data/train.csv...
+>>> 类别平衡采样: 目标 50:50 比例，总数 300000...
+  原始数据: 有毒 144334 条, 正常 1660540 条
+  平衡采样后: 有毒 144334 条, 正常 144334 条, 总计 288668 条
+  比例: 50.0% : 50.0%
+Processing labels...
+>>> Starting Data Augmentation using [SR, RI, RD, BT]...
+Downloading NLTK resource: wordnet...
+Downloading NLTK resource: omw-1.4...
+Generated 115467 augmented samples.
+
+============================================================
+>>> 数据预处理完成 - 最终统计
+============================================================
+  Train :  346,401 条 | 有毒: 230,934 ( 66.7%) | 正常: 115,467 | 比例 1:0.50
+  Val   :   28,867 条 | 有毒:  14,434 ( 50.0%) | 正常:  14,433 | 比例 1:1.00
+  Test  :   28,867 条 | 有毒:  14,433 ( 50.0%) | 正常:  14,434 | 比例 1:1.00
+------------------------------------------------------------
+  Total :  404,135 条 | 有毒: 259,801 ( 64.3%) | 正常: 144,334
+============================================================
+
+Preprocessing completed. Files saved to /home/dell/workspace/01_nlp_toxicity_classification/data
+WARNING:__main__:
+*****************************************
+Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
+*****************************************
+[Hardware] TF32 acceleration enabled for Ampere+ GPUs.
+
+>>> 启动实验: DebertaV3MTL_S1_Sample300000_0131_2257 | Mode: DDP
+[Hardware] TF32 acceleration enabled for Ampere+ GPUs.
+[Hardware] TF32 acceleration enabled for Ampere+ GPUs.
+  [Data Balance] 原始数据: 346401 条 (有毒: 230934, 正常: 115467)
+  [Data Balance] 平衡采样完成: 265467 条 (有毒: 150000, 正常: 115467)
+  [Data Balance] 原始数据: 346401 条 (有毒: 230934, 正常: 115467)
+  [Data Balance] 原始数据: 346401 条 (有毒: 230934, 正常: 115467)
+  [Data Balance] 平衡采样完成: 265467 条 (有毒: 150000, 正常: 115467)
+  [Data Balance] 平衡采样完成: 265467 条 (有毒: 150000, 正常: 115467)
+/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/convert_slow_tokenizer.py:566: UserWarning: The sentencepiece tokenizer that you are converting to a fast tokenizer uses the byte fallback option which is not implemented in the fast tokenizers. In practice this means that the fast version of the tokenizer can produce unknown tokens whereas the sentencepiece version would have converted these unknown tokens into a sequence of byte tokens matching the original piece of text.
+  warnings.warn(
+/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/convert_slow_tokenizer.py:566: UserWarning: The sentencepiece tokenizer that you are converting to a fast tokenizer uses the byte fallback option which is not implemented in the fast tokenizers. In practice this means that the fast version of the tokenizer can produce unknown tokens whereas the sentencepiece version would have converted these unknown tokens into a sequence of byte tokens matching the original piece of text.
+  warnings.warn(
+/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/convert_slow_tokenizer.py:566: UserWarning: The sentencepiece tokenizer that you are converting to a fast tokenizer uses the byte fallback option which is not implemented in the fast tokenizers. In practice this means that the fast version of the tokenizer can produce unknown tokens whereas the sentencepiece version would have converted these unknown tokens into a sequence of byte tokens matching the original piece of text.
+  warnings.warn(
+
+Epoch 1/6
+[rank0]: Traceback (most recent call last):
+[rank0]:   File "/home/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s1.py", line 273, in <module>
+[rank0]:     main()
+[rank0]:   File "/home/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s1.py", line 222, in main
+[rank0]:     train_loss = train_one_epoch(
+[rank0]:   File "/home/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s1.py", line 76, in train_one_epoch
+[rank0]:     loss.backward() # [Safe Mode] 直接反向传播
+[rank0]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/_tensor.py", line 581, in backward
+[rank0]:     torch.autograd.backward(
+[rank0]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/__init__.py", line 347, in backward
+[rank0]:     _engine_run_backward(
+[rank0]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/graph.py", line 825, in _engine_run_backward
+[rank0]:     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank0]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/function.py", line 307, in apply
+[rank0]:     return user_fn(self, *args)
+[rank0]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/utils/checkpoint.py", line 321, in backward
+[rank0]:     torch.autograd.backward(outputs_with_grad, args_with_grad)
+[rank0]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/__init__.py", line 347, in backward
+[rank0]:     _engine_run_backward(
+[rank0]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/graph.py", line 825, in _engine_run_backward
+[rank0]:     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank0]: RuntimeError: Expected to mark a variable ready only once. This error is caused by one of the following reasons: 1) Use of a module parameter outside the `forward` function. Please make sure model parameters are not shared across multiple concurrent forward-backward passes. or try to use _set_static_graph() as a workaround if this module graph does not change during training loop.2) Reused parameters in multiple reentrant backward passes. For example, if you use multiple `checkpoint` functions to wrap the same part of your model, it would result in the same set of parameters been used by different reentrant backward passes multiple times, and hence marking a variable ready multiple times. DDP does not support such use cases in default. You can try to use _set_static_graph() as a workaround if your module graph does not change over iterations.
+[rank0]: Parameter at index 193 with name deberta.encoder.layer.11.output.LayerNorm.weight has been marked as ready twice. This means that multiple autograd engine  hooks have fired for this particular parameter during this iteration.
+[rank1]: Traceback (most recent call last):
+[rank1]:   File "/home/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s1.py", line 273, in <module>
+[rank1]:     main()
+[rank1]:   File "/home/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s1.py", line 222, in main
+[rank1]:     train_loss = train_one_epoch(
+[rank1]:   File "/home/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s1.py", line 76, in train_one_epoch
+[rank1]:     loss.backward() # [Safe Mode] 直接反向传播
+[rank1]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/_tensor.py", line 581, in backward
+[rank1]:     torch.autograd.backward(
+[rank1]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/__init__.py", line 347, in backward
+[rank1]:     _engine_run_backward(
+[rank1]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/graph.py", line 825, in _engine_run_backward
+[rank1]:     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank1]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/function.py", line 307, in apply
+[rank1]:     return user_fn(self, *args)
+[rank1]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/utils/checkpoint.py", line 321, in backward
+[rank1]:     torch.autograd.backward(outputs_with_grad, args_with_grad)
+[rank1]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/__init__.py", line 347, in backward
+[rank1]:     _engine_run_backward(
+[rank1]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/graph.py", line 825, in _engine_run_backward
+[rank1]:     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank1]: RuntimeError: Expected to mark a variable ready only once. This error is caused by one of the following reasons: 1) Use of a module parameter outside the `forward` function. Please make sure model parameters are not shared across multiple concurrent forward-backward passes. or try to use _set_static_graph() as a workaround if this module graph does not change during training loop.2) Reused parameters in multiple reentrant backward passes. For example, if you use multiple `checkpoint` functions to wrap the same part of your model, it would result in the same set of parameters been used by different reentrant backward passes multiple times, and hence marking a variable ready multiple times. DDP does not support such use cases in default. You can try to use _set_static_graph() as a workaround if your module graph does not change over iterations.
+[rank1]: Parameter at index 193 with name deberta.encoder.layer.11.output.LayerNorm.weight has been marked as ready twice. This means that multiple autograd engine  hooks have fired for this particular parameter during this iteration.
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s1.py", line 273, in <module>
+[rank2]:     main()
+[rank2]:   File "/home/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s1.py", line 222, in main
+[rank2]:     train_loss = train_one_epoch(
+[rank2]:   File "/home/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s1.py", line 76, in train_one_epoch
+[rank2]:     loss.backward() # [Safe Mode] 直接反向传播
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/_tensor.py", line 581, in backward
+[rank2]:     torch.autograd.backward(
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/__init__.py", line 347, in backward
+[rank2]:     _engine_run_backward(
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/graph.py", line 825, in _engine_run_backward
+[rank2]:     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/function.py", line 307, in apply
+[rank2]:     return user_fn(self, *args)
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/utils/checkpoint.py", line 321, in backward
+[rank2]:     torch.autograd.backward(outputs_with_grad, args_with_grad)
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/__init__.py", line 347, in backward
+[rank2]:     _engine_run_backward(
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/autograd/graph.py", line 825, in _engine_run_backward
+[rank2]:     return Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+[rank2]: RuntimeError: Expected to mark a variable ready only once. This error is caused by one of the following reasons: 1) Use of a module parameter outside the `forward` function. Please make sure model parameters are not shared across multiple concurrent forward-backward passes. or try to use _set_static_graph() as a workaround if this module graph does not change during training loop.2) Reused parameters in multiple reentrant backward passes. For example, if you use multiple `checkpoint` functions to wrap the same part of your model, it would result in the same set of parameters been used by different reentrant backward passes multiple times, and hence marking a variable ready multiple times. DDP does not support such use cases in default. You can try to use _set_static_graph() as a workaround if your module graph does not change over iterations.
+[rank2]: Parameter at index 193 with name deberta.encoder.layer.11.output.LayerNorm.weight has been marked as ready twice. This means that multiple autograd engine  hooks have fired for this particular parameter during this iteration.
+[rank0]:[W131 22:57:39.529857369 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+W0131 22:57:40.816502 1926350 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 1926416 closing signal SIGTERM
+W0131 22:57:40.818024 1926350 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 1926417 closing signal SIGTERM
+E0131 22:57:41.046801 1926350 site-packages/torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 1) local_rank: 0 (pid: 1926415) of binary: /home/dell/anaconda3/envs/pyt38/bin/python
+Traceback (most recent call last):
+  File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/runpy.py", line 197, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/runpy.py", line 87, in _run_code
+    exec(code, run_globals)
+  File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/distributed/run.py", line 923, in <module>
+    main()
+  File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 355, in wrapper
+    return f(*args, **kwargs)
+  File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/distributed/run.py", line 919, in main
+    run(args)
+  File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/distributed/run.py", line 910, in run
+    elastic_launch(
+  File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/distributed/launcher/api.py", line 138, in __call__
+    return launch_agent(self._config, self._entrypoint, list(args))
+  File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/torch/distributed/launcher/api.py", line 269, in launch_agent
+    raise ChildFailedError(
+torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
+============================================================
+/home/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s1.py FAILED
+------------------------------------------------------------
+Failures:
+  <NO_OTHER_FAILURES>
+------------------------------------------------------------
+Root Cause (first observed failure):
+[0]:
+  time      : 2026-01-31_22:57:40
+  host      : hao-jing-ai-192-168-209-213
+  rank      : 0 (local_rank: 0)
+  exitcode  : 1 (pid: 1926415)
+  error_file: <N/A>
+  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
+============================================================
+[2026-01-31 22:56:23] Experiment Session Started.
+[FULL MODE] Effective Sample Size: 300000
+>>> [Auto-Detect] Non-interactive shell detected. Disabling progress bars.
+
+[HIERARCHY RUN] data/exp_data_preprocess.py: /home/dell/anaconda3/envs/pyt38/bin/python -u /home/dell/workspace/01_nlp_toxicity_classification/src_script/data/exp_data_preprocess.py --sample_size 300000 --seed 42
+
+>>> 训练本文提出方案 (Stage 1 & 2)
+
+[HIERARCHY RUN] 🚀 DDP Mode Enabled: train_deberta_v3_mtl_s1.py (Using 3 GPUs)
+Traceback (most recent call last):
+  File "/home/dell/workspace/01_nlp_toxicity_classification/run_experiments.py", line 285, in <module>
+    main()
+  File "/home/dell/workspace/01_nlp_toxicity_classification/run_experiments.py", line 180, in main
+    run_script("train", "train_deberta_v3_mtl_s1.py", deberta_common)
+  File "/home/dell/workspace/01_nlp_toxicity_classification/run_experiments.py", line 93, in run_script
+    subprocess.run(cmd, check=True)
+  File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/subprocess.py", line 528, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/home/dell/anaconda3/envs/pyt38/bin/python', '-m', 'torch.distributed.run', '--nproc_per_node=3', '/home/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s1.py', '--sample_size', '300000', '--batch_size', '8', '--seed', '42', '--max_len', '128', '--scheduler', 'plateau', '--patience', '1', '--early_patience', '3', '--no_bar']' returned non-zero exit status 1.
