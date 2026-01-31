@@ -149,9 +149,9 @@ def main():
     if args.no_bar:
         common += ["--no_bar"]
 
-    # 针对 DeBERTaV3 (禁用 gradient checkpointing 后显存充足)
-    # Batch Size: 32 per GPU × 3 GPUs = 96
-    deberta_batch_size = min(args.batch_size, 96)
+    # 针对 DeBERTaV3: 训练脚本中 batch_size 是单卡值
+    # 32 per GPU × 3 GPUs = 96 total, ~12GB 显存/卡
+    deberta_batch_size = 32
     deberta_common = common[:]
     if "--batch_size" in deberta_common:
         idx = deberta_common.index("--batch_size")
