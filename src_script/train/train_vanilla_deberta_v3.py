@@ -58,10 +58,16 @@ def train_one_epoch(model, loader, optimizer, scheduler, device):
         pbar.set_postfix(loss=f"{total_loss/(i+1):.4f}")
     return total_loss / len(loader)
 
+# DDP Imports
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data.distributed import DistributedSampler
+
 def main():
-    parser = argparse.ArgumentParser(description="Vanilla DeBERTa Training (AMP)")
+    parser = argparse.ArgumentParser(description="Vanilla DeBERTa Training (DDP)")
+    parser.add_argument("--local_rank", type=int, default=os.getenv("LOCAL_RANK", -1))
     parser.add_argument("--sample_size", type=int, default=200000)
-    parser.add_argument("--batch_size", type=int, default=64, help="DeBERTa较重，暂设64")
+    parser.add_argument("--batch_size", type=int, default=16, help="单卡BatchSize，DDP下建议16")
     parser.add_argument("--lr", type=float, default=2e-5)
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--seed", type=int, default=42)
@@ -72,22 +78,31 @@ def main():
     parser.add_argument("--no_bar", action="store_true")
     args = parser.parse_args()
 
-    # 静默模式处理 (for nohup)
-    if args.no_bar:
+    # --- DDP Initialization ---
+    local_rank = int(os.environ["LOCAL_RANK"])
+    torch.cuda.set_device(local_rank)
+    dist.init_process_group(backend="nccl")
+    device = torch.device("cuda", local_rank)
+    is_main_process = (local_rank == 0)
+
+    # 静默模式处理 (仅主进程显示进度条)
+    if args.no_bar or (not is_main_process):
         global tqdm
         from tqdm import tqdm as _tqdm
         tqdm = lambda *args, **kwargs: _tqdm(*args, **kwargs, disable=True)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # [Performance] Hardware Acceleration
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.allow_tf32 = True
-    torch.backends.cudnn.benchmark = False # 禁用 benchmark 防止某些环境下的 Segfault
+    torch.backends.cudnn.benchmark = False 
     torch.manual_seed(args.seed)
     
     timestamp = datetime.now().strftime("%m%d_%H%M")
     save_basename = f"VanillaDeBERTaV3_Sample{args.sample_size}_{timestamp}"
     save_path = get_model_path(save_basename + ".pth")
+
+    if is_main_process:
+        print(f"\n>>> 启动实验: {save_basename} | Mode: DDP (Vanilla)")
 
     train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
     val_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "val_processed.parquet"))
@@ -97,21 +112,35 @@ def main():
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len)
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len)
     
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size, shuffle=False, num_workers=0, pin_memory=True)
+    # --- DDP Data Loading ---
+    train_sampler = DistributedSampler(train_ds, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(
+        train_ds, 
+        batch_size=args.batch_size, 
+        shuffle=False, 
+        sampler=train_sampler,
+        num_workers=0, 
+        pin_memory=True
+    )
+    val_loader = torch.utils.data.DataLoader(
+        val_ds, 
+        batch_size=args.batch_size * 2, 
+        shuffle=False, 
+        num_workers=0, 
+        pin_memory=True
+    )
 
     model = VanillaDeBERTaV3().to(device)
     
-    if torch.cuda.device_count() > 1:
-        print(f"Using {torch.cuda.device_count()} GPUs for training DeBERTaV3...")
-        model = nn.DataParallel(model)
+    # --- DDP Model Wrapping ---
+    model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
         
-    optimizer = AdamW(model.parameters(), lr=args.lr, fused=False) # 禁用 fused 模式，某些 CUDA 环境下会导致 Segfault
-    # scaler = torch.amp.GradScaler('cuda') # [Safe Mode] 移除 Scaler
+    optimizer = AdamW(model.parameters(), lr=args.lr, fused=False) 
     
-    num_steps = int(len(train_ds) / args.batch_size * args.epochs)
+    num_steps = int(len(train_ds) / args.batch_size / 4 * args.epochs)
     if args.scheduler == "plateau":
-        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True)
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True if is_main_process else False)
     else:
         scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=int(0.1*num_steps), num_training_steps=num_steps)
 
@@ -120,55 +149,60 @@ def main():
     loss_history = {"train": [], "val": []}
 
     for epoch in range(args.epochs):
-        print(f"\nEpoch {epoch+1}/{args.epochs}")
-        # [Safe Mode] 移除 scaler 参数
+        train_sampler.set_epoch(epoch)
+        if is_main_process: print(f"\nEpoch {epoch+1}/{args.epochs}")
+
         train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device)
         
-        model.eval()
-        v_loss = 0
-        with torch.no_grad():
-            for batch in val_loader:
-                ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
-                y = batch['y_tox'].to(device).unsqueeze(-1)
-                # [Safe Mode] 全精度 FP32 推理
-                out = model(ids, mask)
-                v_loss += nn.BCEWithLogitsLoss()(out['logits_tox'], y).item()
-        val_loss = v_loss / len(val_loader)
-        
-        if isinstance(scheduler, ReduceLROnPlateau):
-            scheduler.step(val_loss)
+        # 简化验证逻辑：只在主进程验证
+        if is_main_process:
+            model.eval()
+            v_loss = 0
+            with torch.no_grad():
+                for batch in val_loader:
+                    ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
+                    y = batch['y_tox'].to(device).unsqueeze(-1)
+                    out = model(ids, mask)
+                    v_loss += nn.BCEWithLogitsLoss()(out['logits_tox'], y).item()
+            val_loss = v_loss / len(val_loader)
+            
+            if isinstance(scheduler, ReduceLROnPlateau):
+                scheduler.step(val_loss)
 
-        loss_history["train"].append(float(train_loss))
-        loss_history["val"].append(float(val_loss))
-        print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
-        
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            state_dict = model.module.state_dict() if isinstance(model, nn.DataParallel) else model.state_dict()
-            torch.save(state_dict, save_path)
-            print(f"  [Save] 更优模型已保存至: {save_path}")
+            loss_history["train"].append(float(train_loss))
+            loss_history["val"].append(float(val_loss))
+            print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+            
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                torch.save(model.module.state_dict(), save_path)
+                print(f"  [Save] 更优模型已保存至: {save_path}")
 
-        if early_stopping(val_loss):
-            print(f">>> [Early Stop] 已触发。")
+            if early_stopping(val_loss):
+                print(f">>> [Early Stop] 已触发。")
+                break
+        
+        dist.barrier()
+        stop_signal = torch.tensor(1 if (is_main_process and early_stopping.early_stop) else 0).to(device)
+        dist.all_reduce(stop_signal, op=dist.ReduceOp.MAX)
+        if stop_signal.item() == 1:
             break
 
-    # 保存结果
-    loss_json_path = get_log_path(save_basename + "_loss.json")
-    with open(loss_json_path, 'w') as f:
-        json.dump(loss_history, f, indent=2)
+    if is_main_process:
+        # 保存结果
+        loss_json_path = get_log_path(save_basename + "_loss.json")
+        with open(loss_json_path, 'w') as f:
+            json.dump(loss_history, f, indent=2)
+        
+        plt.figure(figsize=(10, 6))
+        plt.plot(range(1, len(loss_history["train"]) + 1), loss_history["train"], 'b-o', label='Train Loss')
+        plt.plot(range(1, len(loss_history["val"]) + 1), loss_history["val"], 'r-o', label='Val Loss')
+        plt.xlabel('Epoch'); plt.ylabel('Loss'); plt.title(f'Training Loss Curve: {save_basename}')
+        plt.legend(); plt.grid(True, alpha=0.3); plt.tight_layout()
+        plt.savefig(get_log_path(save_basename + "_loss.png"), dpi=150); plt.close()
+        print(f">>> 实验完成。")
     
-    plt.figure(figsize=(10, 6))
-    plt.plot(range(1, len(loss_history["train"]) + 1), loss_history["train"], 'b-o', label='Train Loss')
-    plt.plot(range(1, len(loss_history["val"]) + 1), loss_history["val"], 'r-o', label='Val Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title(f'Training Loss Curve: {save_basename}')
-    plt.legend()
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
-    plt.savefig(get_log_path(save_basename + "_loss.png"), dpi=150)
-    plt.close()
-    print(f">>> 实验完成。")
+    dist.destroy_process_group()
 
 if __name__ == "__main__":
     main()

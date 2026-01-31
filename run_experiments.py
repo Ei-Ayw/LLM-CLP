@@ -63,13 +63,27 @@ def run_script(folder, script_name, args_list):
         nproc = torch.cuda.device_count()
         print(f"\n[HIERARCHY RUN] 🚀 DDP Mode Enabled: {script_name} (Using {nproc} GPUs)")
         
+        # [Fix] 强制修正 Batch Size 以防止 OOM (DDP下 bs 为单卡)
+        # 之前传进来的 args_list 可能含 --batch_size 64，这会让每张卡都跑 64 -> 必炸
+        new_args = []
+        skip_next = False
+        for arg in args_list:
+            if skip_next:
+                skip_next = False
+                continue
+            if arg == "--batch_size":
+                new_args.extend(["--batch_size", "8"]) # 强行设为 8 (总 32)
+                skip_next = True
+            else:
+                new_args.append(arg)
+        
         # 构造 torchrun 命令
         # 相当于: torchrun --nproc_per_node=4 script.py ...
         cmd = [
             sys.executable, "-m", "torch.distributed.run",
             f"--nproc_per_node={nproc}",
             script_path
-        ] + args_list
+        ] + new_args
     else:
         # 普通脚本保持原样
         cmd = PYTHON_EXE.split() + [script_path] + args_list
