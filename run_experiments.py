@@ -48,6 +48,10 @@ os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
 os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
+# [Stable Mode] 强制禁用 NCCL P2P 和 IB 以防止 DataParallel 段错误
+os.environ["NCCL_P2P_DISABLE"] = "1"
+os.environ["NCCL_IB_DISABLE"] = "1"
+
 def run_script(folder, script_name, args_list):
     """ 执行分层目录下的脚本 """
     script_path = os.path.join(BASE_DIR, "src_script", folder, script_name)
