@@ -14,6 +14,9 @@ import numpy as np
 from datetime import datetime
 import json
 import matplotlib.pyplot as plt
+import torch.distributed as dist
+from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.utils.data.distributed import DistributedSampler
 
 # =============================================================================
 # ### 核心训练脚本：train_deberta_mtl_stage2.py (AMP加速版) ###
@@ -115,15 +118,25 @@ def main():
     parser.add_argument("--ablation_tag", type=str, default=None)
 
     args = parser.parse_args()
-
-    # 静默模式处理 (for nohup)
-    if args.no_bar:
+    
+    # --- DDP Initialization ---
+    args.local_rank = int(os.environ.get("LOCAL_RANK", -1))
+    if args.local_rank != -1:
+        torch.cuda.set_device(args.local_rank)
+        dist.init_process_group(backend="nccl")
+        device = torch.device("cuda", args.local_rank)
+        is_main_process = (args.local_rank == 0)
+    else:
+        # Fallback for non-DDP run (though we expect torchrun)
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        is_main_process = True
+    
+    # 静默模式处理 (仅主进程显示)
+    if args.no_bar or (not is_main_process):
         global tqdm
         from tqdm import tqdm as _tqdm
-        # 强制覆盖 tqdm 构造函数，默认 disable=True
         tqdm = lambda *args, **kwargs: _tqdm(*args, **kwargs, disable=True)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # [Performance] Hardware Acceleration - Safe Mode
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.allow_tf32 = True
@@ -144,17 +157,33 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len, augment=not args.no_aug) # 开启简单数据增强
     val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len, augment=False)
-    train_loader = torch.utils.data.DataLoader(train_ds, batch_size=args.batch_size, shuffle=True, num_workers=0, pin_memory=True)
-    val_loader = torch.utils.data.DataLoader(val_ds, batch_size=args.batch_size * 2, shuffle=False, num_workers=0, pin_memory=True)
+    # --- DDP Data Loading ---
+    train_sampler = DistributedSampler(train_ds, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(
+        train_ds, 
+        batch_size=args.batch_size, 
+        shuffle=False, 
+        sampler=train_sampler,
+        num_workers=0, 
+        pin_memory=True
+    )
+    # S2 的验证集也只在主进程跑简单点
+    val_loader = torch.utils.data.DataLoader(
+        val_ds, 
+        batch_size=args.batch_size * 2, 
+        shuffle=False, 
+        num_workers=0, 
+        pin_memory=True
+    )
 
     model = DebertaV3MTL(args.model_name).to(device)
     if os.path.exists(args.s1_checkpoint):
         model.load_state_dict(torch.load(args.s1_checkpoint, map_location=device))
         print(f"  [Success] 加载 S1 权重成功。")
 
-    if torch.cuda.device_count() > 1:
-        print(f"Using {torch.cuda.device_count()} GPUs for training S2...")
-        model = nn.DataParallel(model)
+    # --- DDP Model Wrapping ---
+    model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
+    model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
 
     optimizer = AdamW(model.parameters(), lr=args.lr)
     # scaler = torch.amp.GradScaler('cuda')
@@ -162,29 +191,46 @@ def main():
     if args.scheduler == "plateau":
         scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True)
     else:
-        scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=int(len(train_ds)/args.batch_size*args.epochs))
+        num_steps = int(len(train_ds) / args.batch_size / 4 * args.epochs)
+        scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=num_steps)
 
     early_stopping, best_val_loss = EarlyStopping(patience=args.early_patience), float('inf')
     loss_history = {"train": [], "val": []}
     
     for epoch in range(args.epochs):
-        print(f"\nEpoch {epoch+1}/{args.epochs}")
+        train_sampler.set_epoch(epoch)
+        if is_main_process: print(f"\nEpoch {epoch+1}/{args.epochs}")
+        
         train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, 1, args.alpha, args.beta, args.w_identity, args.w_id_toxic, args.no_reweight)
-        val_loss = evaluate(model, val_loader, device)
-        if isinstance(scheduler, ReduceLROnPlateau): scheduler.step(val_loss)
-        loss_history["train"].append(train_loss); loss_history["val"].append(val_loss)
-        print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss; 
-            state_dict = model.module.state_dict() if isinstance(model, nn.DataParallel) else model.state_dict()
-            torch.save(state_dict, save_path)
-        if early_stopping(val_loss): break
+        
+        # 简化验证：只在主进程
+        if is_main_process:
+            val_loss = evaluate(model, val_loader, device)
+            if isinstance(scheduler, ReduceLROnPlateau): scheduler.step(val_loss)
+            loss_history["train"].append(train_loss); loss_history["val"].append(val_loss)
+            print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f}")
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                torch.save(model.module.state_dict(), save_path)
+            
+            if early_stopping(val_loss): 
+                print(f">>> [Early Stop] 提前结束。")
+        
+        dist.barrier()
+        # 同步早停信号
+        stop_signal = torch.tensor(1 if (is_main_process and early_stopping.early_stop) else 0).to(device)
+        dist.all_reduce(stop_signal, op=dist.ReduceOp.MAX)
+        if stop_signal.item() == 1:
+            break
     
-    with open(get_log_path(save_name + "_loss.json"), 'w') as f: json.dump(loss_history, f, indent=2)
-    plt.figure(figsize=(10, 6)); plt.plot(range(1, len(loss_history["train"])+1), loss_history["train"], 'b-o', label='Train Loss')
-    plt.plot(range(1, len(loss_history["val"])+1), loss_history["val"], 'r-o', label='Val Loss')
-    plt.title(f'S2 Loss Curve: {save_name}'); plt.legend(); plt.grid(True, alpha=0.3)
-    plt.savefig(get_log_path(save_name + "_loss.png"), dpi=150); plt.close()
+    if is_main_process:
+        with open(get_log_path(save_name + "_loss.json"), 'w') as f: json.dump(loss_history, f, indent=2)
+        plt.figure(figsize=(10, 6)); plt.plot(range(1, len(loss_history["train"])+1), loss_history["train"], 'b-o', label='Train Loss')
+        plt.plot(range(1, len(loss_history["val"])+1), loss_history["val"], 'r-o', label='Val Loss')
+        plt.title(f'S2 Loss Curve: {save_name}'); plt.legend(); plt.grid(True, alpha=0.3)
+        plt.savefig(get_log_path(save_name + "_loss.png"), dpi=150); plt.close()
+    
+    dist.destroy_process_group()
 
 if __name__ == "__main__":
     main()
