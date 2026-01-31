@@ -149,9 +149,9 @@ def main():
     if args.no_bar:
         common += ["--no_bar"]
 
-    # 针对 DeBERTaV3 (参数量较大/Attention机制不同) 进行显存特别优化
-    # [FP32 Safe Mode] Batch Size 降级至 64 (16 per GPU) 以确保绝对稳定
-    deberta_batch_size = min(args.batch_size, 64)
+    # 针对 DeBERTaV3 (禁用 gradient checkpointing 后显存充足)
+    # Batch Size: 32 per GPU × 3 GPUs = 96
+    deberta_batch_size = min(args.batch_size, 96)
     deberta_common = common[:]
     if "--batch_size" in deberta_common:
         idx = deberta_common.index("--batch_size")
