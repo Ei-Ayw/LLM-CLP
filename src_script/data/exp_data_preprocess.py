@@ -180,17 +180,41 @@ def preprocess_data(input_path, output_dir, sample_size=None, seed=42, do_augmen
     
     df = pd.read_csv(input_path, usecols=use_cols)
     
+    # 先标记有毒/正常标签（用于分层采样）
+    df['y_tox'] = (df[target_col] >= 0.5).astype(int)
+    
     if sample_size and 0 < sample_size < len(df):
-        print(f"Sampling data down to {sample_size}...")
-        df = df.sample(n=sample_size, random_state=seed)
+        print(f">>> 类别平衡采样: 保留全部有毒样本，目标总数 {sample_size}...")
+        
+        # 分离有毒和正常样本
+        toxic_df = df[df['y_tox'] == 1]
+        normal_df = df[df['y_tox'] == 0]
+        
+        n_toxic = len(toxic_df)
+        n_normal = len(normal_df)
+        print(f"  原始数据: 有毒 {n_toxic} 条, 正常 {n_normal} 条")
+        
+        # 计算需要多少正常样本
+        n_normal_needed = max(0, sample_size - n_toxic)
+        
+        if n_normal_needed < n_normal:
+            # 对正常样本进行下采样
+            sampled_normal = normal_df.sample(n=n_normal_needed, random_state=seed)
+            df = pd.concat([toxic_df, sampled_normal], ignore_index=True)
+            print(f"  平衡采样后: 有毒 {n_toxic} 条, 正常 {n_normal_needed} 条, 总计 {len(df)} 条")
+        else:
+            # 正常样本不够，全部使用
+            print(f"  正常样本不足，使用全部: {len(df)} 条")
+        
+        # 打乱顺序
+        df = df.sample(frac=1, random_state=seed).reset_index(drop=True)
     
     print("Processing labels...")
     df[identity_cols] = df[identity_cols].fillna(0)
     df[subtype_cols] = df[subtype_cols].fillna(0)
     df['has_identity'] = (df[identity_cols].max(axis=1) >= 0.5).astype(int)
-    df['y_tox'] = (df[target_col] >= 0.5).astype(int)
     
-    # Split
+    # Split (注意：y_tox 已经在上面计算过了)
     train_df, temp_df = train_test_split(df, test_size=0.20, random_state=seed, stratify=df['y_tox'])
     val_df, test_df = train_test_split(temp_df, test_size=0.50, random_state=seed, stratify=temp_df['y_tox'])
     
@@ -228,8 +252,26 @@ def preprocess_data(input_path, output_dir, sample_size=None, seed=42, do_augmen
             aug_df = pd.DataFrame(aug_list)
             print(f"Generated {len(aug_df)} augmented samples.")
             train_df = pd.concat([train_df, aug_df], axis=0).sample(frac=1, random_state=seed).reset_index(drop=True)
-            
-    print(f"Final Train size: {len(train_df)} | Val size: {len(val_df)} | Test size: {len(test_df)}")
+    
+    # === 打印最终数据统计 ===
+    print("\n" + "="*60)
+    print(">>> 数据预处理完成 - 最终统计")
+    print("="*60)
+    
+    for split_name, split_df in [("Train", train_df), ("Val", val_df), ("Test", test_df)]:
+        n_total = len(split_df)
+        n_toxic = (split_df['y_tox'] == 1).sum()
+        n_normal = (split_df['y_tox'] == 0).sum()
+        ratio = n_normal / n_toxic if n_toxic > 0 else float('inf')
+        pct_toxic = n_toxic / n_total * 100
+        print(f"  {split_name:6s}: {n_total:>8,} 条 | 有毒: {n_toxic:>7,} ({pct_toxic:5.1f}%) | 正常: {n_normal:>7,} | 比例 1:{ratio:.2f}")
+    
+    total_all = len(train_df) + len(val_df) + len(test_df)
+    total_toxic = (train_df['y_tox'] == 1).sum() + (val_df['y_tox'] == 1).sum() + (test_df['y_tox'] == 1).sum()
+    total_normal = total_all - total_toxic
+    print("-"*60)
+    print(f"  {'Total':6s}: {total_all:>8,} 条 | 有毒: {total_toxic:>7,} ({total_toxic/total_all*100:5.1f}%) | 正常: {total_normal:>7,}")
+    print("="*60 + "\n")
     
     os.makedirs(output_dir, exist_ok=True)
     train_df.to_parquet(os.path.join(output_dir, 'train_processed.parquet'), index=False)
