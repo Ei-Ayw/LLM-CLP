@@ -2,8 +2,6 @@ WARNING:__main__:
 *****************************************
 Setting OMP_NUM_THREADS environment variable for each process to be 1 in default, to avoid your system being overloaded, please further tune the variable for optimal performance in your application as needed. 
 *****************************************
-The cache for model files in Transformers v4.22.0 has been updated. Migrating your old cache. This is a one-time only operation. You can interrupt this and resume the migration later on by calling `transformers.utils.move_cache()`.
-0it [00:00, ?it/s]0it [00:00, ?it/s]
 [Hardware] TF32 acceleration enabled for Ampere+ GPUs.
 [Hardware] TF32 acceleration enabled for Ampere+ GPUs.
 [Hardware] TF32 acceleration enabled for Ampere+ GPUs.
@@ -13,13 +11,13 @@ The cache for model files in Transformers v4.22.0 has been updated. Migrating yo
   [Data Balance] 原始数据: 346401 条 (有毒: 230934, 正常: 115467)
   [Data Balance] 平衡采样完成: 265467 条 (有毒: 150000, 正常: 115467)
   [Data Balance] 平衡采样完成: 265467 条 (有毒: 150000, 正常: 115467)
-/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
-  warnings.warn(
-/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
-  warnings.warn(
 /home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
   warnings.warn(
 /home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/convert_slow_tokenizer.py:551: UserWarning: The sentencepiece tokenizer that you are converting to a fast tokenizer uses the byte fallback option which is not implemented in the fast tokenizers. In practice this means that the fast version of the tokenizer can produce unknown tokens whereas the sentencepiece version would have converted these unknown tokens into a sequence of byte tokens matching the original piece of text.
+  warnings.warn(
+/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
+  warnings.warn(
+/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
   warnings.warn(
 /home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/convert_slow_tokenizer.py:551: UserWarning: The sentencepiece tokenizer that you are converting to a fast tokenizer uses the byte fallback option which is not implemented in the fast tokenizers. In practice this means that the fast version of the tokenizer can produce unknown tokens whereas the sentencepiece version would have converted these unknown tokens into a sequence of byte tokens matching the original piece of text.
   warnings.warn(
@@ -145,10 +143,10 @@ The cache for model files in Transformers v4.22.0 has been updated. Migrating yo
 [rank1]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/modeling_utils.py", line 3666, in from_pretrained
 [rank1]:     raise EnvironmentError(
 [rank1]: OSError: Can't load the model for 'microsoft/deberta-v3-base'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'microsoft/deberta-v3-base' is the correct path to a directory containing a file named pytorch_model.bin, tf_model.h5, model.ckpt or flax_model.msgpack.
-[rank0]:[W201 14:15:37.379544549 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
-W0201 14:15:37.840586 1988958 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 1989024 closing signal SIGTERM
-W0201 14:15:37.842065 1988958 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 1989025 closing signal SIGTERM
-E0201 14:15:38.057728 1988958 site-packages/torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 1) local_rank: 0 (pid: 1989023) of binary: /home/dell/anaconda3/envs/pyt38/bin/python
+[rank0]:[W201 14:20:29.919220893 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+W0201 14:20:29.328588 1989490 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 1989556 closing signal SIGTERM
+W0201 14:20:29.330123 1989490 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 1989557 closing signal SIGTERM
+E0201 14:20:29.527074 1989490 site-packages/torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 1) local_rank: 0 (pid: 1989555) of binary: /home/dell/anaconda3/envs/pyt38/bin/python
 Traceback (most recent call last):
   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/runpy.py", line 197, in _run_module_as_main
     return _run_code(code, main_globals, None,
@@ -175,14 +173,14 @@ Failures:
 ------------------------------------------------------------
 Root Cause (first observed failure):
 [0]:
-  time      : 2026-02-01_14:15:37
+  time      : 2026-02-01_14:20:29
   host      : hao-jing-ai-192-168-209-213
   rank      : 0 (local_rank: 0)
-  exitcode  : 1 (pid: 1989023)
+  exitcode  : 1 (pid: 1989555)
   error_file: <N/A>
   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
 ============================================================
-[2026-02-01 14:15:28] Experiment Session Started.
+[2026-02-01 14:20:22] Experiment Session Started.
 [FULL MODE] Effective Sample Size: 300000
 >>> [Auto-Detect] Non-interactive shell detected. Disabling progress bars.
 
