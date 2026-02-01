@@ -183,7 +183,7 @@ def main():
 
     # --- DDP Model Wrapping ---
     model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
-    model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
+    model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
 
     optimizer = AdamW(model.parameters(), lr=args.lr)
     # scaler = torch.amp.GradScaler('cuda')
