@@ -41,8 +41,9 @@ do
     while true; do
         echo "尝试下载 (第 $((retries+1)) 次)..."
         
-        # 核心下载命令 (改用 python -m 调用以避开 PATH 问题)
-        python -m huggingface_hub.commands.huggingface_cli download "$model" --cache-dir "${CACHE_DIR}/hub" --resume-download
+        # 核心下载命令 (尝试定位二进制文件以避开 PATH 问题)
+        export PATH="$PATH:$(dirname $(which python))"
+        huggingface-cli download "$model" --cache-dir "${CACHE_DIR}/hub" --resume-download
         
         if [ $? -eq 0 ]; then
             echo "✅ $model 下载成功！"
