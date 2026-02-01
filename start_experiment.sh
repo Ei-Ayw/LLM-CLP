@@ -10,7 +10,7 @@ echo ">>> 日志实时输出至: experiment_full_final.log"
 export NCCL_P2P_DISABLE=1
 export NCCL_IB_DISABLE=1
 
-# 锁死本地目录，绝不联网
+# 设置本地模型缓存路径并禁用联网
 export HF_HOME="/data/dell/workspace/01_nlp_toxicity_classification/pretrained_models"
 export TRANSFORMERS_OFFLINE=1
 export HF_HUB_OFFLINE=1
