@@ -10,20 +10,31 @@ os.environ["HF_HOME"] = CACHE_DIR
 
 from huggingface_hub import snapshot_download
 
+import time
+
 def run_download(model_id):
     print(f"\n>>>> 开始下载模型: {model_id}")
-    try:
-        # 使用 snapshot_download API，支持断点续传和镜像站
-        snapshot_download(
-            repo_id=model_id,
-            cache_dir=CACHE_DIR,
-            resume_download=True,
-            local_files_only=False
-        )
-        print(f"✅ 模型 {model_id} 下载/校验完成！")
-    except Exception as e:
-        print(f"❌ 模型 {model_id} 下载失败: {e}")
-        print(f"提示: 请检查网络连接或手动重试。")
+    max_retries = 20  # 最大重试次数
+    for attempt in range(max_retries):
+        try:
+            # 使用 snapshot_download API，支持断点续传和镜像站
+            snapshot_download(
+                repo_id=model_id,
+                cache_dir=CACHE_DIR,
+                resume_download=True,
+                local_files_only=False
+            )
+            print(f"✅ 模型 {model_id} 下载/校验完成！")
+            return  # 成功后直接返回
+        except Exception as e:
+            print(f"⚠️ 模型 {model_id} 下载失败 (尝试 {attempt + 1}/{max_retries}): {e}")
+            if attempt < max_retries - 1:
+                wait_time = 5 + attempt * 2  # 递增等待时间
+                print(f"⏳ 等待 {wait_time} 秒后重试...")
+                time.sleep(wait_time)
+            else:
+                print(f"❌ 模型 {model_id} 最终下载失败，请检查网络设置。")
+                # 不抛出异常，继续尝试下一个模型，或者根据需要决定是否终止
 
 if __name__ == "__main__":
     # 确保文件夹存在
