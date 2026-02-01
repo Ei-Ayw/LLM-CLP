@@ -162,7 +162,7 @@ def main():
     if args.mode in ["all", "train"]:
         # 数据预处理: 生成 train_processed / val_processed / test_processed (80/10/10)
         # 优化：直接在预处理阶段进行采样，避免生成庞大的全量中间文件
-        run_script("data", "exp_data_preprocess.py", ["--sample_size", str(effective_sample_size), "--seed", str(args.seed)])
+        # run_script("data", "exp_data_preprocess.py", ["--sample_size", str(effective_sample_size), "--seed", str(args.seed)])
 
         # [暂时注释] 等主模型跑完再跑对比模型
         # Group 1: Classical Strong Baseline (TF-IDF + LR)
@@ -177,7 +177,7 @@ def main():
         # run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
 
         print("\n>>> 训练本文提出方案 (Stage 1 & 2)")
-        run_script("train", "train_deberta_v3_mtl_s1.py", deberta_common)
+        # run_script("train", "train_deberta_v3_mtl_s1.py", deberta_common)
         s1_path = find_best_s1()
         if s1_path: 
             run_script("train", "train_deberta_v3_mtl_s2.py", ["--s1_checkpoint", s1_path] + deberta_common)
