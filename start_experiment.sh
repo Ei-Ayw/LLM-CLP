@@ -9,6 +9,10 @@ echo ">>> [2/3] 启动全量实验流程 (Group 1-4 + 消融实验)..."
 echo ">>> 日志实时输出至: experiment_full_final.log"
 export NCCL_P2P_DISABLE=1
 export NCCL_IB_DISABLE=1
+# 强制使用当前项目下的预训练模型缓存
+export HF_HOME="$(pwd)/pretrained_models"
+export TRANSFORMERS_OFFLINE=1
+
 nohup python run_experiments.py > experiment_full_final.log 2>&1 &
 
 echo ">>> [3/3] 启动成功！"
