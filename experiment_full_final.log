@@ -17,9 +17,9 @@ Setting OMP_NUM_THREADS environment variable for each process to be 1 in default
   warnings.warn(
 /home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
   warnings.warn(
-/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
-  warnings.warn(
 /home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/convert_slow_tokenizer.py:551: UserWarning: The sentencepiece tokenizer that you are converting to a fast tokenizer uses the byte fallback option which is not implemented in the fast tokenizers. In practice this means that the fast version of the tokenizer can produce unknown tokens whereas the sentencepiece version would have converted these unknown tokens into a sequence of byte tokens matching the original piece of text.
+  warnings.warn(
+/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/tokenization_utils_base.py:1601: FutureWarning: `clean_up_tokenization_spaces` was not set. It will be set to `True` by default. This behavior will be depracted in transformers v4.45, and will be then set to `False` by default. For more details check this issue: https://github.com/huggingface/transformers/issues/31884
   warnings.warn(
 /home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/convert_slow_tokenizer.py:551: UserWarning: The sentencepiece tokenizer that you are converting to a fast tokenizer uses the byte fallback option which is not implemented in the fast tokenizers. In practice this means that the fast version of the tokenizer can produce unknown tokens whereas the sentencepiece version would have converted these unknown tokens into a sequence of byte tokens matching the original piece of text.
   warnings.warn(
@@ -66,43 +66,6 @@ Setting OMP_NUM_THREADS environment variable for each process to be 1 in default
 
 ❌ [CRITICAL] 无法加载 DeBERTa-MTL 权重: Can't load the model for 'microsoft/deberta-v3-base'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'microsoft/deberta-v3-base' is the correct path to a directory containing a file named pytorch_model.bin, tf_model.h5, model.ckpt or flax_model.msgpack.
 👉 提示: 请确保已运行 'python download_models.py' 且下载完整。
-[rank2]: Traceback (most recent call last):
-[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/modeling_utils.py", line 3565, in from_pretrained
-[rank2]:     resolved_archive_file, revision, is_sharded = auto_conversion(
-[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/safetensors_conversion.py", line 111, in auto_conversion
-[rank2]:     raise e
-[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/safetensors_conversion.py", line 90, in auto_conversion
-[rank2]:     sha = get_conversion_pr_reference(api, pretrained_model_name_or_path, **cached_file_kwargs)
-[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/safetensors_conversion.py", line 65, in get_conversion_pr_reference
-[rank2]:     private = api.model_info(model_id).private
-[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
-[rank2]:     return fn(*args, **kwargs)
-[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/huggingface_hub/hf_api.py", line 2647, in model_info
-[rank2]:     headers = self._build_hf_headers(token=token)
-[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/huggingface_hub/hf_api.py", line 9518, in _build_hf_headers
-[rank2]:     return build_hf_headers(
-[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/huggingface_hub/utils/_deprecation.py", line 101, in inner_f
-[rank2]:     return f(*args, **kwargs)
-[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
-[rank2]:     return fn(*args, **kwargs)
-[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/huggingface_hub/utils/_headers.py", line 139, in build_hf_headers
-[rank2]:     hf_headers.update(headers)
-[rank2]: ValueError: dictionary update sequence element #0 has length 1; 2 is required
-
-[rank2]: The above exception was the direct cause of the following exception:
-
-[rank2]: Traceback (most recent call last):
-[rank2]:   File "/data/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s2.py", line 241, in <module>
-[rank2]:     main()
-[rank2]:   File "/data/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s2.py", line 179, in main
-[rank2]:     model = DebertaV3MTL(args.model_name).to(device)
-[rank2]:   File "/data/dell/workspace/01_nlp_toxicity_classification/src_model/model_deberta_v3_mtl.py", line 28, in __init__
-[rank2]:     raise e
-[rank2]:   File "/data/dell/workspace/01_nlp_toxicity_classification/src_model/model_deberta_v3_mtl.py", line 24, in __init__
-[rank2]:     self.deberta = DebertaV2Model.from_pretrained(model_path_or_name, use_safetensors=True)
-[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/modeling_utils.py", line 3666, in from_pretrained
-[rank2]:     raise EnvironmentError(
-[rank2]: OSError: Can't load the model for 'microsoft/deberta-v3-base'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'microsoft/deberta-v3-base' is the correct path to a directory containing a file named pytorch_model.bin, tf_model.h5, model.ckpt or flax_model.msgpack.
 
 ❌ [CRITICAL] 无法加载 DeBERTa-MTL 权重: Can't load the model for 'microsoft/deberta-v3-base'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'microsoft/deberta-v3-base' is the correct path to a directory containing a file named pytorch_model.bin, tf_model.h5, model.ckpt or flax_model.msgpack.
 👉 提示: 请确保已运行 'python download_models.py' 且下载完整。
@@ -143,10 +106,47 @@ Setting OMP_NUM_THREADS environment variable for each process to be 1 in default
 [rank1]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/modeling_utils.py", line 3666, in from_pretrained
 [rank1]:     raise EnvironmentError(
 [rank1]: OSError: Can't load the model for 'microsoft/deberta-v3-base'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'microsoft/deberta-v3-base' is the correct path to a directory containing a file named pytorch_model.bin, tf_model.h5, model.ckpt or flax_model.msgpack.
-[rank0]:[W201 14:20:29.919220893 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
-W0201 14:20:29.328588 1989490 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 1989556 closing signal SIGTERM
-W0201 14:20:29.330123 1989490 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 1989557 closing signal SIGTERM
-E0201 14:20:29.527074 1989490 site-packages/torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 1) local_rank: 0 (pid: 1989555) of binary: /home/dell/anaconda3/envs/pyt38/bin/python
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/modeling_utils.py", line 3565, in from_pretrained
+[rank2]:     resolved_archive_file, revision, is_sharded = auto_conversion(
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/safetensors_conversion.py", line 111, in auto_conversion
+[rank2]:     raise e
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/safetensors_conversion.py", line 90, in auto_conversion
+[rank2]:     sha = get_conversion_pr_reference(api, pretrained_model_name_or_path, **cached_file_kwargs)
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/safetensors_conversion.py", line 65, in get_conversion_pr_reference
+[rank2]:     private = api.model_info(model_id).private
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+[rank2]:     return fn(*args, **kwargs)
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/huggingface_hub/hf_api.py", line 2647, in model_info
+[rank2]:     headers = self._build_hf_headers(token=token)
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/huggingface_hub/hf_api.py", line 9518, in _build_hf_headers
+[rank2]:     return build_hf_headers(
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/huggingface_hub/utils/_deprecation.py", line 101, in inner_f
+[rank2]:     return f(*args, **kwargs)
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/huggingface_hub/utils/_validators.py", line 114, in _inner_fn
+[rank2]:     return fn(*args, **kwargs)
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/huggingface_hub/utils/_headers.py", line 139, in build_hf_headers
+[rank2]:     hf_headers.update(headers)
+[rank2]: ValueError: dictionary update sequence element #0 has length 1; 2 is required
+
+[rank2]: The above exception was the direct cause of the following exception:
+
+[rank2]: Traceback (most recent call last):
+[rank2]:   File "/data/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s2.py", line 241, in <module>
+[rank2]:     main()
+[rank2]:   File "/data/dell/workspace/01_nlp_toxicity_classification/src_script/train/train_deberta_v3_mtl_s2.py", line 179, in main
+[rank2]:     model = DebertaV3MTL(args.model_name).to(device)
+[rank2]:   File "/data/dell/workspace/01_nlp_toxicity_classification/src_model/model_deberta_v3_mtl.py", line 28, in __init__
+[rank2]:     raise e
+[rank2]:   File "/data/dell/workspace/01_nlp_toxicity_classification/src_model/model_deberta_v3_mtl.py", line 24, in __init__
+[rank2]:     self.deberta = DebertaV2Model.from_pretrained(model_path_or_name, use_safetensors=True)
+[rank2]:   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/site-packages/transformers/modeling_utils.py", line 3666, in from_pretrained
+[rank2]:     raise EnvironmentError(
+[rank2]: OSError: Can't load the model for 'microsoft/deberta-v3-base'. If you were trying to load it from 'https://huggingface.co/models', make sure you don't have a local directory with the same name. Otherwise, make sure 'microsoft/deberta-v3-base' is the correct path to a directory containing a file named pytorch_model.bin, tf_model.h5, model.ckpt or flax_model.msgpack.
+[rank0]:[W201 14:24:10.479529691 ProcessGroupNCCL.cpp:1250] Warning: WARNING: process group has NOT been destroyed before we destruct ProcessGroupNCCL. On normal program exit, the application should call destroy_process_group to ensure that any pending NCCL operations have finished in this process. In rare cases this process can exit before this point and block the progress of another member of the process group. This constraint has always been present,  but this warning has only been added since PyTorch 2.4 (function operator())
+W0201 14:24:10.957329 1989881 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 1989947 closing signal SIGTERM
+W0201 14:24:10.958866 1989881 site-packages/torch/distributed/elastic/multiprocessing/api.py:897] Sending process 1989948 closing signal SIGTERM
+E0201 14:24:11.174311 1989881 site-packages/torch/distributed/elastic/multiprocessing/api.py:869] failed (exitcode: 1) local_rank: 0 (pid: 1989946) of binary: /home/dell/anaconda3/envs/pyt38/bin/python
 Traceback (most recent call last):
   File "/home/dell/anaconda3/envs/pyt38/lib/python3.9/runpy.py", line 197, in _run_module_as_main
     return _run_code(code, main_globals, None,
@@ -173,14 +173,14 @@ Failures:
 ------------------------------------------------------------
 Root Cause (first observed failure):
 [0]:
-  time      : 2026-02-01_14:20:29
+  time      : 2026-02-01_14:24:10
   host      : hao-jing-ai-192-168-209-213
   rank      : 0 (local_rank: 0)
-  exitcode  : 1 (pid: 1989555)
+  exitcode  : 1 (pid: 1989946)
   error_file: <N/A>
   traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
 ============================================================
-[2026-02-01 14:20:22] Experiment Session Started.
+[2026-02-01 14:24:02] Experiment Session Started.
 [FULL MODE] Effective Sample Size: 300000
 >>> [Auto-Detect] Non-interactive shell detected. Disabling progress bars.
 
