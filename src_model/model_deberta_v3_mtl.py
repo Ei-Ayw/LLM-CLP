@@ -21,7 +21,7 @@ class DebertaV3MTL(nn.Module):
         try:
             self.config = DebertaV2Config.from_pretrained(model_path_or_name)
             # 移除 low_cpu_mem_usage=True 以解决 "Cannot copy out of meta tensor" 报错
-            self.deberta = DebertaV2Model.from_pretrained(model_path_or_name, use_safetensors=True)
+            self.deberta = DebertaV2Model.from_pretrained(model_path_or_name, use_safetensors=False)
         except Exception as e:
             print(f"\n❌ [CRITICAL] 无法加载 DeBERTa-MTL 权重: {e}")
             print(f"👉 提示: 请确保已运行 'python download_models.py' 且下载完整。")
