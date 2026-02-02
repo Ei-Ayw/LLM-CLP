@@ -119,7 +119,7 @@ def main():
     parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
     parser.add_argument("--patience", type=int, default=1)
     parser.add_argument("--early_patience", type=int, default=3, help="验证集 Loss 早停等待轮数")
-    parser.add_argument("--epochs", type=int, default=0, help="训练轮数 (0=默认/早停)")
+    parser.add_argument("--epochs", type=int, default=20, help="训练轮数 (0=默认/早停)")
     parser.add_argument("--no_bar", action="store_true", help="禁用 tqdm 进度条 (nohup模式下推荐)")
     args = parser.parse_args()
     
@@ -177,7 +177,7 @@ def main():
         # run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
 
         print("\n>>> 训练本文提出方案 (Stage 1 & 2)")
-        # run_script("train", "train_deberta_v3_mtl_s1.py", deberta_common)
+        run_script("train", "train_deberta_v3_mtl_s1.py", deberta_common)
         s1_path = find_best_s1()
         if s1_path: 
             run_script("train", "train_deberta_v3_mtl_s2.py", ["--s1_checkpoint", s1_path] + deberta_common)
