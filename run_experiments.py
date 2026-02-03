@@ -52,16 +52,28 @@ os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 # [Stable Mode] 强制禁用 NCCL P2P 和 IB 以防止 DataParallel 段错误
 os.environ["NCCL_P2P_DISABLE"] = "1"
 os.environ["NCCL_IB_DISABLE"] = "1"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"  # [Fix] 只使用 3 张卡
+
+# [Robust Fix] 动态设置可用显卡，最多保留 3 张
+if torch.cuda.is_available():
+    num_gpus = torch.cuda.device_count()
+    if num_gpus >= 3:
+        os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
+        actual_gpus = 3
+    else:
+        actual_gpus = num_gpus
+    print(f"[System] Detected {num_gpus} GPUs. Using {actual_gpus} GPUs.")
+else:
+    actual_gpus = 0
+    print("[System] No GPU detected. Running in CPU mode.")
 
 def run_script(folder, script_name, args_list):
     """ 执行分层目录下的脚本 (智能适配 DDP) """
     script_path = os.path.join(BASE_DIR, "src_script", folder, script_name)
     
-    # [Smart Mode] 如果是 DeBERTa 训练脚本，自动使用 torchrun 启动 DDP
-    if "deberta" in script_name and "train" in script_name:
-        # 获取显卡数量
-        nproc = torch.cuda.device_count()
+    # [Smart Mode] 如果是 DeBERTa 训练脚本，且有可用显卡，自动使用 torchrun 启动 DDP
+    nproc = torch.cuda.device_count() if torch.cuda.is_available() else 0
+    
+    if "deberta" in script_name and "train" in script_name and nproc > 0:
         print(f"\n[HIERARCHY RUN] 🚀 DDP Mode Enabled: {script_name} (Using {nproc} GPUs)")
         
         # [Fix] 强制修正 Batch Size 以防止 OOM (DDP下 bs 为单卡)
@@ -113,7 +125,8 @@ def main():
     parser.add_argument("--sample_size", type=int, default=0, help="实验数据采样量 (0表示全量)")
     # 针对 4x A10 (24GB) 优化：显存充足，使用大 Batch 提高吞吐
     # MaxLen=128 下，单卡 24G 可支持 Batch=128+，4卡可支持 512+
-    parser.add_argument("--batch_size", type=int, default=96, help="默认基础 Batch Size (3卡 DataParallel 每卡32)")
+    default_bs = 96 if torch.cuda.is_available() else 32
+    parser.add_argument("--batch_size", type=int, default=default_bs, help="默认基础 Batch Size (3卡 DataParallel 每卡32, CPU下建议设小)")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max_len", type=int, default=128, help="短序列加速，默认 128")
     parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
