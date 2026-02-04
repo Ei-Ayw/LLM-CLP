@@ -11,7 +11,7 @@ class VanillaDeBERTaV3(nn.Module):
             self.model = AutoModelForSequenceClassification.from_pretrained(
                 model_path, 
                 config=self.config,
-                use_safetensors=True
+                use_safetensors=False  # [Fix] 使用 bin 格式，避免触发 HF Hub 网络请求
             )
             # [Removed] gradient_checkpointing 与 DataParallel 不兼容，会触发 SIGSEGV
         except Exception as e:

@@ -179,14 +179,14 @@ def main():
 
         # [暂时注释] 等主模型跑完再跑对比模型
         # Group 1: Classical Strong Baseline (TF-IDF + LR)
-        run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
+        # run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
 
         # Group 2: Hybrid Contrastive Baseline (Strong Contrast)
-        run_script("train", "train_bert_cnn_bilstm.py", common)
+        # run_script("train", "train_bert_cnn_bilstm.py", common)
 
         # Group 3: Pretrained Transformer Baselines
-        run_script("train", "train_vanilla_bert.py", common)
-        run_script("train", "train_vanilla_roberta.py", common)
+        # run_script("train", "train_vanilla_bert.py", common)
+        # run_script("train", "train_vanilla_roberta.py", common)
         run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
 
         print("\n>>> 训练本文提出方案 (Stage 1 & 2)")
@@ -240,57 +240,55 @@ def main():
     if args.mode in ["all", "eval", "ablation"]:
         print("\n>>> 全自动化评估引擎启动...")
         if os.path.exists(MODEL_DIR):
+            # --- 新逻辑：基于模型前缀匹配，查找每种类型的最新权重 ---
+            # 预定义模型前缀到评估器类型的映射
+            MODEL_PREFIX_MAP = {
+                "DebertaV3MTL_S2": "deberta_mtl",      # 本文方案 (S2 最终模型)
+                "BertCNNBiLSTM": "bert_cnn",           # 混合对照
+                "VanillaBERT": "vanilla_bert",         # Transformer baseline
+                "VanillaRoBERTa": "vanilla_roberta",   # Transformer baseline
+                "VanillaDeBERTa": "vanilla_deberta",   # Transformer baseline (本文基座)
+            }
+            
             pths = [f for f in os.listdir(MODEL_DIR) if f.endswith(".pth")]
             
-            # --- 筛选逻辑优化：只评估本次实验新生成的模型 ---
-            # 通过文件修改时间 (mtime) 与 experiment_start_time 对比
-            new_pths = []
-            for p in pths:
-                full_p = os.path.join(MODEL_DIR, p)
-                mtime = datetime.fromtimestamp(os.path.getmtime(full_p))
-                if mtime >= experiment_start_time:
-                    new_pths.append(p)
+            # 按模型前缀分组，每组取修改时间最新的
+            best_checkpoints = {}
+            for prefix, m_type in MODEL_PREFIX_MAP.items():
+                # 筛选匹配该前缀的权重文件
+                matched = [p for p in pths if p.startswith(prefix)]
+                if matched:
+                    # 按修改时间排序，取最新
+                    matched.sort(key=lambda x: os.path.getmtime(os.path.join(MODEL_DIR, x)), reverse=True)
+                    best_checkpoints[prefix] = (matched[0], m_type)
             
-            pths = new_pths
-            print(f"  > Detected {len(pths)} new checkpoints from this session.")
-
-            # 智能筛选：每个模型配置只评估最新的权重
-            checkpoint_groups = {}
-            for pth in sorted(pths):
-                # pattern: ModelName_SampleXXXX_MMDD_HHMM.pth
-                # Split by '_' and remove the last two parts (date, time) to get the group key
-                parts = pth.split('_')
-                if len(parts) >= 3:
-                    group_key = "_".join(parts[:-2])
-                    checkpoint_groups[group_key] = pth
+            print(f">>> 发现 {len(pths)} 个权重文件，匹配到 {len(best_checkpoints)} 种模型类型。")
             
-            print(f">>> 发现 {len(pths)} 个权重文件，筛选出 {len(checkpoint_groups)} 个最新模型进行评估。")
-
-            for group, pth in checkpoint_groups.items():
-                # 过滤策略: 跳过 S1 中间权重 (除非是单任务 OnlyTox，它没有 S2)
+            for prefix, (pth, m_type) in best_checkpoints.items():
+                # 跳过 S1 中间权重 (除非是消融实验需要)
                 if "_S1_" in pth and "OnlyTox" not in pth:
-                    print(f"  [Skip] 跳过中间阶段权重 S1 (Intermediate Checkpoint): {pth}")
+                    print(f"  [Skip] 跳过中间阶段权重 S1: {pth}")
                     continue
-
-                # 分类映射逻辑
-                m_type = "deberta_mtl" if "DebertaV3MTL" in pth else \
-                         "bert_cnn" if "BertCNN" in pth else \
-                         "text_cnn" if "TextCNN" in pth else \
-                         "bilstm" if "BiLSTM" in pth else \
-                         "vanilla_bert" if "VanillaBERT" in pth else \
-                         "vanilla_roberta" if "VanillaRoBERTa" in pth else \
-                         "vanilla_deberta" if "VanillaDeBERTa" in pth else "vanilla"
                 
-                run_script("eval", "eval_universal_runner.py", ["--checkpoint", os.path.join(MODEL_DIR, pth), "--model_type", m_type, "--output_prefix", pth.replace(".pth", "")])
+                print(f"  [Eval] {prefix} -> {pth}")
+                run_script("eval", "eval_universal_runner.py", [
+                    "--checkpoint", os.path.join(MODEL_DIR, pth), 
+                    "--model_type", m_type, 
+                    "--output_prefix", pth.replace(".pth", "")
+                ])
 
     # --- Phase 4: Viz ---
     if args.mode in ["all", "viz"]:
         run_script("viz", "viz_performance_summary.py", [])
-        # 寻找 S2 正式权重进行可视化
+        # 寻找 S2 正式权重进行可视化 (取修改时间最新的)
         if os.path.exists(MODEL_DIR):
-            files = sorted([f for f in os.listdir(MODEL_DIR) if f.startswith("DebertaV3MTL_S2_Sample") and "No" not in f and f.endswith(".pth")])
-            if files:
-                run_script("viz", "viz_feature_t_sne.py", ["--checkpoint", os.path.join(MODEL_DIR, files[-1]), "--output_name", "viz_final_paper.png"])
+            s2_files = [f for f in os.listdir(MODEL_DIR) if f.startswith("DebertaV3MTL_S2") and "No" not in f and f.endswith(".pth")]
+            if s2_files:
+                # 按修改时间排序，取最新
+                s2_files.sort(key=lambda x: os.path.getmtime(os.path.join(MODEL_DIR, x)), reverse=True)
+                latest_s2 = s2_files[0]
+                print(f"  [Viz] Using latest S2 checkpoint: {latest_s2}")
+                run_script("viz", "viz_feature_t_sne.py", ["--checkpoint", os.path.join(MODEL_DIR, latest_s2), "--output_name", "viz_final_paper.png"])
 
     print("\n[FINISH] Professional Hierarchical Lifecycle Management Completed.")
 
