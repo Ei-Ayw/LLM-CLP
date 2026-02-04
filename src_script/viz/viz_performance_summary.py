@@ -14,14 +14,39 @@ sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
 from path_config import get_eval_path, EVAL_DIR, get_viz_path
 
 def collect_metrics():
-    """从 eval 目录收集所有模型的评估结果"""
+    """从 eval 目录收集所有模型的评估结果 (每种模型类型取最新的)"""
     all_json = glob.glob(os.path.join(EVAL_DIR, "*_metrics.json"))
     if not all_json:
         print("未发现评估结果文件 (.json)")
         return None
     
-    records = []
+    # --- 新逻辑：按模型前缀分组，每种类型取最新的 ---
+    MODEL_PREFIXES = [
+        "DebertaV3MTL_S2",
+        "BertCNNBiLSTM", 
+        "VanillaBERT",
+        "VanillaRoBERTa",
+        "VanillaDeBERTa",
+    ]
+    
+    # 按前缀分组
+    grouped = {prefix: [] for prefix in MODEL_PREFIXES}
     for f in all_json:
+        filename = os.path.basename(f)
+        for prefix in MODEL_PREFIXES:
+            if filename.startswith(prefix):
+                grouped[prefix].append(f)
+                break
+    
+    # 每组取修改时间最新的
+    latest_files = []
+    for prefix, files in grouped.items():
+        if files:
+            files.sort(key=lambda x: os.path.getmtime(x), reverse=True)
+            latest_files.append(files[0])
+    
+    records = []
+    for f in latest_files:
         try:
             with open(f, 'r', encoding='utf-8') as jf:
                 data = json.load(jf)
