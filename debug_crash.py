@@ -15,13 +15,13 @@ print("⏳ [3/7] Importing sklearn...", flush=True)
 from sklearn import metrics
 print("✅ [3/7] Sklearn imported", flush=True)
 
-print("⏳ [4/7] Importing torch...", flush=True)
-import torch
-print(f"✅ [4/7] Torch imported (CUDA available: {torch.cuda.is_available()})", flush=True)
-
-print("⏳ [5/7] Importing transformers...", flush=True)
+print("⏳ [4/7] Importing transformers (BEFORE torch)...", flush=True)
 from transformers import AutoTokenizer, DebertaV2Model, DebertaV2Config
-print("✅ [5/7] Transformers imported", flush=True)
+print("✅ [4/7] Transformers imported", flush=True)
+
+print("⏳ [5/7] Importing torch...", flush=True)
+import torch
+print(f"✅ [5/7] Torch imported (CUDA available: {torch.cuda.is_available()})", flush=True)
 
 print("⏳ [6/7] Importing local models...", flush=True)
 sys.path.append(os.getcwd())
