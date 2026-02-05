@@ -24,6 +24,13 @@ from tqdm import tqdm
 import json
 import pickle
 
+# [Fix] 防止服务器无GUI环境下的 SegFault
+import matplotlib
+matplotlib.use('Agg')
+
+# [Fix] 防止 Tokenizer 多线程与 DataLoader fork 冲突导致 SegFault
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 # ======================= 项目路径配置 =======================
 # 关键修复：从深层目录退回到项目根目录
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -148,6 +155,10 @@ def main():
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    # [Fix] 显式清理显存碎片，防止 OOM 或 CUDA error
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
     
     # [1] 数据加载 -> 使用独立测试集 (学术严谨性)
     test_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "test_processed.parquet"))

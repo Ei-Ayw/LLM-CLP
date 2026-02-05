@@ -194,7 +194,7 @@ def main():
         s1_path = find_best_s1()
         if s1_path: 
             print(f">>> [Found] 使用最新的 S1 权重进行续训: {s1_path}")
-            run_script("train", "train_deberta_v3_mtl_s2.py", ["--s1_checkpoint", s1_path] + deberta_common)
+            # run_script("train", "train_deberta_v3_mtl_s2.py", ["--s1_checkpoint", s1_path] + deberta_common)
 
     # --- Phase 2: Ablation (Switch Mode) ---
     # [暂时跳过] 等主模型跑完效果再跑消融
