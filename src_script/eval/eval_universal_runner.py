@@ -13,6 +13,10 @@ B. 偏见/群体鲁棒指标 (Nuanced Metrics by Borkan et al.):
 =============================================================================
 """
 import os
+# [CRITICAL Fix] 必须在导入 torch 之前设置 OpenMP 线程数，否则与 sklearn 冲突必崩(SIGSEGV)
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
 import sys
 import pandas as pd
 import numpy as np
