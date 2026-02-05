@@ -24,7 +24,7 @@ echo "Installing dependencies with TUNA mirror..." >> install_pytorch.log
 
 # 基础库与深度学习
 echo "> Installing torch suite..." >> install_pytorch.log
-# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 >> install_pytorch.log 2>&1
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 >> install_pytorch.log 2>&1
 
 echo "> Installing transformers suite..." >> install_pytorch.log
 pip install transformers sentencepiece sacremoses -i https://pypi.tuna.tsinghua.edu.cn/simple >> install_pytorch.log 2>&1
