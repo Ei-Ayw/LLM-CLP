@@ -186,7 +186,9 @@ def main():
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 torch.save(model.module.state_dict(), save_path)
-                print(f"  [Save] 更优模型已保存至: {save_path}")
+                # [Fix] 同时保存 Tokenizer 到同级目录以供评估使用
+                tokenizer.save_pretrained(os.path.join(MODEL_DIR, save_basename + "_tokenizer"))
+                print(f"  [Save] 更优模型与 Tokenizer 已保存至: {save_path}")
 
             if early_stopping(val_loss):
                 print(f">>> [Early Stop] 已触发。")

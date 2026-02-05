@@ -187,12 +187,13 @@ def main():
         # Group 3: Pretrained Transformer Baselines
         # run_script("train", "train_vanilla_bert.py", common)
         # run_script("train", "train_vanilla_roberta.py", common)
-        run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
+        # run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
 
         print("\n>>> 训练本文提出方案 (Stage 1 & 2)")
-        run_script("train", "train_deberta_v3_mtl_s1.py", deberta_common)
+        # run_script("train", "train_deberta_v3_mtl_s1.py", deberta_common)
         s1_path = find_best_s1()
         if s1_path: 
+            print(f">>> [Found] 使用最新的 S1 权重进行续训: {s1_path}")
             run_script("train", "train_deberta_v3_mtl_s2.py", ["--s1_checkpoint", s1_path] + deberta_common)
 
     # --- Phase 2: Ablation (Switch Mode) ---
