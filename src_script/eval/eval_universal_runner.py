@@ -208,11 +208,13 @@ def main():
     local_tokenizer_path = args.checkpoint.replace(".pth", "_tokenizer")
     if os.path.exists(local_tokenizer_path):
         print(f">>> [Load] 发现配套 Tokenizer: {local_tokenizer_path}")
-        tokenizer = AutoTokenizer.from_pretrained(local_tokenizer_path)
+        # [Fix] 强制使用 Slow Tokenizer (Python实现)，避免 C++/Rust 层面的 SIGSEGV
+        tokenizer = AutoTokenizer.from_pretrained(local_tokenizer_path, use_fast=False)
     else:
         base_model_name = "microsoft/deberta-v3-base" if "Deberta" in ckpt_name else \
                         "roberta-base" if "RoBERTa" in ckpt_name else "bert-base-uncased"
-        tokenizer = AutoTokenizer.from_pretrained(base_model_name, local_files_only=True)
+        # [Fix] 强制 use_fast=False
+        tokenizer = AutoTokenizer.from_pretrained(base_model_name, local_files_only=True, use_fast=False)
     
     loader = DataLoader(ToxicityDataset(test_df, tokenizer), batch_size=16, shuffle=False)
     with torch.no_grad():
