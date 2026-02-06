@@ -238,6 +238,14 @@ def main():
 
     probs = np.array(probs)
     targets = np.array(targets)
+    
+    # [DEBUG] 打印预测分布和前几个样本
+    if args.model_type == "vanilla_deberta":
+        print(f">>> [DEBUG] probs 统计: min={probs.min():.4f}, max={probs.max():.4f}, mean={probs.mean():.4f}")
+        print(f">>> [DEBUG] targets 统计: min={targets.min():.4f}, max={targets.max():.4f}, mean={targets.mean():.4f}")
+        print(f">>> [DEBUG] 前10个预测值: {probs[:10]}")
+        print(f">>> [DEBUG] 前10个目标值: {targets[:10]}")
+    
     test_df['model_probs'] = probs
     y_true_binary = (targets >= 0.5).astype(int)
 
