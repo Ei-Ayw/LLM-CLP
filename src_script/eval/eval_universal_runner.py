@@ -224,9 +224,11 @@ def main():
         # [Fix] 强制使用 Slow Tokenizer (Python实现)，避免 C++/Rust 层面的 SIGSEGV
         tokenizer = AutoTokenizer.from_pretrained(local_tokenizer_path, use_fast=False)
     else:
-        base_model_name = "microsoft/deberta-v3-base" if "Deberta" in ckpt_name else \
-                        "roberta-base" if "RoBERTa" in ckpt_name else "bert-base-uncased"
-        # [Fix] 移除 local_files_only=True，它可能导致加载错误的 tokenizer
+        # [FIX] 使用 lower() 进行大小写不敏感匹配，避免 "DeBERTa" vs "Deberta" 不匹配导致加载错误 tokenizer
+        ckpt_lower = ckpt_name.lower()
+        base_model_name = "microsoft/deberta-v3-base" if "deberta" in ckpt_lower else \
+                        "roberta-base" if "roberta" in ckpt_lower else "bert-base-uncased"
+        print(f">>> [Tokenizer] 匹配到模型: {base_model_name}")
         tokenizer = AutoTokenizer.from_pretrained(base_model_name)
     
     loader = DataLoader(ToxicityDataset(test_df, tokenizer), batch_size=16, shuffle=False)
