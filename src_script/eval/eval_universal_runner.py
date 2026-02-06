@@ -226,8 +226,8 @@ def main():
     else:
         base_model_name = "microsoft/deberta-v3-base" if "Deberta" in ckpt_name else \
                         "roberta-base" if "RoBERTa" in ckpt_name else "bert-base-uncased"
-        # [Fix] 强制 use_fast=False
-        tokenizer = AutoTokenizer.from_pretrained(base_model_name, local_files_only=True, use_fast=False)
+        # [Fix] 移除 local_files_only=True，它可能导致加载错误的 tokenizer
+        tokenizer = AutoTokenizer.from_pretrained(base_model_name)
     
     loader = DataLoader(ToxicityDataset(test_df, tokenizer), batch_size=16, shuffle=False)
     with torch.no_grad():
