@@ -99,7 +99,7 @@ def main():
     parser.add_argument("--model_name", type=str, default="microsoft/deberta-v3-base")
     parser.add_argument("--sample_size", type=int, default=200000)
     parser.add_argument("--batch_size", type=int, default=96)
-    parser.add_argument("--lr", type=float, default=2e-6)
+    parser.add_argument("--lr", type=float, default=1e-6)
     parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
     parser.add_argument("--patience", type=int, default=1)
     parser.add_argument("--early_patience", type=int, default=3)
