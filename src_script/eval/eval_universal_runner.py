@@ -230,11 +230,28 @@ def main():
         tokenizer = AutoTokenizer.from_pretrained(base_model_name)
     
     loader = DataLoader(ToxicityDataset(test_df, tokenizer), batch_size=16, shuffle=False)
+    batch_idx = 0
     with torch.no_grad():
         for batch in tqdm(loader, desc="[Inference Transformer]"):
             out = model(batch['input_ids'].to(device), batch['attention_mask'].to(device))
-            probs.extend(torch.sigmoid(out['logits_tox']).squeeze(-1).cpu().numpy())
+            batch_probs = torch.sigmoid(out['logits_tox']).squeeze(-1).cpu().numpy()
+            probs.extend(batch_probs)
             targets.extend(batch['y_tox'].cpu().numpy())
+            
+            # [DEBUG] 打印第一批的详细信息
+            if batch_idx == 0 and args.model_type == "vanilla_deberta":
+                print(f">>> [DEBUG BATCH0] input_ids shape: {batch['input_ids'].shape}")
+                print(f">>> [DEBUG BATCH0] 第一个样本 input_ids[:20]: {batch['input_ids'][0][:20].tolist()}")
+                print(f">>> [DEBUG BATCH0] logits_tox shape: {out['logits_tox'].shape}")
+                print(f">>> [DEBUG BATCH0] batch_probs: {batch_probs}")
+                print(f">>> [DEBUG BATCH0] y_tox: {batch['y_tox'].numpy()}")
+                # 对比：用 DEBUG test 的方式重新推理第一个样本
+                first_text = test_df['comment_text'].iloc[0]
+                test_inp = tokenizer(first_text, return_tensors='pt', truncation=True, max_length=256, padding='max_length')
+                test_out = model(test_inp['input_ids'].to(device), test_inp['attention_mask'].to(device))
+                test_prob = torch.sigmoid(test_out['logits_tox']).item()
+                print(f">>> [DEBUG BATCH0] 重新推理第一个样本: '{first_text[:40]}...' -> {test_prob:.4f}")
+            batch_idx += 1
 
     probs = np.array(probs)
     targets = np.array(targets)
