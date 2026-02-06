@@ -193,6 +193,19 @@ def main():
     
     model.load_state_dict(torch.load(args.checkpoint, map_location=device))
     model.eval()
+    
+    # [DEBUG] 验证模型权重加载成功并进行快速预测测试
+    if args.model_type == "vanilla_deberta":
+        print(f">>> [DEBUG] 模型 classifier 权重 sum: {model.model.classifier.weight.sum().item():.4f}")
+        # 快速预测测试
+        test_tok = AutoTokenizer.from_pretrained("microsoft/deberta-v3-base")
+        test_texts = ["I love you!", "You are an idiot and should die!"]
+        for txt in test_texts:
+            inp = test_tok(txt, return_tensors='pt', truncation=True, max_length=128, padding='max_length')
+            with torch.no_grad():
+                out = model(inp['input_ids'].to(device), inp['attention_mask'].to(device))
+                prob = torch.sigmoid(out['logits_tox']).item()
+            print(f">>> [DEBUG] '{txt[:30]}...' -> {prob:.4f}")
 
     # [3] 推理
     probs, targets = [], []
