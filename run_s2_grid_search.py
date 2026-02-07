@@ -45,7 +45,7 @@ SEARCH_SPACE = {
 FIXED_PARAMS = {
     "sample_size": 300000,
     "batch_size": 32,  # 单卡 batch size (DDP 下)
-    "max_len": 128,
+    "max_len": 256,
     "epochs": 10,
     "early_patience": 3,
     "scheduler": "plateau",

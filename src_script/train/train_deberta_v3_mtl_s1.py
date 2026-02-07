@@ -119,7 +119,7 @@ def main():
     parser.add_argument("--epochs", type=int, default=6)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--accum_steps", type=int, default=1)
-    parser.add_argument("--max_len", type=int, default=128)
+    parser.add_argument("--max_len", type=int, default=256)
     parser.add_argument("--alpha", type=float, default=0.1, help="MTL Weight for Subtypes (Downscaled from 0.5)")
     parser.add_argument("--beta", type=float, default=0.2)
     parser.add_argument("--no_pooling", action="store_true")

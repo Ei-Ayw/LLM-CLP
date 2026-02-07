@@ -121,14 +121,14 @@ def find_best_s1():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", type=str, choices=["all", "train", "eval", "ablation", "viz"], default="all")
+    parser.add_argument("--mode", type=str, choices=["all", "train", "eval", "ablation", "viz", "grid_search"], default="all")
     parser.add_argument("--sample_size", type=int, default=0, help="实验数据采样量 (0表示全量)")
     # 针对 4x A10 (24GB) 优化：显存充足，使用大 Batch 提高吞吐
     # MaxLen=128 下，单卡 24G 可支持 Batch=128+，4卡可支持 512+
     default_bs = 96 if torch.cuda.is_available() else 32
     parser.add_argument("--batch_size", type=int, default=default_bs, help="默认基础 Batch Size (3卡 DataParallel 每卡32, CPU下建议设小)")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--max_len", type=int, default=128, help="短序列加速，默认 128")
+    parser.add_argument("--max_len", type=int, default=256, help="序列最大长度，建议 256")
     parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
     parser.add_argument("--patience", type=int, default=1)
     parser.add_argument("--early_patience", type=int, default=3, help="验证集 Loss 早停等待轮数")
@@ -164,7 +164,7 @@ def main():
 
     # 针对 DeBERTaV3: 训练脚本中 batch_size 是单卡值
     # 32 per GPU × 3 GPUs = 96 total, ~12GB 显存/卡
-    deberta_batch_size = 32
+    deberta_batch_size = 16  # 注意: max_len=256 后显存占用更高，需减小 batch
     deberta_common = common[:]
     if "--batch_size" in deberta_common:
         idx = deberta_common.index("--batch_size")
@@ -195,6 +195,12 @@ def main():
         if s1_path: 
             print(f">>> [Found] 使用最新的 S1 权重进行续训: {s1_path}")
             run_script("train", "train_deberta_v3_mtl_s2.py", ["--s1_checkpoint", s1_path] + deberta_common)
+    
+    # --- Phase 1.5: S2 Grid Search (网格搜索超参数) ---
+    if args.mode in ["grid_search"]:
+        print("\n>>> 启动 S2 超参数网格搜索...")
+        grid_script = os.path.join(BASE_DIR, "run_s2_grid_search.py")
+        subprocess.run([sys.executable, grid_script], check=True)
 
     # --- Phase 2: Ablation (Switch Mode) ---
     # [暂时跳过] 等主模型跑完效果再跑消融
