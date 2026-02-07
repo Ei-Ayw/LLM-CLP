@@ -90,7 +90,7 @@ def scan_thresholds(y_true, y_prob):
     best_f1, best_thresh = 0, 0.5
     scan_history = []  # 记录完整扫描过程
     
-    for thresh in np.arange(0.05, 0.96, 0.05):
+    for thresh in np.arange(0.01, 1.00, 0.01):
         y_pred = (y_prob >= thresh).astype(int)
         f1 = metrics.f1_score(y_true, y_pred)
         precision = metrics.precision_score(y_true, y_pred, zero_division=0)

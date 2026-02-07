@@ -5,7 +5,7 @@ import argparse
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
-# from torch.cuda.amp import GradScaler, autocast
+from torch.cuda.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from transformers import AutoTokenizer, get_linear_schedule_with_warmup
 import pandas as pd
@@ -49,7 +49,7 @@ def weighted_toxicity_loss(logits, targets, has_id, w_identity, w_id_toxic):
     loss = criterion(logits, targets)
     return (loss * weights).mean()
 
-def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, alpha, beta, w_identity, w_id_toxic, no_reweight=False):
+def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_steps, alpha, beta, w_identity, w_id_toxic, no_reweight=False):
     model.train()
     criterion_aux = nn.BCEWithLogitsLoss()
     total_loss = 0
@@ -59,19 +59,20 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, al
         ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
         y_tox, y_sub, y_id, has_id = batch['y_tox'].to(device).unsqueeze(-1), batch['y_sub'].to(device), batch['y_id'].to(device), batch['has_id'].to(device)
         
-        # with torch.amp.autocast('cuda'): # [Safe Mode]
-        out = model(ids, mask)
-        if no_reweight:
-            l_tox = criterion_aux(out['logits_tox'], y_tox)
-        else:
-            l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id, w_identity, w_id_toxic)
-        l_sub, l_id = criterion_aux(out['logits_sub'], y_sub), criterion_aux(out['logits_id'], y_id)
-        loss = l_tox + alpha * l_sub + beta * l_id
+        with torch.amp.autocast('cuda'):
+            out = model(ids, mask)
+            if no_reweight:
+                l_tox = criterion_aux(out['logits_tox'], y_tox)
+            else:
+                l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id, w_identity, w_id_toxic)
+            l_sub, l_id = criterion_aux(out['logits_sub'], y_sub), criterion_aux(out['logits_id'], y_id)
+            loss = l_tox + alpha * l_sub + beta * l_id
         
         loss = loss / accum_steps
-        loss.backward()
+        scaler.scale(loss).backward()
         if (i + 1) % accum_steps == 0:
-            optimizer.step()
+            scaler.step(optimizer)
+            scaler.update()
             if scheduler is not None and not isinstance(scheduler, ReduceLROnPlateau):
                 scheduler.step()
             optimizer.zero_grad()
@@ -99,15 +100,16 @@ def main():
     parser.add_argument("--model_name", type=str, default="microsoft/deberta-v3-base")
     parser.add_argument("--sample_size", type=int, default=200000)
     parser.add_argument("--batch_size", type=int, default=96)
-    parser.add_argument("--lr", type=float, default=1e-8)
+    parser.add_argument("--lr", type=float, default=5e-6)
     parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
     parser.add_argument("--patience", type=int, default=1)
     parser.add_argument("--early_patience", type=int, default=3)
     parser.add_argument("--epochs", type=int, default=4)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--max_len", type=int, default=128)
-    parser.add_argument("--alpha", type=float, default=0.1)
+    parser.add_argument("--max_len", type=int, default=256)
+    parser.add_argument("--alpha", type=float, default=0.5)
     parser.add_argument("--beta", type=float, default=0.2)
+    parser.add_argument("--grad_accum", type=int, default=2, help="梯度累积步数")
     parser.add_argument("--w_identity", type=float, default=2.5)
     parser.add_argument("--w_id_toxic", type=float, default=1.5)
     parser.add_argument("--no_reweight", action="store_true")
@@ -186,7 +188,7 @@ def main():
     model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
 
     optimizer = AdamW(model.parameters(), lr=args.lr)
-    # scaler = torch.amp.GradScaler('cuda')
+    scaler = torch.amp.GradScaler('cuda')
     
     if args.scheduler == "plateau":
         scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True)
@@ -202,7 +204,7 @@ def main():
         train_sampler.set_epoch(epoch)
         if is_main_process: print(f"\nEpoch {epoch+1}/{args.epochs}")
         
-        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, device, 1, args.alpha, args.beta, args.w_identity, args.w_id_toxic, args.no_reweight)
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, scaler, device, args.grad_accum, args.alpha, args.beta, args.w_identity, args.w_id_toxic, args.no_reweight)
         
         # [Fix] 所有 Rank 都参与验证，避免 NCCL 超时
         val_loss = evaluate(model, val_loader, device)
