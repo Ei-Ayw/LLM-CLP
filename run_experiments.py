@@ -125,7 +125,8 @@ def main():
     parser.add_argument("--sample_size", type=int, default=0, help="实验数据采样量 (0表示全量)")
     # 针对 4x A10 (24GB) 优化：显存充足，使用大 Batch 提高吞吐
     # MaxLen=128 下，单卡 24G 可支持 Batch=128+，4卡可支持 512+
-    default_bs = 96 if torch.cuda.is_available() else 32
+    # 注意: max_len=256 后显存占用翻倍，需减小 batch_size
+    default_bs = 48 if torch.cuda.is_available() else 16
     parser.add_argument("--batch_size", type=int, default=default_bs, help="默认基础 Batch Size (3卡 DataParallel 每卡32, CPU下建议设小)")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--max_len", type=int, default=256, help="序列最大长度，建议 256")
