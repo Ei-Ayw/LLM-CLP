@@ -33,6 +33,8 @@ from exp_data_loader import ToxicityDataset, sample_aligned_data
 from path_config import get_model_path, get_log_path
 from train_utils import EarlyStopping
 
+MODEL_DIR = os.path.join(BASE_DIR, "src_result", "models")
+
 # DDP Imports
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
