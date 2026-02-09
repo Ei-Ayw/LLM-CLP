@@ -16,10 +16,13 @@ import json
 import matplotlib.pyplot as plt
 
 # =============================================================================
-# ### 核心训练脚本：train_deberta_mtl.py (AMP加速版) ###
-# 设计说明：
-# 本脚本执行 DebertaV3MTL 模型的第一阶段（基础多任务训练）。
-# 已针对 3090 24G 优化：启用 AMP、Gradient Checkpointing、短序列提速。
+# ### 消融实验脚本：train_deberta_v3_mtl_s1_ablation_bce.py ###
+# =============================================================================
+# 【消融目标】验证 Focal Loss 的作用
+# 【对照组】本脚本与 train_deberta_v3_mtl_s1.py 的唯一区别：
+#   - 原版本: 使用 BCEFocalLoss(alpha=12.5, gamma=2.0)
+#   - 本版本: 使用标准 BCEWithLogitsLoss
+# 【预期结果】如果 Focal Loss 有效，本消融实验的 F1/AUC 应明显低于原版本
 # =============================================================================
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -37,17 +40,15 @@ from exp_data_loader import ToxicityDataset, sample_aligned_data
 from path_config import get_model_path, get_log_path
 from train_utils import EarlyStopping
 
-from loss_functions import BCEFocalLoss
+# [Ablation] 移除 Focal Loss 导入，使用标准 BCE
+# from loss_functions import BCEFocalLoss
 
-def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, alpha, beta, only_toxicity=False, use_focal=True):
+def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, alpha, beta, only_toxicity=False):
+    """
+    [消融实验] 全流程使用标准 BCE，与 Focal Loss 版本对照
+    """
     model.train()
-    
-    # 损失函数配置
-    if use_focal:
-        criterion_tox = BCEFocalLoss(alpha=12.5, gamma=2.0) # Focal Loss
-    else:
-        criterion_tox = nn.BCEWithLogitsLoss() # Standard BCE
-        
+    criterion_tox = nn.BCEWithLogitsLoss()  # [消融] 统一使用 BCE
     criterion_aux = nn.BCEWithLogitsLoss()
     
     total_loss = 0
@@ -86,20 +87,15 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, al
         
     return total_loss / len(loader)
 
-def evaluate(model, loader, device, use_focal=True):
+def evaluate(model, loader, device):
     """
-    [Fix] 评估函数与训练保持一致的损失函数
-    - 修复前：训练用 Focal Loss，评估用 BCE，导致 checkpoint 选择偏差
-    - 修复后：评估也使用 Focal Loss，确保 Early Stopping 基于正确的指标
+    [消融实验] 全流程使用标准 BCE
     """
     model.eval()
-    if use_focal:
-        criterion = BCEFocalLoss(alpha=12.5, gamma=2.0)  # 与训练一致
-    else:
-        criterion = nn.BCEWithLogitsLoss()
+    criterion = nn.BCEWithLogitsLoss()  # [消融] 统一使用 BCE
     total_loss = 0
     with torch.no_grad():
-        for batch in tqdm(loader, desc="[Eval S1]"):
+        for batch in tqdm(loader, desc="[Eval S1 Ablation]"):
             ids = batch['input_ids'].to(device)
             mask = batch['attention_mask'].to(device)
             y_tox = batch['y_tox'].to(device).unsqueeze(-1)
@@ -169,7 +165,8 @@ def main():
     if args.no_focal: suffix += "_NoFocal"
     if args.ablation_tag: suffix += f"_{args.ablation_tag}"
     
-    save_name = f"DebertaV3MTL_S1{suffix}_Sample{args.sample_size}_{timestamp}"
+    # [消融] 文件名使用 AblationBCE 前缀，方便区分
+    save_name = f"DebertaV3MTL_S1_AblationBCE{suffix}_Sample{args.sample_size}_{timestamp}"
     save_path = get_model_path(save_name + ".pth")
 
     if is_main_process:
@@ -228,12 +225,11 @@ def main():
         
         train_loss = train_one_epoch(
           model, train_loader, optimizer, scheduler, device, args.accum_steps, 
-          args.alpha, args.beta, args.only_toxicity, 
-          use_focal=not args.no_focal
+          args.alpha, args.beta, args.only_toxicity
         )
         
         # [Fix] 所有 Rank 都参与验证，避免 NCCL 超时
-        val_loss = evaluate(model, val_loader, device, use_focal=not args.no_focal)
+        val_loss = evaluate(model, val_loader, device)
         
         # 同步所有 Rank 的验证完成
         dist.barrier()
