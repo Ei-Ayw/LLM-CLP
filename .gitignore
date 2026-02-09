@@ -2,6 +2,7 @@
 data/*.csv
 data/*.parquet
 data/
+src_result/
 !data/.gitkeep
 .idea/
 # Models & Results
