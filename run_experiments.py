@@ -182,12 +182,12 @@ def main():
         # run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
 
         # Group 2: Hybrid Contrastive Baseline (Strong Contrast)
-        run_script("train", "train_bert_cnn_bilstm.py", common)
+        # run_script("train", "train_bert_cnn_bilstm.py", common)
 
         # Group 3: Pretrained Transformer Baselines
-        run_script("train", "train_vanilla_bert.py", common)
-        run_script("train", "train_vanilla_roberta.py", common)
-        run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
+        # run_script("train", "train_vanilla_bert.py", common)
+        # run_script("train", "train_vanilla_roberta.py", common)
+        # run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
 
         print("\n>>> 训练本文提出方案 (Stage 1 & 2)")
         run_script("train", "train_deberta_v3_mtl_s1.py", deberta_common)
@@ -195,6 +195,14 @@ def main():
         if s1_path: 
             print(f">>> [Found] 使用最新的 S1 权重进行续训: {s1_path}")
             run_script("train", "train_deberta_v3_mtl_s2.py", ["--s1_checkpoint", s1_path] + deberta_common)
+        
+        # --- BCE 消融实验组 (验证 Focal Loss 和 weighted_toxicity_loss 的贡献) ---
+        print("\n>>> [消融实验] 训练 BCE 消融组 (全流程使用标准 BCE，对照 Focal Loss)")
+        run_script("train", "train_deberta_v3_mtl_s1_ablation_bce.py", deberta_common)
+        s1_ablation_path = find_latest_checkpoint("DebertaV3MTL_S1_AblationBCE")
+        if s1_ablation_path:
+            print(f">>> [Found] 使用 BCE 消融 S1 权重: {s1_ablation_path}")
+            run_script("train", "train_deberta_v3_mtl_s2_ablation_bce.py", ["--s1_checkpoint", s1_ablation_path] + deberta_common)
     
     # --- Phase 1.5: S2 Grid Search (网格搜索超参数) ---
     if args.mode in ["grid_search"]:
@@ -250,11 +258,14 @@ def main():
             # --- 新逻辑：基于模型前缀匹配，查找每种类型的最新权重 ---
             # 预定义模型前缀到评估器类型的映射
             MODEL_PREFIX_MAP = {
-                "DebertaV3MTL_S2": "deberta_mtl",      # 本文方案 (S2 最终模型)
-                "BertCNNBiLSTM": "bert_cnn",           # 混合对照
-                "VanillaBERT": "vanilla_bert",         # Transformer baseline
-                "VanillaRoBERTa": "vanilla_roberta",   # Transformer baseline
-                "VanillaDeBERTa": "vanilla_deberta",   # Transformer baseline (本文基座)
+                "DebertaV3MTL_S2": "deberta_mtl",              # 本文方案 (S2 最终模型)
+                "DebertaV3MTL_S1": "deberta_mtl",              # 本文方案 (S1 阶段模型)
+                "DebertaV3MTL_S2_AblationBCE": "deberta_mtl",  # BCE 消融实验 S2
+                "DebertaV3MTL_S1_AblationBCE": "deberta_mtl",  # BCE 消融实验 S1
+                "BertCNNBiLSTM": "bert_cnn",                   # 混合对照
+                "VanillaBERT": "vanilla_bert",                 # Transformer baseline
+                "VanillaRoBERTa": "vanilla_roberta",           # Transformer baseline
+                "VanillaDeBERTa": "vanilla_deberta",           # Transformer baseline (本文基座)
             }
             
             pths = [f for f in os.listdir(MODEL_DIR) if f.endswith(".pth")]
