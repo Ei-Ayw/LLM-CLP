@@ -19,9 +19,14 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data.distributed import DistributedSampler
 
 # =============================================================================
-# ### 核心训练脚本：train_deberta_mtl_stage2.py (AMP加速版) ###
-# 设计说明：
-# 执行身份感知重加权微调。集成了 FP16 加速。
+# ### 消融实验脚本：train_deberta_v3_mtl_s2_ablation_bce.py ###
+# =============================================================================
+# 【消融目标】验证 Focal Loss 和 weighted_toxicity_loss 的作用
+# 【对照组】本脚本与 train_deberta_v3_mtl_s2.py 的区别：
+#   - 原版本 S1: 使用 BCEFocalLoss
+#   - 原版本 S2: 使用 weighted_toxicity_loss (身份重加权)
+#   - 本版本: 全流程使用标准 BCEWithLogitsLoss
+# 【预期结果】与训练/评估一致的统一损失函数可能改善效果
 # =============================================================================
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -39,33 +44,35 @@ from exp_data_loader import ToxicityDataset, sample_aligned_data
 from path_config import get_model_path, get_log_path
 from train_utils import EarlyStopping
 
-def weighted_toxicity_loss(logits, targets, has_id, w_identity, w_id_toxic):
-    weights = torch.ones_like(targets)
-    has_id_mask = has_id.unsqueeze(-1).bool()
-    is_toxic = targets >= 0.5
-    weights[(~is_toxic) & has_id_mask] = w_identity
-    weights[is_toxic & has_id_mask] = w_id_toxic
-    criterion = nn.BCEWithLogitsLoss(reduction='none')
-    loss = criterion(logits, targets)
-    return (loss * weights).mean()
+# [消融] 移除 weighted_toxicity_loss，使用标准 BCE
+# def weighted_toxicity_loss(logits, targets, has_id, w_identity, w_id_toxic):
+#     weights = torch.ones_like(targets)
+#     has_id_mask = has_id.unsqueeze(-1).bool()
+#     is_toxic = targets >= 0.5
+#     weights[(~is_toxic) & has_id_mask] = w_identity
+#     weights[is_toxic & has_id_mask] = w_id_toxic
+#     criterion = nn.BCEWithLogitsLoss(reduction='none')
+#     loss = criterion(logits, targets)
+#     return (loss * weights).mean()
 
-def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_steps, alpha, beta, w_identity, w_id_toxic, no_reweight=False):
+def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_steps, alpha, beta):
+    """
+    [消融实验] 全流程使用标准 BCE，移除身份重加权
+    """
     model.train()
-    criterion_aux = nn.BCEWithLogitsLoss()
+    criterion = nn.BCEWithLogitsLoss()  # [消融] 统一使用 BCE
     total_loss = 0
-    optimizer.zero_grad() # [Fix] 显式初始化梯度
-    pbar = tqdm(loader, desc="[Train S2 AMP]")
+    optimizer.zero_grad()
+    pbar = tqdm(loader, desc="[Train S2 Ablation]")
     for i, batch in enumerate(pbar):
         ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
-        y_tox, y_sub, y_id, has_id = batch['y_tox'].to(device).unsqueeze(-1), batch['y_sub'].to(device), batch['y_id'].to(device), batch['has_id'].to(device)
+        y_tox, y_sub, y_id = batch['y_tox'].to(device).unsqueeze(-1), batch['y_sub'].to(device), batch['y_id'].to(device)
         
         with torch.amp.autocast('cuda'):
             out = model(ids, mask)
-            if no_reweight:
-                l_tox = criterion_aux(out['logits_tox'], y_tox)
-            else:
-                l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id, w_identity, w_id_toxic)
-            l_sub, l_id = criterion_aux(out['logits_sub'], y_sub), criterion_aux(out['logits_id'], y_id)
+            l_tox = criterion(out['logits_tox'], y_tox)  # [消融] 无重加权
+            l_sub = criterion(out['logits_sub'], y_sub)
+            l_id = criterion(out['logits_id'], y_id)
             loss = l_tox + alpha * l_sub + beta * l_id
         
         loss = loss / accum_steps
@@ -80,24 +87,19 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_s
         pbar.set_postfix(loss=f"{total_loss/(i+1):.4f}")
     return total_loss / len(loader)
 
-def evaluate(model, loader, device, w_identity=2.5, w_id_toxic=1.5, no_reweight=False):
+def evaluate(model, loader, device):
     """
-    [Fix] 评估函数与训练保持一致的损失函数
-    - 修复前：训练用 weighted_toxicity_loss，评估用 BCE，导致 checkpoint 选择偏差
-    - 修复后：评估也使用 weighted_toxicity_loss，确保 Early Stopping 基于正确的指标
+    [消融实验] 全流程使用标准 BCE
     """
     model.eval()
+    criterion = nn.BCEWithLogitsLoss()  # [消融] 统一使用 BCE
     total_loss = 0
     with torch.no_grad():
-        for batch in tqdm(loader, desc="[Eval S2]"):
+        for batch in tqdm(loader, desc="[Eval S2 Ablation]"):
             ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
             y_tox = batch['y_tox'].to(device).unsqueeze(-1)
-            has_id = batch['has_id'].to(device)
             out = model(ids, mask)
-            if no_reweight:
-                loss = nn.BCEWithLogitsLoss()(out['logits_tox'], y_tox)
-            else:
-                loss = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id, w_identity, w_id_toxic)
+            loss = criterion(out['logits_tox'], y_tox)
             total_loss += loss.item()
     return total_loss / len(loader)
 
@@ -156,7 +158,8 @@ def main():
     suffix = ('_NoReweight' if args.no_reweight else '')
     if args.ablation_tag: suffix += f"_{args.ablation_tag}"
     
-    save_name = f"DebertaV3MTL_S2{suffix}_Sample{args.sample_size}_{datetime.now().strftime('%m%d_%H%M')}"
+    # [消融] 文件名使用 AblationBCE 前缀
+    save_name = f"DebertaV3MTL_S2_AblationBCE{suffix}_Sample{args.sample_size}_{datetime.now().strftime('%m%d_%H%M')}"
     save_path = get_model_path(save_name + ".pth")
 
     train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
@@ -211,10 +214,10 @@ def main():
         train_sampler.set_epoch(epoch)
         if is_main_process: print(f"\nEpoch {epoch+1}/{args.epochs}")
         
-        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, scaler, device, args.grad_accum, args.alpha, args.beta, args.w_identity, args.w_id_toxic, args.no_reweight)
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, scaler, device, args.grad_accum, args.alpha, args.beta)
         
         # [Fix] 所有 Rank 都参与验证，避免 NCCL 超时
-        val_loss = evaluate(model, val_loader, device, args.w_identity, args.w_id_toxic, args.no_reweight)
+        val_loss = evaluate(model, val_loader, device)
         
         # 同步所有 Rank 的验证完成
         dist.barrier()
