@@ -68,7 +68,7 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_s
         ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
         y_tox, y_sub, y_id = batch['y_tox'].to(device).unsqueeze(-1), batch['y_sub'].to(device), batch['y_id'].to(device)
         
-        with torch.amp.autocast('cuda'):
+        with torch.cuda.amp.autocast():
             out = model(ids, mask)
             l_tox = criterion(out['logits_tox'], y_tox)  # [消融] 无重加权
             l_sub = criterion(out['logits_sub'], y_sub)
@@ -198,7 +198,7 @@ def main():
     model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
 
     optimizer = AdamW(model.parameters(), lr=args.lr)
-    scaler = torch.amp.GradScaler('cuda')
+    scaler = torch.cuda.amp.GradScaler()
     
     if args.scheduler == "plateau":
         scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True)

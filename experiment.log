@@ -1,0 +1,16 @@
+[System] Detected 8 GPUs. Full parallel mode enabled.
+[2026-02-24 12:46:07] Experiment Session Started.
+[System] GPU Count: 8
+[FULL MODE] Effective Sample Size: 300000
+>>> [Auto-Detect] Non-interactive shell detected. Disabling progress bars.
+
+>>> Phase 0: Skipped (preprocessed data already exists)
+
+======================================================================
+>>> Phase 1: Parallel Baseline Training (4 groups x 2 GPUs + CPU)
+======================================================================
+[PARALLEL] Launching: VanillaBERT on GPU [0,1]
+[PARALLEL] Launching: VanillaRoBERTa on GPU [2,3]
+[PARALLEL] Launching: BertCNNBiLSTM on GPU [4,5]
+[PARALLEL] Launching: VanillaDeBERTa on GPU [6,7]
+[PARALLEL] Launching: TF-IDF_LR on GPU []

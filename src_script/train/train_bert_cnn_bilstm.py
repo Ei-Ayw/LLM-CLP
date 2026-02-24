@@ -47,7 +47,7 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device):
         y = batch['y_tox'].to(device).unsqueeze(-1)
         
         optimizer.zero_grad()
-        with torch.amp.autocast('cuda'): # 开启自动混合精度
+        with torch.cuda.amp.autocast(): # 开启自动混合精度
             out = model(ids, mask)
             loss = criterion(out['logits_tox'], y)
         
@@ -116,7 +116,7 @@ def main():
         model = nn.DataParallel(model)
         
     optimizer = AdamW(model.parameters(), lr=args.lr, fused=True)
-    scaler = torch.amp.GradScaler('cuda') # 梯度缩放器
+    scaler = torch.cuda.amp.GradScaler() # 梯度缩放器
     
     num_steps = int(len(train_ds) / args.batch_size * args.epochs)
     if args.scheduler == "plateau":
@@ -138,7 +138,7 @@ def main():
             for batch in val_loader:
                 ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
                 y = batch['y_tox'].to(device).unsqueeze(-1)
-                with torch.amp.autocast('cuda'):
+                with torch.cuda.amp.autocast():
                     out = model(ids, mask)
                     v_loss += nn.BCEWithLogitsLoss()(out['logits_tox'], y).item()
         val_loss = v_loss / len(val_loader)
