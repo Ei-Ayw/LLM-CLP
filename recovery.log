@@ -1,0 +1,54 @@
+[21:17:48] Recovery started. Target: finish in 1 hour.
+
+=== Existing Checkpoints ===
+  [OK] BertCNNBiLSTM_Sample300000_0224_1246.pth
+  [OK] DebertaV3MTL_S1_AblationBCE_Sample300000_0224_1652.pth
+  [OK] DebertaV3MTL_S1_Sample300000_0224_1632.pth
+  [OK] VanillaBERT_Sample300000_0224_1246.pth
+  [OK] VanillaDeBERTa_Sample300000_0224_1246.pth
+  [OK] VanillaRoBERTa_Sample300000_0224_1246.pth
+  S1 path: /root/lanyun-fs/01_nlp_toxicity_classification/src_result/models/DebertaV3MTL_S1_Sample300000_0224_1632.pth
+  S1 Ablation path: /root/lanyun-fs/01_nlp_toxicity_classification/src_result/models/DebertaV3MTL_S1_AblationBCE_Sample300000_0224_1652.pth
+
+============================================================
+Phase A: MTL S2 (4 GPU) + Ablation S2 (4 GPU) + TF-IDF (CPU)
+============================================================
+  [MTL_S2] GPU [0,1,2,3] -> /root/lanyun-fs/01_nlp_toxicity_classification/src_result/logs/recovery_MTL_S2.log
+  [AblationBCE_S2] GPU [4,5,6,7] -> /root/lanyun-fs/01_nlp_toxicity_classification/src_result/logs/recovery_AblationBCE_S2.log
+  [TF-IDF_LR] GPU [] -> /root/lanyun-fs/01_nlp_toxicity_classification/src_result/logs/recovery_TF-IDF_LR.log
+  [MTL_S2] OK (211.4 min)
+  [AblationBCE_S2] OK (212.8 min)
+  [TF-IDF_LR] OK (212.8 min)
+
+Phase A done. Elapsed: 212.8 min
+
+============================================================
+Phase B: Evaluate ALL models (parallel, 1 GPU each)
+============================================================
+  Evaluating 6 models...
+  [Eval_DebertaV3MTL_S2_AblationBCE] GPU [0] -> /root/lanyun-fs/01_nlp_toxicity_classification/src_result/logs/recovery_Eval_DebertaV3MTL_S2_AblationBCE.log
+  [Eval_DebertaV3MTL_S2] GPU [1] -> /root/lanyun-fs/01_nlp_toxicity_classification/src_result/logs/recovery_Eval_DebertaV3MTL_S2.log
+  [Eval_BertCNNBiLSTM] GPU [2] -> /root/lanyun-fs/01_nlp_toxicity_classification/src_result/logs/recovery_Eval_BertCNNBiLSTM.log
+  [Eval_VanillaBERT] GPU [3] -> /root/lanyun-fs/01_nlp_toxicity_classification/src_result/logs/recovery_Eval_VanillaBERT.log
+  [Eval_VanillaRoBERTa] GPU [4] -> /root/lanyun-fs/01_nlp_toxicity_classification/src_result/logs/recovery_Eval_VanillaRoBERTa.log
+  [Eval_VanillaDeBERTa] GPU [5] -> /root/lanyun-fs/01_nlp_toxicity_classification/src_result/logs/recovery_Eval_VanillaDeBERTa.log
+  [Eval_DebertaV3MTL_S2_AblationBCE] OK (2.6 min)
+  [Eval_DebertaV3MTL_S2] OK (2.7 min)
+  [Eval_BertCNNBiLSTM] OK (2.7 min)
+  [Eval_VanillaBERT] OK (2.7 min)
+  [Eval_VanillaRoBERTa] OK (2.7 min)
+  [Eval_VanillaDeBERTa] OK (2.9 min)
+
+Phase B done. Elapsed: 215.6 min
+
+============================================================
+Phase C: Visualization
+============================================================
+  [PerfSummary] GPU [0] -> /root/lanyun-fs/01_nlp_toxicity_classification/src_result/logs/recovery_PerfSummary.log
+  [tSNE] GPU [1] -> /root/lanyun-fs/01_nlp_toxicity_classification/src_result/logs/recovery_tSNE.log
+  [PerfSummary] OK (0.0 min)
+  [tSNE] OK (0.3 min)
+
+============================================================
+[DONE] Total time: 215.9 min
+============================================================
