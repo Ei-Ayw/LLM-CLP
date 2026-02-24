@@ -2,12 +2,12 @@ import os
 import subprocess
 import argparse
 import sys
-import torch # Need to detect GPU count for launcher
+import torch
 import time
 from datetime import datetime
 
 # =============================================================================
-# ### 实验管理器：run_experiments.py (专业分层架构版) ###
+# ### 实验管理器：run_experiments.py (8-GPU 并行调度版) ###
 # =============================================================================
 # 设计说明：
 # 本脚本作为整个项目的"控制塔"，通过四级分层子目录调度全量实验流程。
@@ -26,11 +26,18 @@ from datetime import datetime
 # │  (sample_size控制)        Early Stopping        (从未见过)             │
 # └─────────────────────────────────────────────────────────────────────────┘
 #
-# 实验矩阵 (精简到文档要求):
+# 实验矩阵 (全量):
 #   Group 1: 传统强基线    - TF-IDF + Logistic Regression
 #   Group 2: 混合强对照    - BERT + CNN + BiLSTM
 #   Group 3: Transformer   - BERT, RoBERTa, DeBERTa-v3 (本文基座)
 #   Group 4: 本文方案      - DeBERTa-v3 MTL (两阶段) + 消融实验
+#
+# 并行调度策略 (8x GPU):
+#   Phase 1: 4组 baseline 并行 (各2卡) + TF-IDF (CPU)
+#   Phase 2: MTL S1 全8卡 DDP
+#   Phase 3: MTL S2 (4卡) + BCE Ablation S1 (4卡) 并行
+#   Phase 4: BCE Ablation S2 (4卡) + 已完成模型评估 (4卡) 并行
+#   Phase 5: 剩余评估 + 可视化
 #
 # 输出目录结构 (src_result/):
 # ├── models/      # 存储 .pth 模型权重 (Best Model)
@@ -42,6 +49,7 @@ from datetime import datetime
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RES_DIR = os.path.join(BASE_DIR, "src_result")
 MODEL_DIR = os.path.join(RES_DIR, "models")
+LOG_DIR = os.path.join(RES_DIR, "logs")
 PYTHON_EXE = sys.executable + " -u"
 
 # 核心离线环境配置
@@ -49,266 +57,463 @@ os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
 os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
 
-# [Stable Mode] 强制禁用 NCCL P2P 和 IB 以防止 DataParallel 段错误
+# [Stable Mode] 强制禁用 NCCL P2P 和 IB 以防止跨卡通信问题
 os.environ["NCCL_P2P_DISABLE"] = "1"
 os.environ["NCCL_IB_DISABLE"] = "1"
 
-# [Robust Fix] 动态设置可用显卡，最多保留 3 张
-if torch.cuda.is_available():
-    num_gpus = torch.cuda.device_count()
-    if num_gpus >= 3:
-        os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2"
-        actual_gpus = 3
-    else:
-        actual_gpus = num_gpus
-    print(f"[System] Detected {num_gpus} GPUs. Using {actual_gpus} GPUs.")
-else:
-    actual_gpus = 0
-    print("[System] No GPU detected. Running in CPU mode.")
+# 检测全部可用 GPU (不做人为限制)
+TOTAL_GPUS = torch.cuda.device_count() if torch.cuda.is_available() else 0
+print(f"[System] Detected {TOTAL_GPUS} GPUs. Full parallel mode enabled.")
 
-def run_script(folder, script_name, args_list):
-    """ 执行分层目录下的脚本 (智能适配 DDP) """
+
+# =============================================================================
+# 核心调度函数
+# =============================================================================
+
+def run_script(folder, script_name, args_list, gpu_ids=None, ddp_nproc=None, master_port=29500):
+    """执行分层目录下的脚本 (支持指定 GPU 子集和 DDP)"""
     script_path = os.path.join(BASE_DIR, "src_script", folder, script_name)
-    
-    # [Smart Mode] 如果是 DeBERTa 训练脚本，且有可用显卡，自动使用 torchrun 启动 DDP
-    nproc = torch.cuda.device_count() if torch.cuda.is_available() else 0
-    
-    if "deberta" in script_name and "train" in script_name and nproc > 0:
-        print(f"\n[HIERARCHY RUN] 🚀 DDP Mode Enabled: {script_name} (Using {nproc} GPUs)")
-        
-        # [Fix] 强制修正 Batch Size 以防止 OOM (DDP下 bs 为单卡)
-        # 之前传进来的 args_list 可能含 --batch_size 64，这会让每张卡都跑 64 -> 必炸
-        new_args = []
-        skip_next = False
-        for arg in args_list:
-            if skip_next:
-                skip_next = False
-                continue
-            if arg == "--batch_size":
-                new_args.extend(["--batch_size", "8"]) # 强行设为 8 (总 32)
-                skip_next = True
-            else:
-                new_args.append(arg)
-        
-        # 构造 torchrun 命令
-        # 相当于: torchrun --nproc_per_node=4 script.py ...
+
+    env = os.environ.copy()
+    if gpu_ids is not None:
+        env["CUDA_VISIBLE_DEVICES"] = gpu_ids
+
+    is_ddp = "deberta" in script_name and "train" in script_name and ddp_nproc and ddp_nproc > 0
+
+    if is_ddp:
+        print(f"\n[RUN-DDP] {script_name} on GPU [{gpu_ids}] x{ddp_nproc}")
         cmd = [
             sys.executable, "-m", "torch.distributed.run",
-            f"--nproc_per_node={nproc}",
+            f"--nproc_per_node={ddp_nproc}",
+            f"--master_port={master_port}",
             script_path
-        ] + new_args
+        ] + args_list
     else:
-        # 普通脚本保持原样
         cmd = PYTHON_EXE.split() + [script_path] + args_list
-        print(f"\n[HIERARCHY RUN] {folder}/{script_name}: {' '.join(cmd)}")
-    
-    subprocess.run(cmd, check=True)
+        print(f"\n[RUN] {folder}/{script_name} on GPU [{gpu_ids or 'all'}]")
+
+    subprocess.run(cmd, check=True, env=env)
+
+
+def run_parallel_tasks(tasks):
+    """
+    并行执行多个训练/评估任务，每个任务分配独立的 GPU 子集。
+
+    Args:
+        tasks: list of dicts, each with:
+            - 'name': 任务名称
+            - 'folder': 脚本子目录 (e.g., 'train', 'eval')
+            - 'script': 脚本文件名
+            - 'args': 命令行参数列表
+            - 'gpus': str, CUDA_VISIBLE_DEVICES (e.g., "0,1")
+            - 'ddp': bool, 是否用 torchrun 启动 DDP
+            - 'nproc': int, DDP 进程数 (仅 ddp=True 时)
+            - 'master_port': int, DDP rendezvous 端口 (仅 ddp=True 时)
+
+    Returns:
+        dict: {task_name: (return_code, elapsed_seconds)}
+    """
+    processes = {}
+    start_times = {}
+    log_files = {}
+
+    for task in tasks:
+        script_path = os.path.join(BASE_DIR, "src_script", task['folder'], task['script'])
+
+        env = os.environ.copy()
+        env["CUDA_VISIBLE_DEVICES"] = task.get('gpus', '')
+
+        if task.get('ddp', False):
+            nproc = task.get('nproc', len(task['gpus'].split(',')))
+            master_port = task.get('master_port', 29500)
+            cmd = [
+                sys.executable, "-m", "torch.distributed.run",
+                f"--nproc_per_node={nproc}",
+                f"--master_port={master_port}",
+                script_path
+            ] + task['args']
+        else:
+            cmd = PYTHON_EXE.split() + [script_path] + task['args']
+
+        print(f"[PARALLEL] Launching: {task['name']} on GPU [{task.get('gpus', 'CPU')}]")
+
+        # 每个并行任务输出到独立日志文件，避免交叉输出
+        log_path = os.path.join(LOG_DIR, f"parallel_{task['name']}.log")
+        lf = open(log_path, 'w')
+        log_files[task['name']] = lf
+
+        proc = subprocess.Popen(cmd, env=env, stdout=lf, stderr=subprocess.STDOUT)
+        processes[task['name']] = proc
+        start_times[task['name']] = time.time()
+
+    # 等待所有任务完成
+    results = {}
+    for name, proc in processes.items():
+        proc.wait()
+        elapsed = time.time() - start_times[name]
+        results[name] = (proc.returncode, elapsed)
+        status = "OK" if proc.returncode == 0 else f"FAILED (rc={proc.returncode})"
+        print(f"[PARALLEL] {name}: {status} ({elapsed/60:.1f} min)")
+        log_files[name].close()
+
+    # 报告失败任务 (不中断流程)
+    failed = {n: r for n, r in results.items() if r[0] != 0}
+    if failed:
+        print(f"\n[WARNING] {len(failed)} task(s) failed: {list(failed.keys())}")
+        for name in failed:
+            log_path = os.path.join(LOG_DIR, f"parallel_{name}.log")
+            print(f"  -> Check log: {log_path}")
+
+    return results
+
 
 def find_latest_checkpoint(identifier=None):
     if not os.path.exists(MODEL_DIR): return None
     pths = [f for f in os.listdir(MODEL_DIR) if f.endswith(".pth")]
     if identifier:
         pths = [f for f in pths if identifier in f]
-    
+
     if not pths: return None
-    # Sort by modification time (newest first)
     pths.sort(key=lambda x: os.path.getmtime(os.path.join(MODEL_DIR, x)), reverse=True)
     return os.path.join(MODEL_DIR, pths[0])
 
-def find_best_s1():
-    # Deprecated fallback
-    return find_latest_checkpoint(identifier="S1")
+
+def build_eval_tasks(gpus_start=0, exclude_prefixes=None):
+    """构建评估任务列表，用于并行执行。"""
+    MODEL_PREFIX_MAP = {
+        "DebertaV3MTL_S2_AblationBCE": "deberta_mtl",
+        "DebertaV3MTL_S2": "deberta_mtl",
+        "BertCNNBiLSTM": "bert_cnn",
+        "VanillaBERT": "vanilla_bert",
+        "VanillaRoBERTa": "vanilla_roberta",
+        "VanillaDeBERTa": "vanilla_deberta",
+    }
+
+    if not os.path.exists(MODEL_DIR):
+        return []
+
+    pths = [f for f in os.listdir(MODEL_DIR) if f.endswith(".pth")]
+
+    best_checkpoints = {}
+    for prefix, m_type in MODEL_PREFIX_MAP.items():
+        matched = [p for p in pths if p.startswith(prefix)]
+        if matched:
+            matched.sort(key=lambda x: os.path.getmtime(os.path.join(MODEL_DIR, x)), reverse=True)
+            best_checkpoints[prefix] = (matched[0], m_type)
+
+    if exclude_prefixes:
+        best_checkpoints = {k: v for k, v in best_checkpoints.items() if k not in exclude_prefixes}
+
+    tasks = []
+    gpu_idx = gpus_start
+    for prefix, (pth, m_type) in best_checkpoints.items():
+        tasks.append({
+            'name': f'Eval_{prefix}',
+            'folder': 'eval', 'script': 'eval_universal_runner.py',
+            'args': [
+                "--checkpoint", os.path.join(MODEL_DIR, pth),
+                "--model_type", m_type,
+                "--output_prefix", pth.replace(".pth", ""),
+            ],
+            'gpus': str(gpu_idx),
+            'ddp': False,
+        })
+        gpu_idx += 1
+        if gpu_idx > 7:
+            gpu_idx = gpus_start
+    return tasks
+
+
+# =============================================================================
+# 主流程
+# =============================================================================
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, choices=["all", "train", "eval", "ablation", "viz", "grid_search"], default="all")
     parser.add_argument("--sample_size", type=int, default=0, help="实验数据采样量 (0表示全量)")
-    # 针对 4x A10 (24GB) 优化：显存充足，使用大 Batch 提高吞吐
-    # MaxLen=128 下，单卡 24G 可支持 Batch=128+，4卡可支持 512+
-    # 注意: max_len=256 后显存占用翻倍，需减小 batch_size
     default_bs = 48 if torch.cuda.is_available() else 16
-    parser.add_argument("--batch_size", type=int, default=default_bs, help="默认基础 Batch Size (3卡 DataParallel 每卡32, CPU下建议设小)")
+    parser.add_argument("--batch_size", type=int, default=default_bs, help="Baseline 模型 Batch Size")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--max_len", type=int, default=256, help="序列最大长度，建议 256")
+    parser.add_argument("--max_len", type=int, default=256, help="序列最大长度")
     parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
     parser.add_argument("--patience", type=int, default=1)
     parser.add_argument("--early_patience", type=int, default=3, help="验证集 Loss 早停等待轮数")
     parser.add_argument("--epochs", type=int, default=20, help="训练轮数 (0=默认/早停)")
     parser.add_argument("--no_bar", action="store_true", help="禁用 tqdm 进度条 (nohup模式下推荐)")
     args = parser.parse_args()
-    
-    # 记录实验开始时间戳，用于后续筛选本次实验产出的模型
+
     experiment_start_time = datetime.now()
     print(f"[{experiment_start_time.strftime('%Y-%m-%d %H:%M:%S')}] Experiment Session Started.")
+    print(f"[System] GPU Count: {TOTAL_GPUS}")
 
-    # 处理全量跑逻辑
-    effective_sample_size = args.sample_size if args.sample_size > 0 else 300_000  # [Fix] 减少样本量加速训练
+    effective_sample_size = args.sample_size if args.sample_size > 0 else 300_000
     is_full_mode = args.sample_size <= 0
     print(f"[{'FULL' if is_full_mode else 'SAMPLED'} MODE] Effective Sample Size: {effective_sample_size}")
 
-    # 自动检测 nohup / 非交互环境
     if not sys.stdout.isatty():
         args.no_bar = True
         print(">>> [Auto-Detect] Non-interactive shell detected. Disabling progress bars.")
 
-    # 预先创建结果子目录 (防御式编程)
+    # 预先创建结果子目录
     for d in ["models", "logs", "eval", "viz"]:
         os.makedirs(os.path.join(RES_DIR, d), exist_ok=True)
 
-    common = ["--sample_size", str(effective_sample_size), "--batch_size", str(args.batch_size), "--seed", str(args.seed), "--max_len", str(args.max_len), "--scheduler", args.scheduler, "--patience", str(args.patience), "--early_patience", str(args.early_patience)]
-    
+    # Baseline 通用参数 (BERT/RoBERTa/BertCNNBiLSTM 用)
+    common = [
+        "--sample_size", str(effective_sample_size),
+        "--batch_size", str(args.batch_size),
+        "--seed", str(args.seed),
+        "--max_len", str(args.max_len),
+        "--scheduler", args.scheduler,
+        "--patience", str(args.patience),
+        "--early_patience", str(args.early_patience),
+    ]
     if args.epochs > 0:
         common += ["--epochs", str(args.epochs)]
-        
     if args.no_bar:
         common += ["--no_bar"]
 
-    # 针对 DeBERTaV3: 训练脚本中 batch_size 是单卡值
-    # 32 per GPU × 3 GPUs = 96 total, ~12GB 显存/卡
-    deberta_batch_size = 16  # 注意: max_len=256 后显存占用更高，需减小 batch
+    # DeBERTa 专用参数 (DDP 下 batch_size 为单卡值, 16 per GPU)
+    deberta_batch_size = 16
     deberta_common = common[:]
     if "--batch_size" in deberta_common:
         idx = deberta_common.index("--batch_size")
         deberta_common[idx+1] = str(deberta_batch_size)
 
+    # GPU ID 字符串
+    all_gpus = ",".join(str(i) for i in range(TOTAL_GPUS))  # "0,1,2,3,4,5,6,7"
+    gpus_0_1 = "0,1"
+    gpus_2_3 = "2,3"
+    gpus_4_5 = "4,5"
+    gpus_6_7 = "6,7"
+    gpus_0_3 = "0,1,2,3"
+    gpus_4_7 = "4,5,6,7"
 
-    # --- Phase 1: Data & Models Training ---
+    # =====================================================================
+    # Phase 0: 数据预处理 (CPU, 仅在缺失时执行)
+    # =====================================================================
     if args.mode in ["all", "train"]:
-        # 数据预处理: 生成 train_processed / val_processed / test_processed (80/10/10)
-        # 优化：直接在预处理阶段进行采样，避免生成庞大的全量中间文件
-        # run_script("data", "exp_data_preprocess.py", ["--sample_size", str(effective_sample_size), "--seed", str(args.seed)])
+        data_files = ["train_processed.parquet", "val_processed.parquet", "test_processed.parquet"]
+        if not all(os.path.exists(os.path.join(BASE_DIR, "data", f)) for f in data_files):
+            print("\n" + "="*70)
+            print(">>> Phase 0: Data Preprocessing")
+            print("="*70)
+            run_script("data", "exp_data_preprocess.py",
+                       ["--sample_size", str(effective_sample_size), "--seed", str(args.seed)])
+        else:
+            print("\n>>> Phase 0: Skipped (preprocessed data already exists)")
 
-        # Group 1: Classical Strong Baseline (TF-IDF + LR)
-        # run_script("train", "train_classical_tfidf_lr.py", ["--mode", "train"])
+    # =====================================================================
+    # Phase 1: Baseline 并行训练 (4组 x 2卡 + CPU)
+    # =====================================================================
+    if args.mode in ["all", "train"]:
+        print("\n" + "="*70)
+        print(">>> Phase 1: Parallel Baseline Training (4 groups x 2 GPUs + CPU)")
+        print("="*70)
 
-        # Group 2: Hybrid Contrastive Baseline (Strong Contrast)
-        # run_script("train", "train_bert_cnn_bilstm.py", common)
+        phase1_tasks = [
+            {
+                'name': 'VanillaBERT',
+                'folder': 'train', 'script': 'train_vanilla_bert.py',
+                'args': common,
+                'gpus': gpus_0_1, 'ddp': False,
+            },
+            {
+                'name': 'VanillaRoBERTa',
+                'folder': 'train', 'script': 'train_vanilla_roberta.py',
+                'args': common,
+                'gpus': gpus_2_3, 'ddp': False,
+            },
+            {
+                'name': 'BertCNNBiLSTM',
+                'folder': 'train', 'script': 'train_bert_cnn_bilstm.py',
+                'args': common,
+                'gpus': gpus_4_5, 'ddp': False,
+            },
+            {
+                'name': 'VanillaDeBERTa',
+                'folder': 'train', 'script': 'train_vanilla_deberta_v3.py',
+                'args': deberta_common,
+                'gpus': gpus_6_7, 'ddp': True, 'nproc': 2, 'master_port': 29500,
+            },
+            {
+                'name': 'TF-IDF_LR',
+                'folder': 'train', 'script': 'train_classical_tfidf_lr.py',
+                'args': ['--mode', 'train'],
+                'gpus': '',  # CPU only
+                'ddp': False,
+            },
+        ]
+        run_parallel_tasks(phase1_tasks)
 
-        # Group 3: Pretrained Transformer Baselines
-        # run_script("train", "train_vanilla_bert.py", common)
-        # run_script("train", "train_vanilla_roberta.py", common)
-        # run_script("train", "train_vanilla_deberta_v3.py", deberta_common)
+    # =====================================================================
+    # Phase 2: 本文方案 MTL S1 (全8卡 DDP)
+    # =====================================================================
+    if args.mode in ["all", "train"]:
+        print("\n" + "="*70)
+        print(f">>> Phase 2: MTL Stage 1 Training ({TOTAL_GPUS}-GPU DDP)")
+        print("="*70)
 
-        print("\n>>> 训练本文提出方案 (Stage 1 & 2)")
-        run_script("train", "train_deberta_v3_mtl_s1.py", deberta_common)
-        s1_path = find_best_s1()
-        if s1_path: 
-            print(f">>> [Found] 使用最新的 S1 权重进行续训: {s1_path}")
-            run_script("train", "train_deberta_v3_mtl_s2.py", ["--s1_checkpoint", s1_path] + deberta_common)
-        
-        # --- BCE 消融实验组 (验证 Focal Loss 和 weighted_toxicity_loss 的贡献) ---
-        print("\n>>> [消融实验] 训练 BCE 消融组 (全流程使用标准 BCE，对照 Focal Loss)")
-        run_script("train", "train_deberta_v3_mtl_s1_ablation_bce.py", deberta_common)
+        run_script("train", "train_deberta_v3_mtl_s1.py", deberta_common,
+                   gpu_ids=all_gpus, ddp_nproc=TOTAL_GPUS, master_port=29500)
+
+        s1_path = find_latest_checkpoint("DebertaV3MTL_S1")
+        if s1_path:
+            print(f">>> [Found] S1 checkpoint: {s1_path}")
+
+    # =====================================================================
+    # Phase 3: MTL S2 (4卡) + BCE Ablation S1 (4卡) 并行
+    # =====================================================================
+    if args.mode in ["all", "train"]:
+        print("\n" + "="*70)
+        print(">>> Phase 3: MTL S2 + BCE Ablation S1 (parallel, 4+4 GPUs)")
+        print("="*70)
+
+        s1_path = find_latest_checkpoint("DebertaV3MTL_S1")
+        phase3_tasks = []
+
+        if s1_path:
+            phase3_tasks.append({
+                'name': 'MTL_S2',
+                'folder': 'train', 'script': 'train_deberta_v3_mtl_s2.py',
+                'args': ['--s1_checkpoint', s1_path] + deberta_common,
+                'gpus': gpus_0_3, 'ddp': True, 'nproc': 4, 'master_port': 29500,
+            })
+        else:
+            print("[WARNING] S1 checkpoint not found. Skipping MTL S2.")
+
+        phase3_tasks.append({
+            'name': 'AblationBCE_S1',
+            'folder': 'train', 'script': 'train_deberta_v3_mtl_s1_ablation_bce.py',
+            'args': deberta_common,
+            'gpus': gpus_4_7, 'ddp': True, 'nproc': 4, 'master_port': 29501,
+        })
+
+        if phase3_tasks:
+            run_parallel_tasks(phase3_tasks)
+
+    # =====================================================================
+    # Phase 4: BCE Ablation S2 (4卡) + 已完成模型评估 (4卡) 并行
+    # =====================================================================
+    if args.mode in ["all", "train"]:
+        print("\n" + "="*70)
+        print(">>> Phase 4: BCE Ablation S2 + Early Evaluations (parallel)")
+        print("="*70)
+
+        phase4_tasks = []
+
         s1_ablation_path = find_latest_checkpoint("DebertaV3MTL_S1_AblationBCE")
         if s1_ablation_path:
-            print(f">>> [Found] 使用 BCE 消融 S1 权重: {s1_ablation_path}")
-            run_script("train", "train_deberta_v3_mtl_s2_ablation_bce.py", ["--s1_checkpoint", s1_ablation_path] + deberta_common)
-    
-    # --- Phase 1.5: S2 Grid Search (网格搜索超参数) ---
+            print(f">>> [Found] BCE Ablation S1 checkpoint: {s1_ablation_path}")
+            phase4_tasks.append({
+                'name': 'AblationBCE_S2',
+                'folder': 'train', 'script': 'train_deberta_v3_mtl_s2_ablation_bce.py',
+                'args': ['--s1_checkpoint', s1_ablation_path] + deberta_common,
+                'gpus': gpus_0_3, 'ddp': True, 'nproc': 4, 'master_port': 29500,
+            })
+        else:
+            print("[WARNING] BCE Ablation S1 checkpoint not found. Skipping Ablation S2.")
+
+        # 同时在 GPU 4-7 上并行评估已完成的 baseline 模型
+        eval_tasks = build_eval_tasks(
+            gpus_start=4,
+            exclude_prefixes=["DebertaV3MTL_S2_AblationBCE"],  # S2 ablation 还在训练
+        )
+        phase4_tasks.extend(eval_tasks)
+
+        if phase4_tasks:
+            run_parallel_tasks(phase4_tasks)
+
+    # =====================================================================
+    # Phase 5: 剩余评估 + 可视化
+    # =====================================================================
+    if args.mode in ["all", "eval"]:
+        print("\n" + "="*70)
+        print(">>> Phase 5: Remaining Evaluations + Visualization")
+        print("="*70)
+
+        # 评估所有尚未评估的模型 (包括刚训练完的 Ablation S2)
+        remaining_eval = build_eval_tasks(gpus_start=0)
+        # 过滤掉已有评估结果的模型
+        eval_dir = os.path.join(RES_DIR, "eval")
+        if os.path.exists(eval_dir):
+            existing_evals = set(f.replace("_metrics.json", "") for f in os.listdir(eval_dir) if f.endswith("_metrics.json"))
+            remaining_eval = [t for t in remaining_eval
+                              if t['args'][t['args'].index("--output_prefix") + 1] not in existing_evals]
+
+        if remaining_eval:
+            print(f">>> Evaluating {len(remaining_eval)} remaining model(s)...")
+            run_parallel_tasks(remaining_eval)
+        else:
+            print(">>> All models already evaluated.")
+
+    if args.mode in ["all", "viz"]:
+        print("\n>>> Generating visualizations...")
+        run_script("viz", "viz_performance_summary.py", [])
+
+        # t-SNE
+        if os.path.exists(MODEL_DIR):
+            s2_files = [f for f in os.listdir(MODEL_DIR)
+                        if f.startswith("DebertaV3MTL_S2") and "Ablation" not in f and f.endswith(".pth")]
+            if s2_files:
+                s2_files.sort(key=lambda x: os.path.getmtime(os.path.join(MODEL_DIR, x)), reverse=True)
+                latest_s2 = s2_files[0]
+                print(f">>> [Viz] t-SNE using: {latest_s2}")
+                run_script("viz", "viz_feature_t_sne.py",
+                           ["--checkpoint", os.path.join(MODEL_DIR, latest_s2),
+                            "--output_name", "viz_final_paper.png"])
+
+    # =====================================================================
+    # Grid Search (独立模式)
+    # =====================================================================
     if args.mode in ["grid_search"]:
-        print("\n>>> 启动 S2 超参数网格搜索...")
+        print("\n>>> S2 Grid Search...")
         grid_script = os.path.join(BASE_DIR, "run_s2_grid_search.py")
         subprocess.run([sys.executable, grid_script], check=True)
 
-    # --- Phase 2: Ablation (Switch Mode) ---
-    # [暂时跳过] 等主模型跑完效果再跑消融
-    if args.mode in ["ablation"]:  # 只有显式指定才跑
-        print("\n>>> 启动严格消融实验组 (Strict Ablation Matrix: Full S1+S2 Pipeline)")
-        
-        # 基础命令集 (使用 DeBERTa 专用配置，因为消融实验全都是基于 DeBERTa 的)
-        base_cmd = deberta_common
+    # =====================================================================
+    # Ablation 扩展模式 (独立模式, 需要显式 --mode ablation)
+    # =====================================================================
+    if args.mode in ["ablation"]:
+        print("\n>>> Strict Ablation Matrix (Full S1+S2 Pipeline)")
 
-        # Define Ablation Cases
-        # Format: (CaseName, S1_Extra_Args, S2_Extra_Args)
+        base_cmd = deberta_common
         ablations = [
-            ("No_Augmentation", ["--no_aug"], ["--no_aug"]),           # 1. 移除数据增强
-            ("No_Pooling", ["--no_pooling"], ["--no_pooling"]),        # 2. 移除 Attention Pooling
-            ("No_Reweight", [], ["--no_reweight"]),                    # 3. 移除 S2 身份重加权 (S1 正常, S2 无重加权)
-            ("No_Focal", ["--no_focal"], ["--no_focal"]),             # 4. 移除 Focal Loss (如果脚本支持，需确保脚本也加了此参数解析)
+            ("No_Augmentation", ["--no_aug"], ["--no_aug"]),
+            ("No_Pooling", ["--no_pooling"], ["--no_pooling"]),
+            ("No_Reweight", [], ["--no_reweight"]),
+            ("No_Focal", ["--no_focal"], ["--no_focal"]),
         ]
 
         for case_name, s1_args, s2_args in ablations:
             print(f"\n[Ablation Run] Case: {case_name}")
-            
-            # 1. Run Stage 1 for this ablation
-            # 为了区分，我们需要给模型存盘名加后缀，或者依赖脚本内部的时间戳机制
-            # 这里我们通过传入 --suffix 参数让脚本保存时带上标记 (需要在训练脚本里支持)
-            # 或者我们简单地顺序跑，然后根据时间戳最新的去找。
-            
-            # Run S1
+
             print(f"  > Running Stage 1 ({case_name})...")
-            run_script("train", "train_deberta_v3_mtl_s1.py", base_cmd + s1_args + ["--ablation_tag", case_name])
-            
-            # Find the S1 checkpoint we just trained
-            # 假设脚本保存的文件名包含 case_name
+            run_script("train", "train_deberta_v3_mtl_s1.py",
+                       base_cmd + s1_args + ["--ablation_tag", case_name],
+                       gpu_ids=all_gpus, ddp_nproc=TOTAL_GPUS, master_port=29500)
+
             s1_ckpt = find_latest_checkpoint(identifier=f"_{case_name}_")
-            
             if s1_ckpt:
                 print(f"  > Found S1 Checkpoint: {s1_ckpt}")
                 print(f"  > Running Stage 2 ({case_name})...")
-                # Run S2 using the specific S1 checkpoint
-                run_script("train", "train_deberta_v3_mtl_s2.py", base_cmd + s2_args + ["--s1_checkpoint", s1_ckpt, "--ablation_tag", case_name])
+                run_script("train", "train_deberta_v3_mtl_s2.py",
+                           base_cmd + s2_args + ["--s1_checkpoint", s1_ckpt, "--ablation_tag", case_name],
+                           gpu_ids=all_gpus, ddp_nproc=TOTAL_GPUS, master_port=29500)
             else:
-                print(f"  [Error] S1 training for {case_name} failed or checkpoint not found. Skipping S2.")
+                print(f"  [Error] S1 for {case_name} failed or checkpoint not found. Skipping S2.")
 
-    # --- Phase 3: Evaluation ---
-    if args.mode in ["all", "eval", "ablation"]:
-        print("\n>>> 全自动化评估引擎启动...")
-        if os.path.exists(MODEL_DIR):
-            # --- 新逻辑：基于模型前缀匹配，查找每种类型的最新权重 ---
-            # 预定义模型前缀到评估器类型的映射
-            MODEL_PREFIX_MAP = {
-                "DebertaV3MTL_S2": "deberta_mtl",              # 本文方案 (S2 最终模型)
-                "DebertaV3MTL_S1": "deberta_mtl",              # 本文方案 (S1 阶段模型)
-                "DebertaV3MTL_S2_AblationBCE": "deberta_mtl",  # BCE 消融实验 S2
-                "DebertaV3MTL_S1_AblationBCE": "deberta_mtl",  # BCE 消融实验 S1
-                "BertCNNBiLSTM": "bert_cnn",                   # 混合对照
-                "VanillaBERT": "vanilla_bert",                 # Transformer baseline
-                "VanillaRoBERTa": "vanilla_roberta",           # Transformer baseline
-                "VanillaDeBERTa": "vanilla_deberta",           # Transformer baseline (本文基座)
-            }
-            
-            pths = [f for f in os.listdir(MODEL_DIR) if f.endswith(".pth")]
-            
-            # 按模型前缀分组，每组取修改时间最新的
-            best_checkpoints = {}
-            for prefix, m_type in MODEL_PREFIX_MAP.items():
-                # 筛选匹配该前缀的权重文件
-                matched = [p for p in pths if p.startswith(prefix)]
-                if matched:
-                    # 按修改时间排序，取最新
-                    matched.sort(key=lambda x: os.path.getmtime(os.path.join(MODEL_DIR, x)), reverse=True)
-                    best_checkpoints[prefix] = (matched[0], m_type)
-            
-            print(f">>> 发现 {len(pths)} 个权重文件，匹配到 {len(best_checkpoints)} 种模型类型。")
-            
-            for prefix, (pth, m_type) in best_checkpoints.items():
-                # 跳过 S1 中间权重 (除非是消融实验需要)
-                if "_S1_" in pth and "OnlyTox" not in pth:
-                    print(f"  [Skip] 跳过中间阶段权重 S1: {pth}")
-                    continue
-                
-                print(f"  [Eval] {prefix} -> {pth}")
-                run_script("eval", "eval_universal_runner.py", [
-                    "--checkpoint", os.path.join(MODEL_DIR, pth), 
-                    "--model_type", m_type, 
-                    "--output_prefix", pth.replace(".pth", "")
-                ])
+        # 评估消融实验产出的模型
+        print("\n>>> Evaluating ablation models...")
+        eval_tasks = build_eval_tasks(gpus_start=0)
+        if eval_tasks:
+            run_parallel_tasks(eval_tasks)
 
-    # --- Phase 4: Viz ---
-    if args.mode in ["all", "viz"]:
-        run_script("viz", "viz_performance_summary.py", [])
-        # 寻找 S2 正式权重进行可视化 (取修改时间最新的)
-        if os.path.exists(MODEL_DIR):
-            s2_files = [f for f in os.listdir(MODEL_DIR) if f.startswith("DebertaV3MTL_S2") and "No" not in f and f.endswith(".pth")]
-            if s2_files:
-                # 按修改时间排序，取最新
-                s2_files.sort(key=lambda x: os.path.getmtime(os.path.join(MODEL_DIR, x)), reverse=True)
-                latest_s2 = s2_files[0]
-                print(f"  [Viz] Using latest S2 checkpoint: {latest_s2}")
-                run_script("viz", "viz_feature_t_sne.py", ["--checkpoint", os.path.join(MODEL_DIR, latest_s2), "--output_name", "viz_final_paper.png"])
+    # 完成
+    elapsed_total = (datetime.now() - experiment_start_time).total_seconds()
+    print(f"\n[FINISH] All experiments completed. Total time: {elapsed_total/60:.1f} min")
 
-    print("\n[FINISH] Professional Hierarchical Lifecycle Management Completed.")
 
 if __name__ == "__main__":
     main()

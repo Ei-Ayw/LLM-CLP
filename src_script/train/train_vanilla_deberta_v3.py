@@ -53,7 +53,7 @@ def train_one_epoch(model, loader, optimizer, scheduler, device):
         # [Performance] Disable explicit AMP if stability is an issue, 
         # but here we follow the baseline pattern. 
         # Note: DeBERTaV3 often prefers bf16 orfp32 for stability.
-        with torch.amp.autocast('cuda'):
+        with torch.cuda.amp.autocast():
             out = model(ids, mask)
             loss = criterion(out['logits_tox'], y)
         
