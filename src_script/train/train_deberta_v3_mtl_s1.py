@@ -125,6 +125,7 @@ def main():
     parser.add_argument("--early_patience", type=int, default=3)
     parser.add_argument("--epochs", type=int, default=6)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--data_seed", type=int, default=42, help="数据采样种子(固定)，与模型训练seed解耦")
     parser.add_argument("--accum_steps", type=int, default=1)
     parser.add_argument("--max_len", type=int, default=256)
     parser.add_argument("--alpha", type=float, default=0.1, help="MTL Weight for Subtypes (Downscaled from 0.5)")
@@ -158,6 +159,8 @@ def main():
     torch.backends.cudnn.allow_tf32 = True
     torch.backends.cudnn.benchmark = False
     torch.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
+    np.random.seed(args.seed)
     
     timestamp = datetime.now().strftime("%m%d_%H%M")
     
@@ -169,7 +172,7 @@ def main():
     if args.no_focal: suffix += "_NoFocal"
     if args.ablation_tag: suffix += f"_{args.ablation_tag}"
     
-    save_name = f"DebertaV3MTL_S1{suffix}_Sample{args.sample_size}_{timestamp}"
+    save_name = f"DebertaV3MTL_S1{suffix}_Seed{args.seed}_Sample{args.sample_size}_{timestamp}"
     save_path = get_model_path(save_name + ".pth")
 
     if is_main_process:
@@ -177,7 +180,7 @@ def main():
 
     train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
     val_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "val_processed.parquet"))
-    train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.seed)
+    train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.data_seed)
     
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len, augment=not args.no_aug) 

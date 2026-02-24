@@ -49,7 +49,7 @@ def weighted_toxicity_loss(logits, targets, has_id, w_identity, w_id_toxic):
     loss = criterion(logits, targets)
     return (loss * weights).mean()
 
-def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_steps, alpha, beta, w_identity, w_id_toxic, no_reweight=False):
+def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_steps, alpha, beta, w_identity, w_id_toxic, no_reweight=False, only_toxicity=False):
     model.train()
     criterion_aux = nn.BCEWithLogitsLoss()
     total_loss = 0
@@ -65,8 +65,11 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_s
                 l_tox = criterion_aux(out['logits_tox'], y_tox)
             else:
                 l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id, w_identity, w_id_toxic)
-            l_sub, l_id = criterion_aux(out['logits_sub'], y_sub), criterion_aux(out['logits_id'], y_id)
-            loss = l_tox + alpha * l_sub + beta * l_id
+            if only_toxicity:
+                loss = l_tox
+            else:
+                l_sub, l_id = criterion_aux(out['logits_sub'], y_sub), criterion_aux(out['logits_id'], y_id)
+                loss = l_tox + alpha * l_sub + beta * l_id
         
         loss = loss / accum_steps
         scaler.scale(loss).backward()
@@ -113,6 +116,7 @@ def main():
     parser.add_argument("--early_patience", type=int, default=3)
     parser.add_argument("--epochs", type=int, default=4)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--data_seed", type=int, default=42, help="数据采样种子(固定)，与模型训练seed解耦")
     parser.add_argument("--max_len", type=int, default=256)
     parser.add_argument("--alpha", type=float, default=0.1, help="MTL Weight for Subtypes [Fixed: was 0.5, now 0.1 to match S1]")
     parser.add_argument("--beta", type=float, default=0.2)
@@ -124,6 +128,9 @@ def main():
 
     # Ablation Flags
     parser.add_argument("--no_aug", action="store_true")
+    parser.add_argument("--no_pooling", action="store_true", help="禁用Attention Pooling，仅用CLS")
+    parser.add_argument("--only_toxicity", action="store_true", help="仅训练毒性主任务，禁用MTL辅助任务")
+    parser.add_argument("--no_focal", action="store_true", help="标记：S1阶段未使用Focal Loss（用于文件名标识）")
     parser.add_argument("--ablation_tag", type=str, default=None)
 
     args = parser.parse_args()
@@ -151,17 +158,24 @@ def main():
     torch.backends.cudnn.allow_tf32 = True
     torch.backends.cudnn.benchmark = False 
     torch.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
+    np.random.seed(args.seed)
     
     # Suffix Construction
-    suffix = ('_NoReweight' if args.no_reweight else '')
+    suffix = ''
+    if args.no_reweight: suffix += '_NoReweight'
+    if args.no_pooling: suffix += '_NoPooling'
+    if args.only_toxicity: suffix += '_OnlyTox'
+    if args.no_aug: suffix += '_NoAug'
+    if args.no_focal: suffix += '_NoFocal'
     if args.ablation_tag: suffix += f"_{args.ablation_tag}"
-    
-    save_name = f"DebertaV3MTL_S2{suffix}_Sample{args.sample_size}_{datetime.now().strftime('%m%d_%H%M')}"
+
+    save_name = f"DebertaV3MTL_S2{suffix}_Seed{args.seed}_Sample{args.sample_size}_{datetime.now().strftime('%m%d_%H%M')}"
     save_path = get_model_path(save_name + ".pth")
 
     train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
     val_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "val_processed.parquet"))
-    train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.seed)
+    train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.data_seed)
     
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len, augment=not args.no_aug) # 开启简单数据增强
@@ -185,7 +199,7 @@ def main():
         pin_memory=True
     )
 
-    model = DebertaV3MTL(args.model_name).to(device)
+    model = DebertaV3MTL(args.model_name, use_attention_pooling=not args.no_pooling).to(device)
     if os.path.exists(args.s1_checkpoint):
         model.load_state_dict(torch.load(args.s1_checkpoint, map_location=device))
         print(f"  [Success] 加载 S1 权重成功。")
@@ -211,7 +225,7 @@ def main():
         train_sampler.set_epoch(epoch)
         if is_main_process: print(f"\nEpoch {epoch+1}/{args.epochs}")
         
-        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, scaler, device, args.grad_accum, args.alpha, args.beta, args.w_identity, args.w_id_toxic, args.no_reweight)
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, scaler, device, args.grad_accum, args.alpha, args.beta, args.w_identity, args.w_id_toxic, args.no_reweight, args.only_toxicity)
         
         # [Fix] 所有 Rank 都参与验证，避免 NCCL 超时
         val_loss = evaluate(model, val_loader, device, args.w_identity, args.w_id_toxic, args.no_reweight)

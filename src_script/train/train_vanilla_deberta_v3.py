@@ -90,6 +90,7 @@ def main():
     parser.add_argument("--lr", type=float, default=2e-5)
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--data_seed", type=int, default=42, help="数据采样种子(固定)，与模型训练seed解耦")
     parser.add_argument("--max_len", type=int, default=256)
     parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
     parser.add_argument("--patience", type=int, default=1)
@@ -115,9 +116,11 @@ def main():
     torch.backends.cudnn.allow_tf32 = True
     torch.backends.cudnn.benchmark = False
     torch.manual_seed(args.seed)
+    torch.cuda.manual_seed_all(args.seed)
+    np.random.seed(args.seed)
     
     timestamp = datetime.now().strftime("%m%d_%H%M")
-    save_basename = f"VanillaDeBERTa_Sample{args.sample_size}_{timestamp}"
+    save_basename = f"VanillaDeBERTa_Seed{args.seed}_Sample{args.sample_size}_{timestamp}"
     save_path = get_model_path(save_basename + ".pth")
 
     if is_main_process:
@@ -125,7 +128,7 @@ def main():
 
     train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
     val_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "val_processed.parquet"))
-    train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.seed)
+    train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.data_seed)
     
     tokenizer = AutoTokenizer.from_pretrained(args.model_path)
     train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len)
