@@ -314,11 +314,11 @@ def main():
     # =================================================================
     if args.mode in ["all", "ablation"]:
         # 消融配置: (名称, S1额外参数, S2额外参数, 是否需要独立S1)
+        # 只保留最关键的3个消融: NoPooling, NoFocal, NoReweight
+        # 砍掉 OnlyTox 和 NoAug 以节省约 7h
         ABLATION_CASES = [
             ("NoPooling",  ["--no_pooling"],     ["--no_pooling"],     True),
             ("NoFocal",    ["--no_focal"],        ["--no_focal"],       True),
-            ("OnlyTox",    ["--only_toxicity"],   ["--only_toxicity"],  True),
-            ("NoAug",      ["--no_aug"],          ["--no_aug"],         True),
             ("NoReweight", [],                    ["--no_reweight"],    False),  # 复用已有S1
         ]
 
@@ -431,9 +431,10 @@ def main():
                 new_checkpoints.append((ckpt, "deberta_mtl"))
 
     # =================================================================
-    # 实验C: 超参数敏感性 (w_identity)
+    # 实验C: 超参数敏感性 (已砍掉，节省约3.5h)
+    # 如需恢复，将下方 if False 改为 if args.mode in ["all", "sensitivity"]
     # =================================================================
-    if args.mode in ["all", "sensitivity"]:
+    if args.mode in ["sensitivity"]:  # 不再包含 "all"，需要手动 --mode sensitivity 才会跑
         W_VALUES = [3.0, 3.5]
 
         log("\n" + "=" * 70)
