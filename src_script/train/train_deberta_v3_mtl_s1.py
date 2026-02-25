@@ -44,7 +44,7 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, accum_steps, al
     
     # 损失函数配置
     if use_focal:
-        criterion_tox = BCEFocalLoss(alpha=12.5, gamma=2.0) # Focal Loss
+        criterion_tox = BCEFocalLoss(alpha=2.0, gamma=2.0) # Focal Loss (alpha降低：数据已1:1平衡)
     else:
         criterion_tox = nn.BCEWithLogitsLoss() # Standard BCE
         
@@ -94,7 +94,7 @@ def evaluate(model, loader, device, use_focal=True):
     """
     model.eval()
     if use_focal:
-        criterion = BCEFocalLoss(alpha=12.5, gamma=2.0)  # 与训练一致
+        criterion = BCEFocalLoss(alpha=2.0, gamma=2.0)  # 与训练一致
     else:
         criterion = nn.BCEWithLogitsLoss()
     total_loss = 0
@@ -119,14 +119,14 @@ def main():
     parser.add_argument("--model_name", type=str, default="microsoft/deberta-v3-base")
     parser.add_argument("--sample_size", type=int, default=200000)
     parser.add_argument("--batch_size", type=int, default=16, help="单卡BatchSize，DDP下设为16即可（总=4x16=64）")
-    parser.add_argument("--lr", type=float, default=2e-5)
-    parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
+    parser.add_argument("--lr", type=float, default=1e-5)
+    parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="linear")
     parser.add_argument("--patience", type=int, default=1)
     parser.add_argument("--early_patience", type=int, default=3)
     parser.add_argument("--epochs", type=int, default=6)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--data_seed", type=int, default=42, help="数据采样种子(固定)，与模型训练seed解耦")
-    parser.add_argument("--accum_steps", type=int, default=1)
+    parser.add_argument("--accum_steps", type=int, default=2)
     parser.add_argument("--max_len", type=int, default=256)
     parser.add_argument("--alpha", type=float, default=0.1, help="MTL Weight for Subtypes (Downscaled from 0.5)")
     parser.add_argument("--beta", type=float, default=0.2)
@@ -211,7 +211,7 @@ def main():
     model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     model = DDP(model, device_ids=[local_rank], output_device=local_rank, find_unused_parameters=True)
     
-    optimizer = AdamW(model.parameters(), lr=args.lr, fused=False)
+    optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=0.01, fused=False)
     
     world_size = dist.get_world_size()
     num_steps = int(len(train_ds) / args.batch_size / world_size / args.accum_steps * args.epochs)

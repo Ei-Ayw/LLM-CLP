@@ -163,27 +163,61 @@ class DataAugmenter:
             return text
         return text
 
-def preprocess_data(input_path, output_dir, sample_size=None, seed=42, do_augment=True):
+def preprocess_data(input_path, output_dir, sample_size=None, seed=42, do_augment=True, keep_all_labeled=False):
     print(f"Loading data from {input_path}...")
-    
+
     identity_cols = [
-        'male', 'female', 'black', 'white', 'muslim', 'jewish', 'christian', 
+        'male', 'female', 'black', 'white', 'muslim', 'jewish', 'christian',
         'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness'
     ]
     subtype_cols = [
         'severe_toxicity', 'obscene', 'threat', 'insult', 'identity_attack', 'sexual_explicit'
     ]
-    
+
     target_col = 'target'
     text_col = 'comment_text'
     use_cols = [text_col, target_col] + subtype_cols + identity_cols
-    
+
     df = pd.read_csv(input_path, usecols=use_cols)
-    
+
     # 先标记有毒/正常标签（用于分层采样）
     df['y_tox'] = (df[target_col] >= 0.5).astype(int)
-    
-    if sample_size and 0 < sample_size < len(df):
+
+    if keep_all_labeled:
+        # =====================================================================
+        # 新策略：保留所有有身份/子类别标签的样本 + 填充至 1:1
+        # 目的：最大化身份标签覆盖率，提升 Worst Group AUC
+        # =====================================================================
+        df[identity_cols] = df[identity_cols].fillna(0)
+        df[subtype_cols] = df[subtype_cols].fillna(0)
+
+        has_label = (df[identity_cols].max(axis=1) >= 0.5) | (df[subtype_cols].max(axis=1) >= 0.5)
+        labeled_df = df[has_label].copy()
+        unlabeled_df = df[~has_label].copy()
+
+        n_labeled_toxic = (labeled_df['y_tox'] == 1).sum()
+        n_labeled_normal = (labeled_df['y_tox'] == 0).sum()
+        print(f">>> 标签保留策略: 有标签样本 {len(labeled_df)} 条 (有毒: {n_labeled_toxic}, 正常: {n_labeled_normal})")
+
+        # 从无标签样本中补充，使有毒:无毒 = 1:1
+        if n_labeled_toxic > n_labeled_normal:
+            n_fill = n_labeled_toxic - n_labeled_normal
+            pool = unlabeled_df[unlabeled_df['y_tox'] == 0]
+            fill_df = pool.sample(n=min(n_fill, len(pool)), random_state=seed)
+            target_total = n_labeled_toxic * 2
+        else:
+            n_fill = n_labeled_normal - n_labeled_toxic
+            pool = unlabeled_df[unlabeled_df['y_tox'] == 1]
+            fill_df = pool.sample(n=min(n_fill, len(pool)), random_state=seed)
+            target_total = n_labeled_normal * 2
+
+        df = pd.concat([labeled_df, fill_df], ignore_index=True)
+        n_final_toxic = (df['y_tox'] == 1).sum()
+        n_final_normal = (df['y_tox'] == 0).sum()
+        print(f"  填充后: 总计 {len(df)} 条 (有毒: {n_final_toxic}, 正常: {n_final_normal})")
+        print(f"  比例: {n_final_toxic/len(df)*100:.1f}% : {n_final_normal/len(df)*100:.1f}%")
+        df = df.sample(frac=1, random_state=seed).reset_index(drop=True)
+    elif sample_size and 0 < sample_size < len(df):
         print(f">>> 类别平衡采样: 目标 50:50 比例，总数 {sample_size}...")
         
         # 分离有毒和正常样本
@@ -292,6 +326,8 @@ if __name__ == "__main__":
     parser.add_argument("--sample_size", type=int, default=0)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--no_aug", action="store_true", help="Disable augmentation")
+    parser.add_argument("--keep_all_labeled", action="store_true",
+                        help="保留所有有身份/子类别标签的样本，从无标签样本中填充至1:1")
     args = parser.parse_args()
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -317,4 +353,5 @@ if __name__ == "__main__":
             print(f"Expected path: {INPUT_CSV}")
             exit(1)
     
-    preprocess_data(INPUT_CSV, OUTPUT_DIR, sample_size=args.sample_size, seed=args.seed, do_augment=not args.no_aug)
+    preprocess_data(INPUT_CSV, OUTPUT_DIR, sample_size=args.sample_size, seed=args.seed,
+                    do_augment=not args.no_aug, keep_all_labeled=args.keep_all_labeled)

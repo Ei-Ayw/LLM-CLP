@@ -40,7 +40,7 @@ class DebertaV3MTL(nn.Module):
             self.projection = nn.Linear(hidden_size, 512)
         
         self.activation = nn.GELU()
-        self.dropout = nn.Dropout(0.1)
+        self.dropout = nn.Dropout(0.2)
         self.tox_head = nn.Linear(512, 1)
         self.subtype_head = nn.Linear(512, num_subtypes)
         self.identity_head = nn.Linear(512, num_identities)

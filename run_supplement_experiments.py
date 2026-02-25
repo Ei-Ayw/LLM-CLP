@@ -149,8 +149,8 @@ def build_eval_task(checkpoint_path, model_type, gpu_id):
 def main():
     parser = argparse.ArgumentParser(description="补充实验运行器（多seed + 细粒度消融 + 超参敏感性）")
     parser.add_argument("--mode", type=str, default="all",
-                        choices=["all", "multi_seed", "ablation", "sensitivity", "eval_only", "aggregate"],
-                        help="运行模式: all=全部, multi_seed=仅多seed, ablation=仅消融, sensitivity=仅敏感性")
+                        choices=["all", "preprocess", "multi_seed", "ablation", "sensitivity", "eval_only", "aggregate"],
+                        help="运行模式: all=全部, preprocess=仅数据预处理, multi_seed=仅多seed, ablation=仅消融, sensitivity=仅敏感性")
     parser.add_argument("--no_bar", action="store_true", help="禁用进度条")
     parser.add_argument("--batch_size", type=int, default=16, help="DDP 单卡 BatchSize")
     parser.add_argument("--s2_batch_size", type=int, default=96, help="S2 单卡 BatchSize")
@@ -178,6 +178,30 @@ def main():
             sys.exit(1)
     log("[OK] 数据文件检查通过（已冻结，不会重新采样）")
 
+    # =================================================================
+    # Phase 0: 数据预处理 (可选，使用新采样策略)
+    # =================================================================
+    if args.mode in ["all", "preprocess"]:
+        log("\n" + "=" * 70)
+        log(">>> Phase 0: 数据预处理 (保留所有有标签样本 + 填充至1:1)")
+        log("=" * 70)
+        preprocess_script = os.path.join(BASE_DIR, "src_script", "data", "exp_data_preprocess.py")
+        preprocess_cmd = [
+            sys.executable, preprocess_script,
+            "--seed", str(DATA_SEED),
+            "--no_aug",
+            "--keep_all_labeled",
+        ]
+        log(f"  命令: {' '.join(preprocess_cmd)}")
+        result = subprocess.run(preprocess_cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            log("[OK] 数据预处理完成")
+            log(result.stdout[-500:] if len(result.stdout) > 500 else result.stdout)
+        else:
+            log(f"[FATAL] 数据预处理失败 (rc={result.returncode})")
+            log(result.stderr[-500:] if result.stderr else "No stderr")
+            sys.exit(1)
+
     # 创建结果目录
     for d in ["models", "logs", "eval", "viz"]:
         os.makedirs(os.path.join(RES_DIR, d), exist_ok=True)
@@ -191,15 +215,15 @@ def main():
         "--data_seed", str(DATA_SEED),
         "--batch_size", str(args.batch_size),
         "--max_len", "256",
-        "--scheduler", "plateau",
+        "--scheduler", "linear",
         "--patience", "1",
         "--early_patience", "3",
     ]
     if args.no_bar:
         common_args += ["--no_bar"]
 
-    # S2 使用更大 batch_size + 梯度累积
-    s2_extra = ["--batch_size", str(args.s2_batch_size), "--grad_accum", "2"]
+    # S2 使用更大 batch_size + 梯度累积 (4步)
+    s2_extra = ["--batch_size", str(args.s2_batch_size), "--grad_accum", "4"]
 
     # GPU 分组
     gpus_0_3 = "0,1,2,3"
