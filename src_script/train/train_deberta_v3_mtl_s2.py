@@ -39,17 +39,45 @@ from exp_data_loader import ToxicityDataset, sample_aligned_data
 from path_config import get_model_path, get_log_path
 from train_utils import EarlyStopping
 
-def weighted_toxicity_loss(logits, targets, has_id, w_identity, w_id_toxic):
+# =============================================================================
+# 身份分组差异化权重 (对数平滑逆频率加权)
+# 公式: w = 1 + log(max_group_count / group_count)
+# 顺序与 identity_cols 一致:
+#   male, female, black, white, muslim, jewish, christian,
+#   homosexual_gay_or_lesbian, psychiatric_or_mental_illness
+# =============================================================================
+IDENTITY_GROUP_WEIGHTS = [1.2, 1.0, 2.3, 1.8, 1.9, 2.9, 1.3, 2.6, 3.4]
+
+def weighted_toxicity_loss(logits, targets, has_id, y_id, w_id_toxic=1.5, group_weights=None):
+    """
+    身份感知加权损失函数 (per-group differential weighting)
+    - non-toxic + has_identity: 按所属身份组的最大权重加权 (保护少数群体)
+    - toxic + has_identity: 统一 w_id_toxic 权重 (降低权重，避免过度抑制)
+    - 其余: 权重 1.0
+    """
     weights = torch.ones_like(targets)
     has_id_mask = has_id.unsqueeze(-1).bool()
     is_toxic = targets >= 0.5
-    weights[(~is_toxic) & has_id_mask] = w_identity
+
+    if group_weights is not None:
+        gw = torch.tensor(group_weights, dtype=torch.float, device=y_id.device)
+        id_present = (y_id >= 0.5).float()  # (batch, 9)
+        # 每样本权重 = 所属身份组中最大的权重
+        per_sample_w = (id_present * gw.unsqueeze(0)).max(dim=1, keepdim=True).values  # (batch, 1)
+        per_sample_w = per_sample_w.clamp(min=1.0)
+        # non-toxic + identity: 使用分组权重
+        weights = torch.where((~is_toxic) & has_id_mask, per_sample_w, weights)
+    else:
+        weights[(~is_toxic) & has_id_mask] = 2.5
+
+    # toxic + identity: 统一权重
     weights[is_toxic & has_id_mask] = w_id_toxic
+
     criterion = nn.BCEWithLogitsLoss(reduction='none')
     loss = criterion(logits, targets)
     return (loss * weights).mean()
 
-def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_steps, alpha, beta, w_identity, w_id_toxic, no_reweight=False, only_toxicity=False):
+def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_steps, alpha, beta, w_id_toxic, no_reweight=False, only_toxicity=False):
     model.train()
     criterion_aux = nn.BCEWithLogitsLoss()
     total_loss = 0
@@ -58,19 +86,21 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_s
     for i, batch in enumerate(pbar):
         ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
         y_tox, y_sub, y_id, has_id = batch['y_tox'].to(device).unsqueeze(-1), batch['y_sub'].to(device), batch['y_id'].to(device), batch['has_id'].to(device)
-        
+
         with torch.cuda.amp.autocast():
             out = model(ids, mask)
             if no_reweight:
                 l_tox = criterion_aux(out['logits_tox'], y_tox)
             else:
-                l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id, w_identity, w_id_toxic)
+                l_tox = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id, y_id,
+                                               w_id_toxic=w_id_toxic,
+                                               group_weights=IDENTITY_GROUP_WEIGHTS)
             if only_toxicity:
                 loss = l_tox
             else:
                 l_sub, l_id = criterion_aux(out['logits_sub'], y_sub), criterion_aux(out['logits_id'], y_id)
                 loss = l_tox + alpha * l_sub + beta * l_id
-        
+
         loss = loss / accum_steps
         scaler.scale(loss).backward()
         if (i + 1) % accum_steps == 0:
@@ -83,11 +113,11 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_s
         pbar.set_postfix(loss=f"{total_loss/(i+1):.4f}")
     return total_loss / len(loader)
 
-def evaluate(model, loader, device, w_identity=2.5, w_id_toxic=1.5, no_reweight=False):
+def evaluate(model, loader, device, w_id_toxic=1.5, no_reweight=False):
     """
     [Fix] 评估函数与训练保持一致的损失函数
     - 修复前：训练用 weighted_toxicity_loss，评估用 BCE，导致 checkpoint 选择偏差
-    - 修复后：评估也使用 weighted_toxicity_loss，确保 Early Stopping 基于正确的指标
+    - 修复后：评估也使用 weighted_toxicity_loss (per-group)，确保 Early Stopping 基于正确的指标
     """
     model.eval()
     total_loss = 0
@@ -96,11 +126,14 @@ def evaluate(model, loader, device, w_identity=2.5, w_id_toxic=1.5, no_reweight=
             ids, mask = batch['input_ids'].to(device), batch['attention_mask'].to(device)
             y_tox = batch['y_tox'].to(device).unsqueeze(-1)
             has_id = batch['has_id'].to(device)
+            y_id = batch['y_id'].to(device)
             out = model(ids, mask)
             if no_reweight:
                 loss = nn.BCEWithLogitsLoss()(out['logits_tox'], y_tox)
             else:
-                loss = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id, w_identity, w_id_toxic)
+                loss = weighted_toxicity_loss(out['logits_tox'], y_tox, has_id, y_id,
+                                              w_id_toxic=w_id_toxic,
+                                              group_weights=IDENTITY_GROUP_WEIGHTS)
             total_loss += loss.item()
     return total_loss / len(loader)
 
@@ -110,8 +143,8 @@ def main():
     parser.add_argument("--model_name", type=str, default="microsoft/deberta-v3-base")
     parser.add_argument("--sample_size", type=int, default=200000)
     parser.add_argument("--batch_size", type=int, default=96)
-    parser.add_argument("--lr", type=float, default=5e-6)
-    parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="plateau")
+    parser.add_argument("--lr", type=float, default=3e-6)
+    parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="linear")
     parser.add_argument("--patience", type=int, default=1)
     parser.add_argument("--early_patience", type=int, default=3)
     parser.add_argument("--epochs", type=int, default=4)
@@ -120,7 +153,7 @@ def main():
     parser.add_argument("--max_len", type=int, default=256)
     parser.add_argument("--alpha", type=float, default=0.1, help="MTL Weight for Subtypes [Fixed: was 0.5, now 0.1 to match S1]")
     parser.add_argument("--beta", type=float, default=0.2)
-    parser.add_argument("--grad_accum", type=int, default=2, help="梯度累积步数")
+    parser.add_argument("--grad_accum", type=int, default=4, help="梯度累积步数")
     parser.add_argument("--w_identity", type=float, default=2.5)
     parser.add_argument("--w_id_toxic", type=float, default=1.5)
     parser.add_argument("--no_reweight", action="store_true")
@@ -208,7 +241,7 @@ def main():
     model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
     model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
 
-    optimizer = AdamW(model.parameters(), lr=args.lr)
+    optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=0.01)
     scaler = torch.cuda.amp.GradScaler()
     
     if args.scheduler == "plateau":
@@ -216,7 +249,7 @@ def main():
     else:
         world_size = dist.get_world_size()
         num_steps = int(len(train_ds) / args.batch_size / world_size * args.epochs)
-        scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=0, num_training_steps=num_steps)
+        scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=int(0.1*num_steps), num_training_steps=num_steps)
 
     early_stopping, best_val_loss = EarlyStopping(patience=args.early_patience), float('inf')
     loss_history = {"train": [], "val": []}
@@ -225,10 +258,10 @@ def main():
         train_sampler.set_epoch(epoch)
         if is_main_process: print(f"\nEpoch {epoch+1}/{args.epochs}")
         
-        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, scaler, device, args.grad_accum, args.alpha, args.beta, args.w_identity, args.w_id_toxic, args.no_reweight, args.only_toxicity)
-        
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, scaler, device, args.grad_accum, args.alpha, args.beta, args.w_id_toxic, args.no_reweight, args.only_toxicity)
+
         # [Fix] 所有 Rank 都参与验证，避免 NCCL 超时
-        val_loss = evaluate(model, val_loader, device, args.w_identity, args.w_id_toxic, args.no_reweight)
+        val_loss = evaluate(model, val_loader, device, args.w_id_toxic, args.no_reweight)
         
         # 同步所有 Rank 的验证完成
         dist.barrier()
