@@ -189,7 +189,6 @@ def main():
         preprocess_cmd = [
             sys.executable, preprocess_script,
             "--seed", str(DATA_SEED),
-            "--no_aug",
             "--keep_all_labeled",
         ]
         log(f"  命令: {' '.join(preprocess_cmd)}")

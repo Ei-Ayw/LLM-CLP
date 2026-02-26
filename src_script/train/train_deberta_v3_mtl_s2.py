@@ -236,7 +236,6 @@ def main():
     parser.add_argument("--no_bar", action="store_true")
 
     # Ablation Flags
-    parser.add_argument("--no_aug", action="store_true")
     parser.add_argument("--no_pooling", action="store_true")
     parser.add_argument("--only_toxicity", action="store_true")
     parser.add_argument("--no_focal", action="store_true")
@@ -272,7 +271,6 @@ def main():
     if args.no_reweight: suffix += '_NoReweight'
     if args.no_pooling: suffix += '_NoPooling'
     if args.only_toxicity: suffix += '_OnlyTox'
-    if args.no_aug: suffix += '_NoAug'
     if args.no_focal: suffix += '_NoFocal'
     if args.ablation_tag: suffix += f"_{args.ablation_tag}"
 
@@ -284,8 +282,8 @@ def main():
     train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.data_seed)
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len, augment=not args.no_aug)
-    val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len, augment=False)
+    train_ds = ToxicityDataset(train_df, tokenizer, max_len=args.max_len)
+    val_ds = ToxicityDataset(val_df, tokenizer, max_len=args.max_len)
 
     train_sampler = DistributedSampler(train_ds, shuffle=True)
     train_loader = torch.utils.data.DataLoader(
