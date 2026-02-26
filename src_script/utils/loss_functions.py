@@ -9,9 +9,9 @@ class BCEFocalLoss(nn.Module):
     
     Args:
         gamma (float): Focusing parameter. Default: 2.0 (from paper/screenshot)
-        alpha (float): Class weight for positive class (Toxic). 
-                       If set, it acts as the 'alpha_t' in the valid/toxic case.
-                       Screenshot suggests trying 12.5 for Toxic class.
+        alpha (float): Class weight for positive class (Toxic).
+                       1:1 balanced data → alpha=1.0 (equal weight)
+                       Unbalanced data → alpha=positive/negative ratio
         reduction (str): 'mean' or 'sum'
     """
     def __init__(self, alpha=None, gamma=2.0, reduction='mean'):
