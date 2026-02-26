@@ -182,6 +182,8 @@ def preprocess_data(input_path, output_dir, sample_size=None, seed=42, do_augmen
 
     # 先标记有毒/正常标签（用于分层采样）
     df['y_tox'] = (df[target_col] >= 0.5).astype(int)
+    # 保留原始连续值用于 soft label 训练 (值域 [0, 1])
+    df['y_tox_soft'] = df[target_col].clip(0, 1)
 
     if keep_all_labeled:
         # =====================================================================
