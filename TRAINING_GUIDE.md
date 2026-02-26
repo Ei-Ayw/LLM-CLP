@@ -36,9 +36,20 @@
 | 23 | model | **分离特征头** | 三任务共享projection | **主任务/辅助任务独立proj** | P2 | 避免梯度冲突 |
 | 24 | model | **AttentionPooling** | 单层Linear | **Tanh bottleneck非线性** | P2 | 提升表达能力 |
 | 25 | S1 + S2 | **num_workers** | 0 | **4 + persistent_workers** | P2 | 数据加载不再是瓶颈 |
-| 26 | exp_data_loader.py | **数据增强修复** | 仅toxic样本随机删词 | **所有样本20%概率随机交换** | P2 | 不破坏语义，不引入标签噪声 |
+| 26 | exp_data_loader.py | **删除在线增强** | safe_aug随机交换词对 | **完全移除** | P2 | 任何文本扰动都可能引入标签噪声 |
 | 27 | S2 | **group_weights预创建** | 每步新建tensor | **全局缓存tensor** | P3 | 减少CUDA内存碎片 |
 | 28 | S2 | **S1→S2 权重兼容** | strict=True | **strict=False + 提示新参数** | P2 | 新增proj_tox/proj_aux自动处理 |
+
+### 第三轮修改 (彻底移除数据增强)
+
+| # | 文件 | 修改项 | 旧行为 | 新行为 | 原因 |
+|---|------|--------|--------|--------|------|
+| 29 | exp_data_preprocess.py | **删除 DataAugmenter 类** | 150行离线增强(SR/RI/RD/BT) | **完全移除** | 同义词替换/删词破坏毒性语义引入标签噪声; 回译慢且质量差; 只增强toxic会打破1:1平衡 |
+| 30 | exp_data_preprocess.py | **删除 --no_aug 参数** | do_augment 控制增强开关 | **移除参数** | 不再需要开关 |
+| 31 | exp_data_preprocess.py | **删除冗余依赖** | import nltk/tqdm/torch/transformers | **仅保留 pandas/numpy/sklearn/os/argparse** | 脚本从360行精简至145行 |
+| 32 | exp_data_loader.py | **删除 safe_aug 方法** | 在线随机交换词对 | **完全移除** | DeBERTa dropout=0.2 已提供足够正则化 |
+| 33 | S1 + S2 训练脚本 | **删除 --no_aug flag** | augment=not args.no_aug | **不传 augment 参数** | 增强已从 DataLoader 移除 |
+| 34 | run_supplement_experiments.py | **删除 --no_aug** | 预处理命令含 --no_aug | **移除该参数** | 预处理不再有增强功能 |
 
 ---
 
