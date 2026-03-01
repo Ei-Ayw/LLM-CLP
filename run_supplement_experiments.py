@@ -224,9 +224,12 @@ def main():
     # S2 使用更大 batch_size + 梯度累积 (4步)
     s2_extra = ["--batch_size", str(args.s2_batch_size), "--grad_accum", "4"]
 
-    # GPU 分组
-    gpus_0_3 = "0,1,2,3"
-    gpus_4_7 = "4,5,6,7"
+    # GPU 分组 (动态适配: 7卡→4+3, 8卡→4+4, 6卡→3+3)
+    half = TOTAL_GPUS // 2
+    gpus_group_a = ",".join(str(i) for i in range(half))                    # 前半: 0,1,2,...
+    gpus_group_b = ",".join(str(i) for i in range(half, TOTAL_GPUS))        # 后半: half,...,N-1
+    nproc_a = half
+    nproc_b = TOTAL_GPUS - half
     all_gpus = ",".join(str(i) for i in range(TOTAL_GPUS))
 
     # 收集所有需要评估的新模型 (checkpoint_path, model_type)
@@ -238,14 +241,14 @@ def main():
     if args.mode in ["all", "multi_seed"]:
         SEEDS = [123, 2024]
 
-        # --- Phase A1: MTL S1 (两个seed并行, 各4卡) ---
+        # --- Phase A1: MTL S1 (两个seed并行, 分两组GPU) ---
         log("\n" + "=" * 70)
         log(f">>> Phase A1: 多seed MTL S1 训练 (seeds={SEEDS})")
         log("=" * 70)
 
         phase_a1_tasks = []
         for i, seed in enumerate(SEEDS):
-            gpus = gpus_0_3 if i == 0 else gpus_4_7
+            gpus = gpus_group_a if i == 0 else gpus_group_b
             port = 29500 + i
             phase_a1_tasks.append({
                 'name': f'MTL_S1_Seed{seed}',
@@ -254,12 +257,12 @@ def main():
                 'args': common_args + ["--seed", str(seed), "--epochs", "6"],
                 'gpus': gpus,
                 'ddp': True,
-                'nproc': 4,
+                'nproc': nproc_a if i == 0 else nproc_b,
                 'master_port': port,
             })
         run_parallel_tasks(phase_a1_tasks, log_file)
 
-        # --- Phase A2: MTL S2 (两个seed并行, 各4卡) ---
+        # --- Phase A2: MTL S2 (两个seed并行, 分两组GPU) ---
         log("\n" + "=" * 70)
         log(f">>> Phase A2: 多seed MTL S2 训练 (seeds={SEEDS})")
         log("=" * 70)
@@ -271,7 +274,7 @@ def main():
                 log(f"[WARNING] 未找到 S1 Seed{seed} 检查点，跳过 S2")
                 continue
             log(f"  [Found] S1 Seed{seed} -> {os.path.basename(s1_ckpt)}")
-            gpus = gpus_0_3 if i == 0 else gpus_4_7
+            gpus = gpus_group_a if i == 0 else gpus_group_b
             port = 29500 + i
             # S2 args: 覆盖 batch_size
             s2_args = [a for a in common_args if a not in ["--batch_size", str(args.batch_size)]]
@@ -297,7 +300,7 @@ def main():
                 ],
                 'gpus': gpus,
                 'ddp': True,
-                'nproc': 4,
+                'nproc': nproc_a if i == 0 else nproc_b,
                 'master_port': port,
             })
         if phase_a2_tasks:
@@ -307,14 +310,14 @@ def main():
                 if ckpt:
                     new_checkpoints.append((ckpt, "deberta_mtl"))
 
-        # --- Phase A3: Vanilla DeBERTa 多seed (两个seed并行, 各4卡) ---
+        # --- Phase A3: Vanilla DeBERTa 多seed (两个seed并行, 分两组GPU) ---
         log("\n" + "=" * 70)
         log(f">>> Phase A3: 多seed Vanilla DeBERTa 训练 (seeds={SEEDS})")
         log("=" * 70)
 
         phase_a3_tasks = []
         for i, seed in enumerate(SEEDS):
-            gpus = gpus_0_3 if i == 0 else gpus_4_7
+            gpus = gpus_group_a if i == 0 else gpus_group_b
             port = 29500 + i
             phase_a3_tasks.append({
                 'name': f'VanillaDeBERTa_Seed{seed}',
@@ -323,7 +326,7 @@ def main():
                 'args': common_args + ["--seed", str(seed), "--epochs", "10"],
                 'gpus': gpus,
                 'ddp': True,
-                'nproc': 4,
+                'nproc': nproc_a if i == 0 else nproc_b,
                 'master_port': port,
             })
         run_parallel_tasks(phase_a3_tasks, log_file)
@@ -348,7 +351,7 @@ def main():
         # 需要独立 S1 的消融案例
         s1_cases = [(name, s1_args) for name, s1_args, _, needs_s1 in ABLATION_CASES if needs_s1]
 
-        # --- Phase B1: 消融 S1 (2轮, 每轮2个并行, 各4卡) ---
+        # --- Phase B1: 消融 S1 (每轮2个并行, 分两组GPU) ---
         log("\n" + "=" * 70)
         log(">>> Phase B1: 细粒度消融 S1 训练")
         log("=" * 70)
@@ -359,7 +362,7 @@ def main():
 
             phase_b1_tasks = []
             for i, (case_name, s1_args) in enumerate(batch):
-                gpus = gpus_0_3 if i == 0 else gpus_4_7
+                gpus = gpus_group_a if i == 0 else gpus_group_b
                 port = 29500 + i
                 phase_b1_tasks.append({
                     'name': f'Ablation_S1_{case_name}',
@@ -372,12 +375,12 @@ def main():
                     ],
                     'gpus': gpus,
                     'ddp': True,
-                    'nproc': 4,
+                    'nproc': nproc_a if i == 0 else nproc_b,
                     'master_port': port,
                 })
             run_parallel_tasks(phase_b1_tasks, log_file)
 
-        # --- Phase B2: 消融 S2 (3轮, 每轮2个并行, 各4卡) ---
+        # --- Phase B2: 消融 S2 (每轮2个并行, 分两组GPU) ---
         log("\n" + "=" * 70)
         log(">>> Phase B2: 细粒度消融 S2 训练")
         log("=" * 70)
@@ -426,7 +429,7 @@ def main():
 
             phase_b2_tasks = []
             for i, (case_name, s2_args, s1_ckpt) in enumerate(batch):
-                gpus = gpus_0_3 if i == 0 else gpus_4_7
+                gpus = gpus_group_a if i == 0 else gpus_group_b
                 port = 29500 + i
                 phase_b2_tasks.append({
                     'name': f'Ablation_S2_{case_name}',
@@ -440,7 +443,7 @@ def main():
                     ],
                     'gpus': gpus,
                     'ddp': True,
-                    'nproc': 4,
+                    'nproc': nproc_a if i == 0 else nproc_b,
                     'master_port': port,
                 })
             run_parallel_tasks(phase_b2_tasks, log_file)
@@ -485,7 +488,7 @@ def main():
 
             sensitivity_tasks = []
             for i, w in enumerate(W_VALUES):
-                gpus = gpus_0_3 if i == 0 else gpus_4_7
+                gpus = gpus_group_a if i == 0 else gpus_group_b
                 port = 29500 + i
                 tag = f"W{str(w).replace('.', '')}"  # W30, W35
                 sensitivity_tasks.append({
@@ -501,7 +504,7 @@ def main():
                     ],
                     'gpus': gpus,
                     'ddp': True,
-                    'nproc': 4,
+                    'nproc': nproc_a if i == 0 else nproc_b,
                     'master_port': port,
                 })
             run_parallel_tasks(sensitivity_tasks, log_file)
