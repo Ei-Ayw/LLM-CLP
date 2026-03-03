@@ -93,5 +93,6 @@ class DebertaV3MTL(nn.Module):
             "logits_sub": logits_sub,
             "logits_id": logits_id,
             "features": z_tox,
-            "log_vars": (self.log_var_tox, self.log_var_sub, self.log_var_id)
+            # +0.0 创建计算节点，避免 DDP "marked ready twice" 错误
+            "log_vars": (self.log_var_tox + 0.0, self.log_var_sub + 0.0, self.log_var_id + 0.0)
         }
