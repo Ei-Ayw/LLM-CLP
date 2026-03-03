@@ -153,7 +153,7 @@ def main():
                         help="运行模式: all=全部, preprocess=仅数据预处理, multi_seed=仅多seed, ablation=仅消融, sensitivity=仅敏感性")
     parser.add_argument("--no_bar", action="store_true", help="禁用进度条")
     parser.add_argument("--batch_size", type=int, default=16, help="DDP 单卡 BatchSize")
-    parser.add_argument("--s2_batch_size", type=int, default=96, help="S2 单卡 BatchSize")
+    parser.add_argument("--s2_batch_size", type=int, default=32, help="S2 单卡 BatchSize")
     args = parser.parse_args()
 
     start_time = datetime.now()
@@ -221,8 +221,8 @@ def main():
     if args.no_bar:
         common_args += ["--no_bar"]
 
-    # S2 使用更大 batch_size + 梯度累积 (4步)
-    s2_extra = ["--batch_size", str(args.s2_batch_size), "--grad_accum", "4"]
+    # S2 使用更大 batch_size + 梯度累积 (8步)
+    s2_extra = ["--batch_size", str(args.s2_batch_size), "--grad_accum", "8"]
 
     # GPU 分组 (动态适配: 7卡→4+3, 8卡→4+4, 6卡→3+3)
     half = TOTAL_GPUS // 2
