@@ -51,13 +51,16 @@ class DebertaV3MTL(nn.Module):
         else:
             pool_dim = hidden_size
 
-        # 分离的特征投影头: 主任务和辅助任务各自独立
-        # 避免身份识别和毒性判断之间的梯度冲突
+        # 三任务完全隔离: 各自独立的 projection + dropout + head
+        # 避免任何梯度交叉污染
         self.proj_tox = nn.Linear(pool_dim, 512)
-        self.proj_aux = nn.Linear(pool_dim, 512)
+        self.proj_sub = nn.Linear(pool_dim, 512)
+        self.proj_id  = nn.Linear(pool_dim, 512)
 
         self.activation = nn.GELU()
-        self.dropout = nn.Dropout(0.2)
+        self.drop_tox = nn.Dropout(0.2)
+        self.drop_sub = nn.Dropout(0.1)   # 辅助任务用较低dropout，防止欠拟合
+        self.drop_id  = nn.Dropout(0.1)
 
         # 任务头
         self.tox_head = nn.Linear(512, 1)
@@ -81,13 +84,14 @@ class DebertaV3MTL(nn.Module):
             h = h_cls
 
         # 主任务特征
-        z_tox = self.dropout(self.activation(self.proj_tox(h)))
-        # 辅助任务特征 (subtype + identity 共享，因为它们不冲突)
-        z_aux = self.dropout(self.activation(self.proj_aux(h)))
+        z_tox = self.drop_tox(self.activation(self.proj_tox(h)))
+        # 辅助任务特征 — 完全物理隔离，各走各的
+        z_sub = self.drop_sub(self.activation(self.proj_sub(h)))
+        z_id  = self.drop_id(self.activation(self.proj_id(h)))
 
         logits_tox = self.tox_head(z_tox)
-        logits_sub = self.subtype_head(z_aux)
-        logits_id = self.identity_head(z_aux)
+        logits_sub = self.subtype_head(z_sub)
+        logits_id = self.identity_head(z_id)
         return {
             "logits_tox": logits_tox,
             "logits_sub": logits_sub,
