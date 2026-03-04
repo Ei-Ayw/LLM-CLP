@@ -1,13 +1,22 @@
 import os
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import sys
+
+# [CRITICAL] 必须在 import transformers 之前设置所有 HF 环境变量
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
+os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 import argparse
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
 from torch.cuda.amp import GradScaler, autocast
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from transformers import AutoTokenizer, get_linear_schedule_with_warmup
+from transformers import AutoTokenizer, get_linear_schedule_with_warmup, get_cosine_schedule_with_warmup
+import copy
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
@@ -21,30 +30,42 @@ from sklearn.metrics import roc_auc_score
 
 # =============================================================================
 # ### 核心训练脚本：train_deberta_mtl_stage2.py ###
-# 改进点:
-# 1. [P0 BUG FIX] scheduler num_steps 除以 grad_accum (之前漏掉了)
-# 2. [P0] 删除无用的 SyncBatchNorm
-# 3. [P1] Layer-wise lr decay (底层小lr, 顶层大lr, 防止灾难遗忘)
-# 4. [P1] AUC-based early stopping & checkpoint selection
-# 5. [P1] Uncertainty Weighting 自动学习多任务权重
-# 6. [P2] num_workers=4 提升数据加载速度
-# 7. [P2] group_weights 预创建避免每步重复分配
 # =============================================================================
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script", "data"))
 sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
 
-os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
-os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-
 from model_deberta_v3_mtl import DebertaV3MTL
 from exp_data_loader import ToxicityDataset, sample_aligned_data
 from path_config import get_model_path, get_log_path
 from train_utils import EarlyStopping
+
+# =============================================================================
+# EMA (Exponential Moving Average) — 平滑模型权重，提升泛化
+# =============================================================================
+class ModelEMA:
+    def __init__(self, model, decay=0.999):
+        self.decay = decay
+        self.shadow = {name: param.data.clone() for name, param in model.named_parameters() if param.requires_grad}
+
+    @torch.no_grad()
+    def update(self, model):
+        for name, param in model.named_parameters():
+            if param.requires_grad and name in self.shadow:
+                self.shadow[name].mul_(self.decay).add_(param.data, alpha=1 - self.decay)
+
+    def apply_shadow(self, model):
+        self.backup = {name: param.data.clone() for name, param in model.named_parameters() if param.requires_grad}
+        for name, param in model.named_parameters():
+            if param.requires_grad and name in self.shadow:
+                param.data.copy_(self.shadow[name])
+
+    def restore(self, model):
+        for name, param in model.named_parameters():
+            if param.requires_grad and name in self.backup:
+                param.data.copy_(self.backup[name])
 
 # =============================================================================
 # 身份分组差异化权重 (对数平滑逆频率加权)
@@ -92,7 +113,7 @@ def uncertainty_weighted_loss(l_tox, l_sub, l_id, log_var_tox, log_var_sub, log_
     w_id = l_id / (2 * torch.exp(log_var_id)) + log_var_id / 2
     return w_tox + w_sub + w_id
 
-def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_steps, w_id_toxic, no_reweight=False, only_toxicity=False):
+def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_steps, w_id_toxic, no_reweight=False, only_toxicity=False, aux_scale=None, ema=None):
     model.train()
     criterion_aux = nn.BCEWithLogitsLoss()
     gw_tensor = None if no_reweight else get_group_weights_tensor(device)
@@ -113,6 +134,11 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_s
                                                group_weights_tensor=gw_tensor)
             if only_toxicity:
                 loss = l_tox
+            elif aux_scale is not None:
+                # 固定权重: toxicity 占主导, 辅助任务按 aux_scale 缩放
+                l_sub = criterion_aux(out['logits_sub'], y_sub)
+                l_id = criterion_aux(out['logits_id'], y_id)
+                loss = l_tox + aux_scale * (l_sub + l_id)
             else:
                 l_sub = criterion_aux(out['logits_sub'], y_sub)
                 l_id = criterion_aux(out['logits_id'], y_id)
@@ -127,11 +153,14 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_s
             if scheduler is not None and not isinstance(scheduler, ReduceLROnPlateau):
                 scheduler.step()
             optimizer.zero_grad()
+            # EMA update after each optimizer step
+            if ema is not None:
+                ema.update(model.module if hasattr(model, 'module') else model)
         total_loss += loss.item() * accum_steps
         pbar.set_postfix(loss=f"{total_loss/(i+1):.4f}")
     return total_loss / len(loader)
 
-def evaluate(model, loader, device, w_id_toxic=1.5, no_reweight=False):
+def evaluate(model, loader, device, w_id_toxic=1.5, no_reweight=False, aux_scale=None):
     """评估: 计算 loss + AUC"""
     model.eval()
     criterion_aux = nn.BCEWithLogitsLoss()
@@ -157,8 +186,11 @@ def evaluate(model, loader, device, w_id_toxic=1.5, no_reweight=False):
                                                   group_weights_tensor=gw_tensor)
                 l_sub = criterion_aux(out['logits_sub'], y_sub)
                 l_id = criterion_aux(out['logits_id'], y_id)
-                log_var_tox, log_var_sub, log_var_id = out['log_vars']
-                loss = uncertainty_weighted_loss(l_tox, l_sub, l_id, log_var_tox, log_var_sub, log_var_id)
+                if aux_scale is not None:
+                    loss = l_tox + aux_scale * (l_sub + l_id)
+                else:
+                    log_var_tox, log_var_sub, log_var_id = out['log_vars']
+                    loss = uncertainty_weighted_loss(l_tox, l_sub, l_id, log_var_tox, log_var_sub, log_var_id)
 
             total_loss += loss.item()
 
@@ -206,7 +238,7 @@ def build_layer_wise_param_groups(model, base_lr, decay_factor=0.8):
     # 3. Heads + Projection + log_var: 最大 lr
     head_params = []
     for name, param in base_model.named_parameters():
-        if any(k in name for k in ['proj_tox', 'proj_aux', 'tox_head', 'subtype_head', 'identity_head', 'att_pooling', 'log_var']):
+        if any(k in name for k in ['proj_tox', 'proj_sub', 'proj_id', 'proj_aux', 'tox_head', 'subtype_head', 'identity_head', 'att_pooling', 'log_var', 'drop_']):
             head_params.append(param)
     if head_params:
         param_groups.append({"params": head_params, "lr": base_lr})
@@ -220,7 +252,7 @@ def main():
     parser.add_argument("--sample_size", type=int, default=200000)
     parser.add_argument("--batch_size", type=int, default=96)
     parser.add_argument("--lr", type=float, default=3e-6)
-    parser.add_argument("--scheduler", type=str, choices=["linear", "plateau"], default="linear")
+    parser.add_argument("--scheduler", type=str, choices=["linear", "cosine", "plateau"], default="linear")
     parser.add_argument("--patience", type=int, default=1)
     parser.add_argument("--early_patience", type=int, default=3)
     parser.add_argument("--epochs", type=int, default=4)
@@ -240,6 +272,11 @@ def main():
     parser.add_argument("--only_toxicity", action="store_true")
     parser.add_argument("--no_focal", action="store_true")
     parser.add_argument("--ablation_tag", type=str, default=None)
+    parser.add_argument("--layer_decay", type=float, default=0.8, help="Layer-wise LR decay factor, 1.0=no decay")
+    parser.add_argument("--warmup_ratio", type=float, default=0.1, help="Warmup ratio of total steps")
+    parser.add_argument("--weight_decay", type=float, default=0.01, help="AdamW weight decay")
+    parser.add_argument("--aux_scale", type=float, default=None, help="Fixed aux loss scale (替代uncertainty weighting). 例如0.3=辅助任务权重0.3")
+    parser.add_argument("--ema_decay", type=float, default=0.0, help="EMA decay rate. 0=不用EMA, 0.999=常用值")
 
     args = parser.parse_args()
 
@@ -318,8 +355,8 @@ def main():
     model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
 
     # Layer-wise lr decay (P1: 防止灾难遗忘)
-    param_groups = build_layer_wise_param_groups(model, base_lr=args.lr, decay_factor=0.8)
-    optimizer = AdamW(param_groups, weight_decay=0.01)
+    param_groups = build_layer_wise_param_groups(model, base_lr=args.lr, decay_factor=getattr(args, 'layer_decay', 0.8))
+    optimizer = AdamW(param_groups, weight_decay=args.weight_decay)
 
     scaler = torch.cuda.amp.GradScaler()
 
@@ -327,20 +364,39 @@ def main():
         scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=args.patience, verbose=True)
     else:
         world_size = dist.get_world_size()
-        # [BUG FIX] 除以 grad_accum 得到正确的 optimizer 步数
         num_steps = int(len(train_ds) / args.batch_size / world_size / args.grad_accum * args.epochs)
-        scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=int(0.1*num_steps), num_training_steps=num_steps)
+        warmup_steps = int(args.warmup_ratio * num_steps)
+        if args.scheduler == "cosine":
+            scheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=num_steps)
+        else:
+            scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=num_steps)
 
     early_stopping, best_val_auc = EarlyStopping(patience=args.early_patience), 0.0
     loss_history = {"train": [], "val": [], "val_auc": []}
+
+    # 初始化 EMA
+    base_model = model.module if hasattr(model, 'module') else model
+    ema = ModelEMA(base_model, decay=args.ema_decay) if args.ema_decay > 0 else None
+
+    # 当使用 aux_scale 时，冻结无用的 log_var 参数
+    if args.aux_scale is not None:
+        for p in [base_model.log_var_tox, base_model.log_var_sub, base_model.log_var_id]:
+            p.requires_grad_(False)
+        if is_main_process:
+            print(f"  [Config] 使用固定 aux_scale={args.aux_scale}, 已冻结 log_var 参数")
 
     for epoch in range(args.epochs):
         train_sampler.set_epoch(epoch)
         if is_main_process: print(f"\nEpoch {epoch+1}/{args.epochs}")
 
-        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, scaler, device, args.grad_accum, args.w_id_toxic, args.no_reweight, args.only_toxicity)
+        train_loss = train_one_epoch(model, train_loader, optimizer, scheduler, scaler, device,
+                                     args.grad_accum, args.w_id_toxic, args.no_reweight, args.only_toxicity,
+                                     aux_scale=args.aux_scale, ema=ema)
 
-        val_loss, val_auc = evaluate(model, val_loader, device, args.w_id_toxic, args.no_reweight)
+        # 评估: 如果有 EMA，用 EMA 权重评估
+        if ema is not None:
+            ema.apply_shadow(base_model)
+        val_loss, val_auc = evaluate(model, val_loader, device, args.w_id_toxic, args.no_reweight, aux_scale=args.aux_scale)
 
         dist.barrier()
 
@@ -350,22 +406,22 @@ def main():
             loss_history["val"].append(val_loss)
             loss_history["val_auc"].append(val_auc)
 
-            try:
-                log_vars = [p.item() for p in [model.module.log_var_tox, model.module.log_var_sub, model.module.log_var_id]]
-                weights = [1.0 / (2 * np.exp(lv)) for lv in log_vars]
-                print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val AUC: {val_auc:.4f}")
-                print(f"  Task Weights -> Tox: {weights[0]:.3f} | Sub: {weights[1]:.3f} | Id: {weights[2]:.3f}")
-            except Exception:
-                print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val AUC: {val_auc:.4f}")
+            print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val AUC: {val_auc:.4f}")
+            if ema is not None:
+                print(f"  [EMA] decay={args.ema_decay}")
 
-            # 用 AUC 选 checkpoint
+            # 用 AUC 选 checkpoint (保存 EMA 权重)
             if val_auc > best_val_auc:
                 best_val_auc = val_auc
-                torch.save(model.module.state_dict(), save_path)
+                torch.save(base_model.state_dict(), save_path)
                 print(f"  [Save] Best AUC={val_auc:.4f} -> {save_path}")
 
             if early_stopping(val_loss):
                 print(f">>> [Early Stop] 提前结束。Best AUC={best_val_auc:.4f}")
+
+        # 恢复非EMA权重继续训练
+        if ema is not None:
+            ema.restore(base_model)
 
         stop_signal = torch.tensor(1 if (is_main_process and early_stopping.early_stop) else 0).to(device)
         dist.all_reduce(stop_signal, op=dist.ReduceOp.MAX)

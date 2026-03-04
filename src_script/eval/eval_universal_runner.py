@@ -13,11 +13,19 @@ B. 偏见/群体鲁棒指标 (Nuanced Metrics by Borkan et al.):
 =============================================================================
 """
 import os
-# [CRITICAL Fix] 必须在导入 torch 之前设置 OpenMP 线程数，否则与 sklearn 冲突必崩(SIGSEGV)
+import sys
+
+# [CRITICAL] 必须在 import transformers/torch 之前设置所有环境变量
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
-import sys
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
+os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
+os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+
 import pandas as pd
 import numpy as np
 from sklearn import metrics
@@ -32,22 +40,11 @@ import pickle
 import matplotlib
 matplotlib.use('Agg')
 
-# [Fix] 防止 Tokenizer 多线程与 DataLoader fork 冲突导致 SegFault
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-
 # ======================= 项目路径配置 =======================
-# 关键修复：从深层目录退回到项目根目录
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script", "data"))
 sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
-
-# 离线环境变量
-os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
-os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
-os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 # 导入模型与数据集定义
 from model_deberta_v3_mtl import DebertaV3MTL
@@ -57,6 +54,7 @@ from model_bert_cnn_bilstm import BertCNNBiLSTM
 from model_vanilla_bert import VanillaBERT
 from model_vanilla_roberta import VanillaRoBERTa
 from model_vanilla_deberta_v3 import VanillaDeBERTaV3
+from model_and_loss import DebertaV3IACD
 from exp_data_loader import ToxicityDataset
 from path_config import get_eval_path
 
@@ -152,7 +150,7 @@ def main():
     parser = argparse.ArgumentParser(description="Nuanced Metrics Evaluation Runner")
     parser.add_argument("--checkpoint", type=str, required=True, help="待评估的权重文件路径")
     parser.add_argument("--model_type", type=str, required=True, 
-                        choices=["deberta_mtl", "bert_cnn", "text_cnn", "bilstm", 
+                        choices=["deberta_mtl", "deberta_iacd", "bert_cnn", "text_cnn", "bilstm",
                                  "vanilla_bert", "vanilla_roberta", "vanilla_deberta"],
                         help="模型类型标识")
     parser.add_argument("--output_prefix", type=str, default="eval_report", help="输出报告前缀")
@@ -182,6 +180,8 @@ def main():
         model = VanillaRoBERTa().to(device)
     elif args.model_type == "vanilla_deberta":
         model = VanillaDeBERTaV3().to(device)
+    elif args.model_type == "deberta_iacd":
+        model = DebertaV3IACD().to(device)
     # elif args.model_type in ["text_cnn", "bilstm"]:
     #     vocab_path = args.checkpoint.replace(".pth", "_vocab.pkl")
     #     with open(vocab_path, 'rb') as f:
@@ -226,7 +226,7 @@ def main():
     else:
         # [FIX] 使用 lower() 进行大小写不敏感匹配，避免 "DeBERTa" vs "Deberta" 不匹配导致加载错误 tokenizer
         ckpt_lower = ckpt_name.lower()
-        base_model_name = "microsoft/deberta-v3-base" if "deberta" in ckpt_lower else \
+        base_model_name = "microsoft/deberta-v3-base" if ("deberta" in ckpt_lower or "iacd" in ckpt_lower) else \
                         "roberta-base" if "roberta" in ckpt_lower else "bert-base-uncased"
         print(f">>> [Tokenizer] 匹配到模型: {base_model_name}")
         tokenizer = AutoTokenizer.from_pretrained(base_model_name)
