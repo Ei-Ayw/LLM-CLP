@@ -107,6 +107,41 @@ def scan_thresholds(y_true, y_prob):
             
     return best_thresh, best_f1, scan_history
 
+def power_mean(values, p=-5):
+    """
+    Generalized (power) mean.
+    p=-5 强调最差群体 (Jigsaw Unintended Bias 官方用 p=-5).
+    当 p→-∞ 时退化为 min; p=1 退化为算术均值.
+    """
+    values = np.array(values, dtype=np.float64)
+    values = values[~np.isnan(values)]
+    if len(values) == 0:
+        return np.nan
+    # 防止 0 值导致的除零 / 负幂问题
+    values = np.clip(values, 1e-10, None)
+    return float(np.power(np.mean(np.power(values, p)), 1.0 / p))
+
+
+def compute_jigsaw_final_metric(overall_auc, bias_df):
+    """
+    计算 Jigsaw Unintended Bias 官方组合指标 (Borkan et al., 2019).
+    Final = 0.25 * Overall_AUC + 0.75 * BiasScore
+    BiasScore = 1/3 * (PM_{-5}(Subgroup_AUCs) + PM_{-5}(BPSN_AUCs) + PM_{-5}(BNSP_AUCs))
+    """
+    pm_subgroup = power_mean(bias_df['subgroup_auc'].values, p=-5)
+    pm_bpsn = power_mean(bias_df['bpsn_auc'].values, p=-5)
+    pm_bnsp = power_mean(bias_df['bnsp_auc'].values, p=-5)
+    bias_score = (pm_subgroup + pm_bpsn + pm_bnsp) / 3.0
+    final_metric = 0.25 * overall_auc + 0.75 * bias_score
+    return {
+        'final_metric': float(final_metric),
+        'bias_score': float(bias_score),
+        'pm_subgroup_auc': float(pm_subgroup),
+        'pm_bpsn_auc': float(pm_bpsn),
+        'pm_bnsp_auc': float(pm_bnsp),
+    }
+
+
 def calculate_fairness_metrics(df, subgroups, model_col):
     """
     计算 Nuanced Metrics。
@@ -291,9 +326,12 @@ def main():
     # Mean Bias AUC: 对所有子群的 3 种 AUC 求均值
     all_bias_auc_values = bias_df[['subgroup_auc', 'bpsn_auc', 'bnsp_auc']].values.flatten()
     mean_bias_auc = float(np.nanmean(all_bias_auc_values))
-    
+
     # Worst-group Bias AUC: 取所有子群 x 3种 AUC 中的最小值
     worst_bias_auc = float(np.nanmin(all_bias_auc_values))
+
+    # C. Jigsaw 官方组合指标 (Borkan et al., 2019)
+    jigsaw_metrics = compute_jigsaw_final_metric(roc_auc, bias_df)
 
     # ======================= [5] 生成阈值扫描曲线图 =======================
     import matplotlib.pyplot as plt
@@ -346,7 +384,9 @@ def main():
             "worst_group_bias_auc": worst_bias_auc,
             "per_subgroup_details": bias_df.to_dict(orient='records')
         },
-        # C. 完整阈值扫描记录
+        # C. Jigsaw 官方组合指标
+        "jigsaw_official_metrics": jigsaw_metrics,
+        # D. 完整阈值扫描记录
         "threshold_scan_history": scan_history
     }
     
@@ -360,6 +400,8 @@ def main():
     print(f">>> [固定阈值 0.50] F1: {fixed_f1:.4f} | Acc: {fixed_accuracy:.4f}")
     print(f">>> ROC-AUC: {roc_auc:.4f} | PR-AUC: {pr_auc:.4f}")
     print(f">>> Mean Bias AUC: {mean_bias_auc:.4f} | Worst-group: {worst_bias_auc:.4f}")
+    print(f">>> [Jigsaw Official] Final={jigsaw_metrics['final_metric']:.4f} | BiasScore={jigsaw_metrics['bias_score']:.4f}")
+    print(f">>>   PM(Subgroup)={jigsaw_metrics['pm_subgroup_auc']:.4f} | PM(BPSN)={jigsaw_metrics['pm_bpsn_auc']:.4f} | PM(BNSP)={jigsaw_metrics['pm_bnsp_auc']:.4f}")
     print(f">>> 报告: {output_path}")
     print(f"{'='*60}")
 
