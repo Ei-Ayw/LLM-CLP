@@ -125,16 +125,20 @@ class SliceRankingLoss(nn.Module):
     """
     对每个 identity group 构造三类 pair (Subgroup/BPSN/BNSP),
     用 pairwise logistic ranking loss 做可微 AUC surrogate.
-    聚合方式: power-mean (p>1, 越大越关注最差组).
+
+    V3 改进:
+    - Margin-based Ranking: 强制正负样本拉开安全距离
+    - Softmax Temperature Weighting: 动态聚焦最差组，替代 Power Mean
     """
-    def __init__(self, num_groups=9, power_p=4, max_pairs_per_type=256):
+    def __init__(self, num_groups=9, margin=1.0, temperature=0.15, max_pairs_per_type=256):
         super().__init__()
         self.num_groups = num_groups
-        self.power_p = power_p
+        self.margin = margin  # 安全距离
+        self.temperature = temperature  # Softmax 温度
         self.max_pairs = max_pairs_per_type
 
     def _pairwise_logistic(self, pos_logits, neg_logits):
-        """log(1 + exp(-(s_pos - s_neg))), 对所有 pair 取均值"""
+        """log(1 + exp(-(s_pos - s_neg - margin))), 对所有 pair 取均值"""
         if pos_logits.numel() == 0 or neg_logits.numel() == 0:
             return None
         # 高效: 不做全笛卡尔积, 而是采样
@@ -142,13 +146,13 @@ class SliceRankingLoss(nn.Module):
         n_pairs = min(n_pos * n_neg, self.max_pairs)
         if n_pos * n_neg <= self.max_pairs:
             # 全 pair
-            diffs = pos_logits.unsqueeze(1) - neg_logits.unsqueeze(0)  # [n_pos, n_neg]
+            diffs = pos_logits.unsqueeze(1) - neg_logits.unsqueeze(0) - self.margin  # 加 margin
             return F.softplus(-diffs).mean()
         else:
             # 随机采样 pair
             idx_p = torch.randint(0, n_pos, (n_pairs,), device=pos_logits.device)
             idx_n = torch.randint(0, n_neg, (n_pairs,), device=neg_logits.device)
-            diffs = pos_logits[idx_p] - neg_logits[idx_n]
+            diffs = pos_logits[idx_p] - neg_logits[idx_n] - self.margin  # 加 margin
             return F.softplus(-diffs).mean()
 
     def forward(self, logits_tox, y_tox, y_id):
@@ -194,11 +198,10 @@ class SliceRankingLoss(nn.Module):
         if not group_losses:
             return torch.tensor(0.0, device=logits_tox.device, requires_grad=True)
 
-        # Power-mean 聚合: 强调最差组
-        losses = torch.stack(group_losses)
-        if self.power_p <= 1:
-            return losses.mean()
-        return torch.pow(torch.mean(torch.pow(losses, self.power_p)), 1.0 / self.power_p)
+        # Softmax Temperature Weighting: 动态聚焦最差组
+        losses = torch.stack(group_losses)  # [num_groups]
+        weights = F.softmax(losses / self.temperature, dim=0)  # 温度越小，权重越集中
+        return (weights * losses).sum()
 
 # =============================================================================
 # B. Anchor-PCGrad: 主任务梯度锚定投影
@@ -441,7 +444,8 @@ def main():
     parser.add_argument("--lambda_clp", type=float, default=0.1, help="CLP 损失权重 (0=关闭)")
     parser.add_argument("--debias_start", type=float, default=0.2, help="Debias 阶段起始比例")
     parser.add_argument("--debias_end", type=float, default=0.9, help="Debias 阶段结束比例")
-    parser.add_argument("--power_p", type=int, default=4, help="Slice loss power-mean 的 p 值")
+    parser.add_argument("--margin", type=float, default=1.0, help="Margin-based Ranking 的安全距离")
+    parser.add_argument("--temperature", type=float, default=0.15, help="Softmax Temperature (越小越聚焦最差组)")
     parser.add_argument("--max_pairs", type=int, default=256, help="每种 pair 类型的最大采样数")
     # === Identity-aware Reweighting ===
     parser.add_argument("--w_id_toxic", type=float, default=1.5, help="has_identity & toxic 样本的权重")
@@ -538,7 +542,7 @@ def main():
     # --- 损失模块 ---
     criterion_main = nn.BCEWithLogitsLoss()  # fallback for no_reweight
     gw_tensor = None if args.no_reweight else get_group_weights_tensor(device)
-    slice_loss_fn = SliceRankingLoss(power_p=args.power_p, max_pairs_per_type=args.max_pairs)
+    slice_loss_fn = SliceRankingLoss(margin=args.margin, temperature=args.temperature, max_pairs_per_type=args.max_pairs)
 
     # --- EMA ---
     base_model = model.module if hasattr(model, 'module') else model
@@ -551,7 +555,7 @@ def main():
     if is_main:
         print(f"\n{'='*60}")
         print(f"  Fair S2 Training Config:")
-        print(f"  λ_bias={args.lambda_bias} | λ_clp={args.lambda_clp} | power_p={args.power_p}")
+        print(f"  λ_bias={args.lambda_bias} | λ_clp={args.lambda_clp} | margin={args.margin} | temp={args.temperature}")
         print(f"  Schedule: warmup[0-{args.debias_start}] → debias[{args.debias_start}-{args.debias_end}] → stabilize[{args.debias_end}-1.0]")
         print(f"  PCGrad={'ON' if not args.no_pcgrad else 'OFF'} | Slice={'ON' if not args.no_slice else 'OFF'} | CLP={'ON' if not args.no_clp else 'OFF'} | Reweight={'ON' if not args.no_reweight else 'OFF'}")
         print(f"  Total steps: {num_steps} | Warmup: {warmup_steps}")
