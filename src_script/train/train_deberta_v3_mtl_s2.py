@@ -32,6 +32,11 @@ from sklearn.metrics import roc_auc_score
 # ### 核心训练脚本：train_deberta_mtl_stage2.py ###
 # =============================================================================
 
+IDENTITY_COLS = [
+    'male', 'female', 'black', 'white', 'muslim', 'jewish', 'christian',
+    'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness'
+]
+
 sys.path.append(BASE_DIR)
 sys.path.append(os.path.join(BASE_DIR, "src_model"))
 sys.path.append(os.path.join(BASE_DIR, "src_script", "data"))
@@ -206,6 +211,60 @@ def evaluate(model, loader, device, w_id_toxic=1.5, no_reweight=False, aux_scale
         auc = 0.5
     return avg_loss, auc
 
+def power_mean(values, p=-5):
+    arr = np.array(values, dtype=np.float64)
+    arr = arr[~np.isnan(arr)]
+    if len(arr) == 0: return np.nan
+    arr = np.clip(arr, 1e-10, None)
+    return float(np.power(np.mean(np.power(arr, p)), 1.0 / p))
+
+def evaluate_with_final_metric(model, loader, device, val_df):
+    """评估: 计算 Overall AUC + BiasScore + Final Metric"""
+    model.eval()
+    all_probs, all_labels = [], []
+    with torch.no_grad():
+        for batch in tqdm(loader, desc="[Eval Final]"):
+            ids = batch['input_ids'].to(device)
+            mask = batch['attention_mask'].to(device)
+            with torch.cuda.amp.autocast():
+                out = model(ids, mask)
+            probs = torch.sigmoid(out['logits_tox']).cpu().numpy().flatten()
+            all_probs.extend(probs)
+            all_labels.extend(batch['y_tox'].numpy().flatten())
+    probs_arr = np.array(all_probs)
+    labels_binary = (np.array(all_labels) >= 0.5).astype(int)
+    try:
+        overall_auc = roc_auc_score(labels_binary, probs_arr)
+    except ValueError:
+        overall_auc = 0.5
+    eval_df = val_df.copy().iloc[:len(probs_arr)]
+    eval_df['_prob'] = probs_arr
+    pm_aucs = {'subgroup': [], 'bpsn': [], 'bnsp': []}
+    for col in IDENTITY_COLS:
+        sub_mask = eval_df[col] >= 0.5
+        if sub_mask.sum() == 0: continue
+        target = (eval_df['y_tox_soft'] if 'y_tox_soft' in eval_df.columns else eval_df['y_tox']) >= 0.5
+        sub_target = target[sub_mask]
+        if sub_target.nunique() >= 2:
+            pm_aucs['subgroup'].append(roc_auc_score(sub_target, eval_df[sub_mask]['_prob']))
+        bpsn_mask = (sub_mask & ~target) | (~sub_mask & target)
+        bpsn_target = target[bpsn_mask]
+        if bpsn_target.nunique() >= 2:
+            pm_aucs['bpsn'].append(roc_auc_score(bpsn_target, eval_df[bpsn_mask]['_prob']))
+        bnsp_mask = (sub_mask & target) | (~sub_mask & ~target)
+        bnsp_target = target[bnsp_mask]
+        if bnsp_target.nunique() >= 2:
+            pm_aucs['bnsp'].append(roc_auc_score(bnsp_target, eval_df[bnsp_mask]['_prob']))
+    pm_sub = power_mean(pm_aucs['subgroup']) if pm_aucs['subgroup'] else 0.5
+    pm_bpsn = power_mean(pm_aucs['bpsn']) if pm_aucs['bpsn'] else 0.5
+    pm_bnsp = power_mean(pm_aucs['bnsp']) if pm_aucs['bnsp'] else 0.5
+    bias_score = (pm_sub + pm_bpsn + pm_bnsp) / 3.0
+    final_metric = 0.25 * overall_auc + 0.75 * bias_score
+    return {
+        'final': final_metric, 'bias_score': bias_score, 'overall_auc': overall_auc,
+        'pm_sub': pm_sub, 'pm_bpsn': pm_bpsn, 'pm_bnsp': pm_bnsp,
+    }
+
 def build_layer_wise_param_groups(model, base_lr, decay_factor=0.8):
     """
     Layer-wise learning rate decay (P1: 防止灾难遗忘)
@@ -277,6 +336,7 @@ def main():
     parser.add_argument("--weight_decay", type=float, default=0.01, help="AdamW weight decay")
     parser.add_argument("--aux_scale", type=float, default=None, help="Fixed aux loss scale (替代uncertainty weighting). 例如0.3=辅助任务权重0.3")
     parser.add_argument("--ema_decay", type=float, default=0.0, help="EMA decay rate. 0=不用EMA, 0.999=常用值")
+    parser.add_argument("--select_by_final", action="store_true", help="用 Final Metric 选 checkpoint (而非 AUC)")
 
     args = parser.parse_args()
 
@@ -344,7 +404,14 @@ def main():
     model = DebertaV3MTL(args.model_name, use_attention_pooling=not args.no_pooling).to(device)
     if os.path.exists(args.s1_checkpoint):
         state_dict = torch.load(args.s1_checkpoint, map_location=device)
-        # 兼容旧模型 (单 projection → 双 projection)
+        # 热启动: 如果 S1 有 proj_aux 但新模型用 proj_sub/proj_id，则复制权重
+        if 'proj_aux.weight' in state_dict and 'proj_sub.weight' not in state_dict:
+            state_dict['proj_sub.weight'] = state_dict['proj_aux.weight'].clone()
+            state_dict['proj_sub.bias'] = state_dict['proj_aux.bias'].clone()
+            state_dict['proj_id.weight'] = state_dict['proj_aux.weight'].clone()
+            state_dict['proj_id.bias'] = state_dict['proj_aux.bias'].clone()
+            if is_main_process:
+                print(f"  [Warmstart] proj_aux → proj_sub + proj_id 权重复制完成")
         missing, unexpected = model.load_state_dict(state_dict, strict=False)
         if is_main_process:
             if missing:
@@ -372,7 +439,8 @@ def main():
             scheduler = get_linear_schedule_with_warmup(optimizer, num_warmup_steps=warmup_steps, num_training_steps=num_steps)
 
     early_stopping, best_val_auc = EarlyStopping(patience=args.early_patience), 0.0
-    loss_history = {"train": [], "val": [], "val_auc": []}
+    best_final = 0.0
+    loss_history = {"train": [], "val": [], "val_auc": [], "val_final": []}
 
     # 初始化 EMA
     base_model = model.module if hasattr(model, 'module') else model
@@ -398,6 +466,11 @@ def main():
             ema.apply_shadow(base_model)
         val_loss, val_auc = evaluate(model, val_loader, device, args.w_id_toxic, args.no_reweight, aux_scale=args.aux_scale)
 
+        # Final Metric 评估 (如果启用)
+        final_metrics = None
+        if args.select_by_final:
+            final_metrics = evaluate_with_final_metric(model, val_loader, device, val_df)
+
         dist.barrier()
 
         if is_main_process:
@@ -405,16 +478,26 @@ def main():
             loss_history["train"].append(train_loss)
             loss_history["val"].append(val_loss)
             loss_history["val_auc"].append(val_auc)
+            loss_history["val_final"].append(final_metrics['final'] if final_metrics else 0.0)
 
             print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val AUC: {val_auc:.4f}")
+            if final_metrics:
+                print(f"  [Final={final_metrics['final']:.4f}] BiasScore={final_metrics['bias_score']:.4f}")
+                print(f"  PM(Sub)={final_metrics['pm_sub']:.4f} | PM(BPSN)={final_metrics['pm_bpsn']:.4f} | PM(BNSP)={final_metrics['pm_bnsp']:.4f}")
             if ema is not None:
                 print(f"  [EMA] decay={args.ema_decay}")
 
-            # 用 AUC 选 checkpoint (保存 EMA 权重)
-            if val_auc > best_val_auc:
-                best_val_auc = val_auc
-                torch.save(base_model.state_dict(), save_path)
-                print(f"  [Save] Best AUC={val_auc:.4f} -> {save_path}")
+            # Checkpoint 选择
+            if args.select_by_final and final_metrics:
+                if final_metrics['final'] > best_final:
+                    best_final = final_metrics['final']
+                    torch.save(base_model.state_dict(), save_path)
+                    print(f"  [Save] Best Final={final_metrics['final']:.4f} -> {save_path}")
+            else:
+                if val_auc > best_val_auc:
+                    best_val_auc = val_auc
+                    torch.save(base_model.state_dict(), save_path)
+                    print(f"  [Save] Best AUC={val_auc:.4f} -> {save_path}")
 
             if early_stopping(val_loss):
                 print(f">>> [Early Stop] 提前结束。Best AUC={best_val_auc:.4f}")
@@ -439,7 +522,7 @@ def main():
         ax2.set_xlabel('Epoch'); ax2.set_title('Validation AUC'); ax2.legend(); ax2.grid(True, alpha=0.3)
         plt.suptitle(f'S2: {save_name}')
         plt.savefig(get_log_path(save_name + "_loss.png"), dpi=150); plt.close()
-        print(f">>> 实验完成。Best AUC={best_val_auc:.4f}")
+        print(f">>> 实验完成。Best AUC={best_val_auc:.4f}" + (f" | Best Final={best_final:.4f}" if args.select_by_final else ""))
 
     dist.destroy_process_group()
 
