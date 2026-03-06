@@ -54,7 +54,7 @@ from model_bert_cnn_bilstm import BertCNNBiLSTM
 from model_vanilla_bert import VanillaBERT
 from model_vanilla_roberta import VanillaRoBERTa
 from model_vanilla_deberta_v3 import VanillaDeBERTaV3
-from model_and_loss import DebertaV3IACD
+# from model_and_loss import DebertaV3IACD  # IACD已移除
 from exp_data_loader import ToxicityDataset
 from path_config import get_eval_path
 
@@ -185,7 +185,7 @@ def main():
     parser = argparse.ArgumentParser(description="Nuanced Metrics Evaluation Runner")
     parser.add_argument("--checkpoint", type=str, required=True, help="待评估的权重文件路径")
     parser.add_argument("--model_type", type=str, required=True, 
-                        choices=["deberta_mtl", "deberta_iacd", "bert_cnn", "text_cnn", "bilstm",
+                        choices=["deberta_mtl", "bert_cnn",
                                  "vanilla_bert", "vanilla_roberta", "vanilla_deberta"],
                         help="模型类型标识")
     parser.add_argument("--output_prefix", type=str, default="eval_report", help="输出报告前缀")
@@ -215,8 +215,7 @@ def main():
         model = VanillaRoBERTa().to(device)
     elif args.model_type == "vanilla_deberta":
         model = VanillaDeBERTaV3().to(device)
-    elif args.model_type == "deberta_iacd":
-        model = DebertaV3IACD().to(device)
+    # IACD已移除
     # elif args.model_type in ["text_cnn", "bilstm"]:
     #     vocab_path = args.checkpoint.replace(".pth", "_vocab.pkl")
     #     with open(vocab_path, 'rb') as f:
