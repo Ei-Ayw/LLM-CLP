@@ -251,9 +251,9 @@ def build_layer_wise_param_groups(model, base_lr, decay_factor=0.95):
     # 所有 head 参数 (toxicity + subtype + identity + attention pooling)
     head_params = []
     for n, p in base_model.named_parameters():
-        if any(k in n for k in ['proj_tox', 'proj_sub', 'proj_id',
+        if any(k in n for k in ['projection',
                                  'tox_head', 'subtype_head', 'identity_head',
-                                 'att_pooling', 'drop_']):
+                                 'att_pooling', 'dropout']):
             head_params.append(p)
     if head_params:
         param_groups.append({"params": head_params, "lr": base_lr})
@@ -344,21 +344,12 @@ def main():
     model = DebertaV3MTL(args.model_name).to(device)
     if os.path.exists(args.s1_checkpoint):
         sd = torch.load(args.s1_checkpoint, map_location=device)
-        if 'proj_aux.weight' in sd and 'proj_sub.weight' not in sd:
-            sd['proj_sub.weight'] = sd['proj_aux.weight'].clone()
-            sd['proj_sub.bias'] = sd['proj_aux.bias'].clone()
-            sd['proj_id.weight'] = sd['proj_aux.weight'].clone()
-            sd['proj_id.bias'] = sd['proj_aux.bias'].clone()
-        model.load_state_dict(sd, strict=False)
-        if is_main: print(f"  [Success] 加载 S1 权重: {args.s1_checkpoint}")
+        model.load_state_dict(sd, strict=True)
+        if is_main: print(f"  [Success] 加载 S1 权重 (strict=True): {args.s1_checkpoint}")
 
-    # 只冻结 log_var (不使用 uncertainty weighting, 用固定 aux_scale 代替)
-    for p in [model.log_var_tox, model.log_var_sub, model.log_var_id]:
-        p.requires_grad_(False)
     if is_main:
         n_train = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        n_frozen = sum(p.numel() for p in model.parameters() if not p.requires_grad)
-        print(f"  [MTL] 可训练: {n_train:,} | 冻结(log_var): {n_frozen:,}")
+        print(f"  [MTL] 可训练参数: {n_train:,}")
         print(f"  [MTL] 辅助任务头全部活跃, aux_scale={args.aux_scale}")
 
     model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank,

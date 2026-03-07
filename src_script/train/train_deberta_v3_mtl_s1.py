@@ -22,8 +22,7 @@ from sklearn.metrics import roc_auc_score
 # 2. [P0] Focal Loss alpha 1.0 (数据已1:1平衡，两类等权)
 # 3. [P0] 删除无用的 SyncBatchNorm
 # 4. [P1] AUC-based early stopping & checkpoint selection
-# 5. [P1] Uncertainty Weighting 自动学习多任务权重
-# 6. [P1] 评估时计算完整多任务 loss (与训练一致)
+# 5. [P1] 评估时计算完整多任务 loss (与训练一致)
 # 7. [P2] num_workers=4 提升数据加载速度
 # =============================================================================
 
@@ -36,6 +35,7 @@ sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
 os.environ["HF_HOME"] = os.path.join(BASE_DIR, "pretrained_models")
 os.environ["HF_HUB_CACHE"] = os.path.join(BASE_DIR, "pretrained_models", "hub")
 os.environ["HF_ENDPOINT"] = "https://hf-mirror.com"
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
 
 from model_deberta_v3_mtl import DebertaV3MTL
 from exp_data_loader import ToxicityDataset, sample_aligned_data
@@ -43,18 +43,6 @@ from path_config import get_model_path, get_log_path
 from train_utils import EarlyStopping
 
 from loss_functions import BCEFocalLoss
-
-def uncertainty_weighted_loss(l_tox, l_sub, l_id, log_var_tox, log_var_sub, log_var_id):
-    """
-    Uncertainty Weighting (Kendall et al., 2018)
-    loss_i = (1 / 2*sigma_i^2) * L_i + log(sigma_i)
-    等价于: loss_i = L_i / (2 * exp(log_var)) + log_var / 2
-    不确定性高的任务自动降权
-    """
-    w_tox = l_tox / (2 * torch.exp(log_var_tox)) + log_var_tox / 2
-    w_sub = l_sub / (2 * torch.exp(log_var_sub)) + log_var_sub / 2
-    w_id = l_id / (2 * torch.exp(log_var_id)) + log_var_id / 2
-    return w_tox + w_sub + w_id
 
 def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_steps, only_toxicity=False, use_focal=True):
     model.train()
@@ -86,8 +74,7 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_s
             else:
                 l_sub = criterion_aux(out['logits_sub'], y_sub)
                 l_id = criterion_aux(out['logits_id'], y_id)
-                log_var_tox, log_var_sub, log_var_id = out['log_vars']
-                loss = uncertainty_weighted_loss(l_tox, l_sub, l_id, log_var_tox, log_var_sub, log_var_id)
+                loss = l_tox + l_sub + l_id
 
         loss = loss / accum_steps
         scaler.scale(loss).backward()
@@ -132,8 +119,7 @@ def evaluate(model, loader, device, use_focal=True):
                 l_tox = criterion_tox(out['logits_tox'], y_tox)
                 l_sub = criterion_aux(out['logits_sub'], y_sub)
                 l_id = criterion_aux(out['logits_id'], y_id)
-                log_var_tox, log_var_sub, log_var_id = out['log_vars']
-                loss = uncertainty_weighted_loss(l_tox, l_sub, l_id, log_var_tox, log_var_sub, log_var_id)
+                loss = l_tox + l_sub + l_id
 
             total_loss += loss.item()
 
@@ -283,14 +269,7 @@ def main():
             loss_history["val"].append(val_loss)
             loss_history["val_auc"].append(val_auc)
 
-            # 打印 uncertainty weights
-            try:
-                log_vars = [p.item() for p in [model.module.log_var_tox, model.module.log_var_sub, model.module.log_var_id]]
-                weights = [1.0 / (2 * np.exp(lv)) for lv in log_vars]
-                print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val AUC: {val_auc:.4f}")
-                print(f"  Task Weights -> Tox: {weights[0]:.3f} | Sub: {weights[1]:.3f} | Id: {weights[2]:.3f}")
-            except Exception:
-                print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val AUC: {val_auc:.4f}")
+            print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val AUC: {val_auc:.4f}")
 
             # 用 AUC 选 checkpoint (旧: 用 val_loss)
             if val_auc > best_val_auc:

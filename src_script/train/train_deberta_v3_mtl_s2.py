@@ -111,14 +111,7 @@ def weighted_toxicity_loss(logits, targets, has_id, y_id, w_id_toxic=1.5, group_
     loss = criterion(logits, targets)
     return (loss * weights).mean()
 
-def uncertainty_weighted_loss(l_tox, l_sub, l_id, log_var_tox, log_var_sub, log_var_id):
-    """Uncertainty Weighting (Kendall et al., 2018)"""
-    w_tox = l_tox / (2 * torch.exp(log_var_tox)) + log_var_tox / 2
-    w_sub = l_sub / (2 * torch.exp(log_var_sub)) + log_var_sub / 2
-    w_id = l_id / (2 * torch.exp(log_var_id)) + log_var_id / 2
-    return w_tox + w_sub + w_id
-
-def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_steps, w_id_toxic, no_reweight=False, only_toxicity=False, aux_scale=None, ema=None):
+def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_steps, w_id_toxic, no_reweight=False, only_toxicity=False, aux_scale=0.3, ema=None):
     model.train()
     criterion_aux = nn.BCEWithLogitsLoss()
     gw_tensor = None if no_reweight else get_group_weights_tensor(device)
@@ -139,16 +132,10 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_s
                                                group_weights_tensor=gw_tensor)
             if only_toxicity:
                 loss = l_tox
-            elif aux_scale is not None:
-                # 固定权重: toxicity 占主导, 辅助任务按 aux_scale 缩放
-                l_sub = criterion_aux(out['logits_sub'], y_sub)
-                l_id = criterion_aux(out['logits_id'], y_id)
-                loss = l_tox + aux_scale * (l_sub + l_id)
             else:
                 l_sub = criterion_aux(out['logits_sub'], y_sub)
                 l_id = criterion_aux(out['logits_id'], y_id)
-                log_var_tox, log_var_sub, log_var_id = out['log_vars']
-                loss = uncertainty_weighted_loss(l_tox, l_sub, l_id, log_var_tox, log_var_sub, log_var_id)
+                loss = l_tox + aux_scale * (l_sub + l_id)
 
         loss = loss / accum_steps
         scaler.scale(loss).backward()
@@ -165,7 +152,7 @@ def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, accum_s
         pbar.set_postfix(loss=f"{total_loss/(i+1):.4f}")
     return total_loss / len(loader)
 
-def evaluate(model, loader, device, w_id_toxic=1.5, no_reweight=False, aux_scale=None):
+def evaluate(model, loader, device, w_id_toxic=1.5, no_reweight=False, aux_scale=0.3):
     """评估: 计算 loss + AUC"""
     model.eval()
     criterion_aux = nn.BCEWithLogitsLoss()
@@ -191,11 +178,7 @@ def evaluate(model, loader, device, w_id_toxic=1.5, no_reweight=False, aux_scale
                                                   group_weights_tensor=gw_tensor)
                 l_sub = criterion_aux(out['logits_sub'], y_sub)
                 l_id = criterion_aux(out['logits_id'], y_id)
-                if aux_scale is not None:
-                    loss = l_tox + aux_scale * (l_sub + l_id)
-                else:
-                    log_var_tox, log_var_sub, log_var_id = out['log_vars']
-                    loss = uncertainty_weighted_loss(l_tox, l_sub, l_id, log_var_tox, log_var_sub, log_var_id)
+                loss = l_tox + aux_scale * (l_sub + l_id)
 
             total_loss += loss.item()
 
@@ -294,10 +277,10 @@ def build_layer_wise_param_groups(model, base_lr, decay_factor=0.8):
             lr = base_lr * decay_factor        # 上层: 0.8x
         param_groups.append({"params": layer_params, "lr": lr})
 
-    # 3. Heads + Projection + log_var: 最大 lr
+    # 3. Heads + Projection: 最大 lr
     head_params = []
     for name, param in base_model.named_parameters():
-        if any(k in name for k in ['proj_tox', 'proj_sub', 'proj_id', 'proj_aux', 'tox_head', 'subtype_head', 'identity_head', 'att_pooling', 'log_var', 'drop_']):
+        if any(k in name for k in ['projection', 'tox_head', 'subtype_head', 'identity_head', 'att_pooling', 'dropout']):
             head_params.append(param)
     if head_params:
         param_groups.append({"params": head_params, "lr": base_lr})
@@ -334,7 +317,7 @@ def main():
     parser.add_argument("--layer_decay", type=float, default=0.8, help="Layer-wise LR decay factor, 1.0=no decay")
     parser.add_argument("--warmup_ratio", type=float, default=0.1, help="Warmup ratio of total steps")
     parser.add_argument("--weight_decay", type=float, default=0.01, help="AdamW weight decay")
-    parser.add_argument("--aux_scale", type=float, default=None, help="Fixed aux loss scale (替代uncertainty weighting). 例如0.3=辅助任务权重0.3")
+    parser.add_argument("--aux_scale", type=float, default=0.3, help="辅助任务损失权重 (固定). 例如0.3=辅助任务权重0.3")
     parser.add_argument("--ema_decay", type=float, default=0.0, help="EMA decay rate. 0=不用EMA, 0.999=常用值")
     parser.add_argument("--select_by_final", action="store_true", help="用 Final Metric 选 checkpoint (而非 AUC)")
 
@@ -404,19 +387,9 @@ def main():
     model = DebertaV3MTL(args.model_name, use_attention_pooling=not args.no_pooling).to(device)
     if os.path.exists(args.s1_checkpoint):
         state_dict = torch.load(args.s1_checkpoint, map_location=device)
-        # 热启动: 如果 S1 有 proj_aux 但新模型用 proj_sub/proj_id，则复制权重
-        if 'proj_aux.weight' in state_dict and 'proj_sub.weight' not in state_dict:
-            state_dict['proj_sub.weight'] = state_dict['proj_aux.weight'].clone()
-            state_dict['proj_sub.bias'] = state_dict['proj_aux.bias'].clone()
-            state_dict['proj_id.weight'] = state_dict['proj_aux.weight'].clone()
-            state_dict['proj_id.bias'] = state_dict['proj_aux.bias'].clone()
-            if is_main_process:
-                print(f"  [Warmstart] proj_aux → proj_sub + proj_id 权重复制完成")
-        missing, unexpected = model.load_state_dict(state_dict, strict=False)
+        model.load_state_dict(state_dict, strict=True)
         if is_main_process:
-            if missing:
-                print(f"  [Info] 新增参数 (随机初始化): {missing}")
-            print(f"  [Success] 加载 S1 权重成功。")
+            print(f"  [Success] 加载 S1 权重成功 (strict=True)。")
 
     # --- DDP Model Wrapping (删除无用的 SyncBatchNorm) ---
     model = DDP(model, device_ids=[args.local_rank], output_device=args.local_rank, find_unused_parameters=True)
@@ -445,13 +418,6 @@ def main():
     # 初始化 EMA
     base_model = model.module if hasattr(model, 'module') else model
     ema = ModelEMA(base_model, decay=args.ema_decay) if args.ema_decay > 0 else None
-
-    # 当使用 aux_scale 时，冻结无用的 log_var 参数
-    if args.aux_scale is not None:
-        for p in [base_model.log_var_tox, base_model.log_var_sub, base_model.log_var_id]:
-            p.requires_grad_(False)
-        if is_main_process:
-            print(f"  [Config] 使用固定 aux_scale={args.aux_scale}, 已冻结 log_var 参数")
 
     for epoch in range(args.epochs):
         train_sampler.set_epoch(epoch)

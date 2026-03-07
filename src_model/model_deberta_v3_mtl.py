@@ -4,17 +4,11 @@ from transformers import DebertaV2Model, DebertaV2Config
 
 class AttentionPooling(nn.Module):
     """
-    改进的注意力池化：加入非线性变换提升表达能力
-    旧版: Linear(hidden, 1) → softmax → weighted_sum
-    新版: Linear(hidden, hidden//4) → Tanh → Linear(hidden//4, 1) → softmax → weighted_sum
+    简单线性注意力池化: Linear(hidden, 1) → softmax → weighted_sum
     """
     def __init__(self, hidden_size):
         super().__init__()
-        self.score_layer = nn.Sequential(
-            nn.Linear(hidden_size, hidden_size // 4),
-            nn.Tanh(),
-            nn.Linear(hidden_size // 4, 1)
-        )
+        self.score_layer = nn.Linear(hidden_size, 1)
 
     def forward(self, last_hidden_state, attention_mask):
         score = self.score_layer(last_hidden_state)
@@ -26,12 +20,10 @@ class AttentionPooling(nn.Module):
 
 class DebertaV3MTL(nn.Module):
     """
-    DeBERTa-v3 多任务学习模型
-    改进点:
-    1. AttentionPooling 加入非线性 (Tanh bottleneck)
-    2. 主任务 (toxicity) 和辅助任务 (subtype/identity) 使用独立的 projection head
-       → 避免梯度冲突 (身份识别 vs 毒性判断 目标矛盾)
-    3. Uncertainty Weighting: 可学习的多任务权重参数
+    DeBERTa-v3 多任务学习模型 (简化架构)
+    - 简单线性 AttentionPooling
+    - 共享 projection layer (所有任务共用)
+    - 单一 dropout
     """
     def __init__(self, model_path_or_name="microsoft/deberta-v3-base", num_subtypes=6, num_identities=9, use_attention_pooling=True):
         super().__init__()
@@ -51,27 +43,15 @@ class DebertaV3MTL(nn.Module):
         else:
             pool_dim = hidden_size
 
-        # 三任务完全隔离: 各自独立的 projection + dropout + head
-        # 避免任何梯度交叉污染
-        self.proj_tox = nn.Linear(pool_dim, 512)
-        self.proj_sub = nn.Linear(pool_dim, 512)
-        self.proj_id  = nn.Linear(pool_dim, 512)
-
+        # 共享 projection: 所有任务共用同一个投影层
+        self.projection = nn.Linear(pool_dim, 512)
         self.activation = nn.GELU()
-        self.drop_tox = nn.Dropout(0.2)
-        self.drop_sub = nn.Dropout(0.1)   # 辅助任务用较低dropout，防止欠拟合
-        self.drop_id  = nn.Dropout(0.1)
+        self.dropout = nn.Dropout(0.2)
 
         # 任务头
         self.tox_head = nn.Linear(512, 1)
         self.subtype_head = nn.Linear(512, num_subtypes)
         self.identity_head = nn.Linear(512, num_identities)
-
-        # Uncertainty Weighting (Kendall et al., 2018)
-        # log_var 越大 → 该任务权重越小 (不确定性高的任务降权)
-        self.log_var_tox = nn.Parameter(torch.zeros(1))
-        self.log_var_sub = nn.Parameter(torch.zeros(1))
-        self.log_var_id = nn.Parameter(torch.zeros(1))
 
     def forward(self, input_ids, attention_mask, token_type_ids=None):
         outputs = self.deberta(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
@@ -83,20 +63,15 @@ class DebertaV3MTL(nn.Module):
         else:
             h = h_cls
 
-        # 主任务特征
-        z_tox = self.drop_tox(self.activation(self.proj_tox(h)))
-        # 辅助任务特征 — 完全物理隔离，各走各的
-        z_sub = self.drop_sub(self.activation(self.proj_sub(h)))
-        z_id  = self.drop_id(self.activation(self.proj_id(h)))
+        # 共享特征
+        z = self.dropout(self.activation(self.projection(h)))
 
-        logits_tox = self.tox_head(z_tox)
-        logits_sub = self.subtype_head(z_sub)
-        logits_id = self.identity_head(z_id)
+        logits_tox = self.tox_head(z)
+        logits_sub = self.subtype_head(z)
+        logits_id = self.identity_head(z)
         return {
             "logits_tox": logits_tox,
             "logits_sub": logits_sub,
             "logits_id": logits_id,
-            "features": z_tox,
-            # +0.0 创建计算节点，避免 DDP "marked ready twice" 错误
-            "log_vars": (self.log_var_tox + 0.0, self.log_var_sub + 0.0, self.log_var_id + 0.0)
+            "features": z,
         }
