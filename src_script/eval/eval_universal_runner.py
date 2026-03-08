@@ -54,6 +54,7 @@ from model_bert_cnn_bilstm import BertCNNBiLSTM
 from model_vanilla_bert import VanillaBERT
 from model_vanilla_roberta import VanillaRoBERTa
 from model_vanilla_deberta_v3 import VanillaDeBERTaV3
+from model_deberta_v3_adversarial import DebertaV3Adversarial
 # from model_and_loss import DebertaV3IACD  # IACD已移除
 from exp_data_loader import ToxicityDataset
 from path_config import get_eval_path
@@ -185,10 +186,11 @@ def main():
     parser = argparse.ArgumentParser(description="Nuanced Metrics Evaluation Runner")
     parser.add_argument("--checkpoint", type=str, required=True, help="待评估的权重文件路径")
     parser.add_argument("--model_type", type=str, required=True, 
-                        choices=["deberta_mtl", "bert_cnn",
+                        choices=["deberta_mtl", "deberta_adv", "bert_cnn",
                                  "vanilla_bert", "vanilla_roberta", "vanilla_deberta"],
                         help="模型类型标识")
     parser.add_argument("--output_prefix", type=str, default="eval_report", help="输出报告前缀")
+    parser.add_argument("--data_dir", type=str, default=None, help="数据目录 (含 test_processed.parquet)")
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -198,7 +200,8 @@ def main():
         torch.cuda.empty_cache()
     
     # [1] 数据加载 -> 使用独立测试集 (学术严谨性)
-    test_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "test_processed.parquet"))
+    data_dir = args.data_dir if args.data_dir else os.path.join(BASE_DIR, "data")
+    test_df = pd.read_parquet(os.path.join(data_dir, "test_processed.parquet"))
     ckpt_name = os.path.basename(args.checkpoint)
     print(f"\n>>> 启动评估: {ckpt_name}")
     print(f">>> 模型类型: {args.model_type} | 测试集大小: {len(test_df)} | 设备: {device}")
@@ -207,6 +210,8 @@ def main():
     if args.model_type == "deberta_mtl":
         use_pool = "NoPooling" not in ckpt_name
         model = DebertaV3MTL(use_attention_pooling=use_pool).to(device)
+    elif args.model_type == "deberta_adv":
+        model = DebertaV3Adversarial().to(device)
     elif args.model_type == "bert_cnn":
         model = BertCNNBiLSTM().to(device)
     elif args.model_type == "vanilla_bert":
