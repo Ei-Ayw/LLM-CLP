@@ -29,18 +29,17 @@ class GradientReversalLayer(nn.Module):
 # 身份属性分层定义
 # =============================================================================
 # 9 个 specific identities → 5 个 coarse groups
+# 顺序与 ToxicityDataset 的 identity_cols 一致
 IDENTITY_COLS = [
-    'male', 'female', 'homosexual_gay_or_lesbian',
-    'christian', 'jewish', 'muslim',
-    'black', 'white',
-    'psychiatric_or_mental_illness'
+    'male', 'female', 'black', 'white', 'muslim', 'jewish', 'christian',
+    'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness'
 ]
 
 COARSE_GROUPS = {
     'gender': [0, 1],               # male, female
-    'sexual_orientation': [2],       # homosexual_gay_or_lesbian
-    'religion': [3, 4, 5],          # christian, jewish, muslim
-    'race': [6, 7],                 # black, white
+    'race': [2, 3],                 # black, white
+    'religion': [4, 5, 6],          # muslim, jewish, christian
+    'sexual_orientation': [7],       # homosexual_gay_or_lesbian
     'disability': [8],              # psychiatric_or_mental_illness
 }
 NUM_COARSE = len(COARSE_GROUPS)  # 5

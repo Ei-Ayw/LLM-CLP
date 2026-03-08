@@ -38,14 +38,17 @@ from sklearn.metrics import roc_auc_score
 # =============================================================================
 
 IDENTITY_COLS = [
-    'male', 'female', 'homosexual_gay_or_lesbian',
-    'christian', 'jewish', 'muslim',
-    'black', 'white', 'psychiatric_or_mental_illness'
+    'male', 'female', 'black', 'white', 'muslim', 'jewish', 'christian',
+    'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness'
 ]
 
 # 粗粒度分组映射: specific index → coarse index
+# 与 ToxicityDataset 的 identity_cols 顺序一致
+# 0:male→gender, 1:female→gender, 2:black→race, 3:white→race,
+# 4:muslim→religion, 5:jewish→religion, 6:christian→religion,
+# 7:homosexual→sexual_orient, 8:psychiatric→disability
 # gender=0, sexual_orient=1, religion=2, race=3, disability=4
-SPECIFIC_TO_COARSE = [0, 0, 1, 2, 2, 2, 3, 3, 4]
+SPECIFIC_TO_COARSE = [0, 0, 3, 3, 2, 2, 2, 1, 4]
 NUM_COARSE = 5
 
 sys.path.append(BASE_DIR)
@@ -54,7 +57,7 @@ sys.path.append(os.path.join(BASE_DIR, "src_script", "data"))
 sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
 
 from model_deberta_v3_hcma import DebertaV3HCMA
-from exp_data_loader import ToxicityDataset, sample_aligned_data
+from exp_data_loader import ToxicityDataset
 from path_config import get_model_path, get_log_path
 from train_utils import EarlyStopping
 
@@ -619,7 +622,6 @@ def main():
     parser = argparse.ArgumentParser(description="HCMA: Hierarchical Conditional Metric-Aligned Debiasing")
     parser.add_argument("--s1_checkpoint", type=str, required=True)
     parser.add_argument("--model_name", type=str, default="microsoft/deberta-v3-base")
-    parser.add_argument("--sample_size", type=int, default=500000)
     parser.add_argument("--batch_size", type=int, default=48)
     parser.add_argument("--grad_accum", type=int, default=2)
     parser.add_argument("--seed", type=int, default=42)
@@ -672,14 +674,13 @@ def main():
     torch.cuda.manual_seed_all(args.seed)
     np.random.seed(args.seed)
 
-    save_name = f"HCMA_Seed{args.seed}_Sample{args.sample_size}_{datetime.now().strftime('%m%d_%H%M')}"
+    save_name = f"HCMA_Seed{args.seed}_{datetime.now().strftime('%m%d_%H%M')}"
     save_path = get_model_path(save_name + ".pth")
 
     # --- Data ---
     data_dir = args.data_dir if args.data_dir else os.path.join(BASE_DIR, "data")
     train_df = pd.read_parquet(os.path.join(data_dir, "train_processed.parquet"))
     val_df = pd.read_parquet(os.path.join(data_dir, "val_processed.parquet"))
-    train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.data_seed)
 
     if is_main_process:
         n_tox = (train_df['y_tox'] >= 0.5).sum() if 'y_tox' in train_df.columns else (train_df['y_tox_soft'] >= 0.5).sum()
@@ -838,7 +839,8 @@ def main():
                 torch.save(base_model.state_dict(), save_path)
                 print(f"  [Save] Best Final={final_metrics['final']:.4f} -> {save_path}")
 
-            if early_stopping(val_loss):
+            # 用 Final Metric 做早停（越高越好，取负值适配 EarlyStopping 的越低越好逻辑）
+            if early_stopping(-final_metrics['final']):
                 print(f">>> [Early Stop] Best Final={best_final:.4f}")
 
         if ema is not None:
