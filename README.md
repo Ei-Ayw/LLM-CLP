@@ -210,11 +210,14 @@ BiasScore = (PM₋₅(Subgroup_AUCs) + PM₋₅(BPSN_AUCs) + PM₋₅(BNSP_AUCs)
 | 模型 | Final | BiasScore | AUC | F1 | PM(Sub) | PM(BPSN) | PM(BNSP) | Worst Bias |
 |------|:-----:|:---------:|:---:|:--:|:-------:|:--------:|:--------:|:----------:|
 | **Cond-GRL (ours)** | **0.9302** | **0.9196** | 0.9623 | 0.6845 | 0.8889 | 0.9281 | 0.9417 | 0.8483 |
-| Vanilla DeBERTa-V3 | 0.9295 | - | - | - | - | - | - | - |
-| GRL (unconditional) | 0.9283 | - | - | - | - | - | - | - |
+| Vanilla DeBERTa-V3 | 0.9295 | 0.9176 | 0.9653 | 0.6900 | 0.8928 | 0.8950 | 0.9651 | 0.8421 |
+| GRL (全样本对抗) | 0.9283 | 0.9161 | 0.9647 | 0.6918 | 0.8884 | 0.8969 | 0.9631 | 0.8389 |
 
-- **Cond-GRL 超过 Vanilla baseline**：Final 0.9302 vs 0.9295（+0.0007）
-- **无条件 GRL 不如 Vanilla**：说明条件反转是关键
+- **Cond-GRL 超过 Vanilla baseline**：Final 0.9302 vs 0.9295（+0.0007），BiasScore 0.9196 vs 0.9176（+0.0020）
+- **全样本 GRL 不如 Vanilla**：对所有样本统一施加对抗（包括毒性样本）反而损害性能，说明条件反转是关键设计
+
+- **Cond-GRL 超过 Vanilla baseline**：Final 0.9302 vs 0.9295（+0.0007），BiasScore 0.9196 vs 0.9176（+0.0020）
+- **全样本 GRL 不如 Vanilla**：对所有样本统一施加对抗（包括毒性样本）反而损害性能，说明条件反转是关键设计
 
 ### 二、平衡数据（历史对照实验）
 
