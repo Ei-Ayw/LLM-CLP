@@ -55,6 +55,7 @@ from model_vanilla_bert import VanillaBERT
 from model_vanilla_roberta import VanillaRoBERTa
 from model_vanilla_deberta_v3 import VanillaDeBERTaV3
 from model_deberta_v3_adversarial import DebertaV3Adversarial
+from model_deberta_v3_hcma import DebertaV3HCMA
 # from model_and_loss import DebertaV3IACD  # IACD已移除
 from exp_data_loader import ToxicityDataset
 from path_config import get_eval_path
@@ -212,6 +213,8 @@ def main():
         model = DebertaV3MTL(use_attention_pooling=use_pool).to(device)
     elif args.model_type == "deberta_adv":
         model = DebertaV3Adversarial().to(device)
+    elif args.model_type == "hcma":
+        model = DebertaV3HCMA().to(device)
     elif args.model_type == "bert_cnn":
         model = BertCNNBiLSTM().to(device)
     elif args.model_type == "vanilla_bert":
