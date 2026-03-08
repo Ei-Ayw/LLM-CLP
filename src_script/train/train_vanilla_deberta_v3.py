@@ -96,6 +96,7 @@ def main():
     parser.add_argument("--patience", type=int, default=1)
     parser.add_argument("--early_patience", type=int, default=3)
     parser.add_argument("--no_bar", action="store_true")
+    parser.add_argument("--data_dir", type=str, default=None, help="数据目录 (含 train/val_processed.parquet)")
     args = parser.parse_args()
 
     # --- DDP Initialization ---
@@ -126,8 +127,9 @@ def main():
     if is_main_process:
         print(f"\n>>> 启动实验: {save_basename} | Mode: DDP")
 
-    train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
-    val_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "val_processed.parquet"))
+    data_dir = args.data_dir if args.data_dir else os.path.join(BASE_DIR, "data")
+    train_df = pd.read_parquet(os.path.join(data_dir, "train_processed.parquet"))
+    val_df = pd.read_parquet(os.path.join(data_dir, "val_processed.parquet"))
     train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.data_seed)
     
     tokenizer = AutoTokenizer.from_pretrained(args.model_path)

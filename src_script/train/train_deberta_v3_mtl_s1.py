@@ -163,6 +163,7 @@ def main():
     # Ablation Flags
     parser.add_argument("--no_focal", action="store_true", help="Disables Focal Loss (reverts to BCE)")
     parser.add_argument("--ablation_tag", type=str, default=None)
+    parser.add_argument("--data_dir", type=str, default=None, help="数据目录 (含 train/val_processed.parquet)")
 
     args = parser.parse_args()
 
@@ -199,8 +200,9 @@ def main():
     if is_main_process:
         print(f"\n>>> 启动实验: {save_name} | Mode: DDP + AMP")
 
-    train_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "train_processed.parquet"))
-    val_df = pd.read_parquet(os.path.join(BASE_DIR, "data", "val_processed.parquet"))
+    data_dir = args.data_dir if args.data_dir else os.path.join(BASE_DIR, "data")
+    train_df = pd.read_parquet(os.path.join(data_dir, "train_processed.parquet"))
+    val_df = pd.read_parquet(os.path.join(data_dir, "val_processed.parquet"))
     train_df = sample_aligned_data(train_df, n_samples=args.sample_size, seed=args.data_seed)
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
