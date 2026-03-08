@@ -187,7 +187,7 @@ def main():
     parser = argparse.ArgumentParser(description="Nuanced Metrics Evaluation Runner")
     parser.add_argument("--checkpoint", type=str, required=True, help="待评估的权重文件路径")
     parser.add_argument("--model_type", type=str, required=True, 
-                        choices=["deberta_mtl", "deberta_adv", "bert_cnn",
+                        choices=["deberta_mtl", "deberta_adv", "hcma", "bert_cnn",
                                  "vanilla_bert", "vanilla_roberta", "vanilla_deberta"],
                         help="模型类型标识")
     parser.add_argument("--output_prefix", type=str, default="eval_report", help="输出报告前缀")
@@ -268,7 +268,7 @@ def main():
     else:
         # [FIX] 使用 lower() 进行大小写不敏感匹配，避免 "DeBERTa" vs "Deberta" 不匹配导致加载错误 tokenizer
         ckpt_lower = ckpt_name.lower()
-        base_model_name = "microsoft/deberta-v3-base" if ("deberta" in ckpt_lower or "iacd" in ckpt_lower) else \
+        base_model_name = "microsoft/deberta-v3-base" if ("deberta" in ckpt_lower or "iacd" in ckpt_lower or "hcma" in ckpt_lower) else \
                         "roberta-base" if "roberta" in ckpt_lower else "bert-base-uncased"
         print(f">>> [Tokenizer] 匹配到模型: {base_model_name}")
         tokenizer = AutoTokenizer.from_pretrained(base_model_name)

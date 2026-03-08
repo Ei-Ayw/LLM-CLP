@@ -27,12 +27,11 @@ echo "[$(date)] S1 checkpoint: $S1_CKPT"
 # 改进 4: Hierarchical conditional adversary
 # =====================================================
 echo "[$(date)] === HCMA 训练 (40.5万身份标签数据) ==="
-torchrun --nproc_per_node=5 \
+torchrun --nproc_per_node=4 \
     src_script/train/train_deberta_v3_hcma.py \
     --s1_checkpoint "$S1_CKPT" \
     --data_dir "$DATA_DIR" \
     --seed 42 --data_seed 42 \
-    --sample_size 500000 \
     --batch_size 48 --grad_accum 2 \
     --warmup_epochs 5 --warmup_lr 1e-4 \
     --adv_epochs 6 --adv_lr 2e-6 \
@@ -60,4 +59,33 @@ python3 src_script/eval/eval_universal_runner.py \
     --data_dir "$DATA_DIR" \
     --output_prefix "HCMA_$(basename $HCMA_CKPT .pth)"
 
-echo "[$(date)] === 完成 ==="
+echo "[$(date)] === HCMA 完成 ==="
+
+# =====================================================
+# Vanilla DeBERTa-V3 Baseline (同一数据集对比)
+# =====================================================
+echo "[$(date)] === Vanilla Baseline 训练 (40.5万身份标签数据) ==="
+torchrun --nproc_per_node=4 \
+    src_script/train/train_vanilla_deberta_v3.py \
+    --data_dir "$DATA_DIR" \
+    --seed 42 --data_seed 42 \
+    --sample_size 500000 \
+    --batch_size 48 --grad_accum 2 \
+    --epochs 2 --lr 2e-5
+
+echo "[$(date)] Vanilla 训练完成"
+
+VANILLA_CKPT=$(ls -t src_result/models/VanillaDeBERTa_Seed42_*.pth 2>/dev/null | head -1)
+if [ -z "$VANILLA_CKPT" ]; then
+    echo "[ERROR] 找不到 Vanilla checkpoint!"
+    exit 1
+fi
+
+echo "[$(date)] Vanilla 评估: $VANILLA_CKPT"
+python3 src_script/eval/eval_universal_runner.py \
+    --checkpoint "$VANILLA_CKPT" \
+    --model_type vanilla_deberta \
+    --data_dir "$DATA_DIR" \
+    --output_prefix "Vanilla_Identity_$(basename $VANILLA_CKPT .pth)"
+
+echo "[$(date)] === 全部完成 ==="
