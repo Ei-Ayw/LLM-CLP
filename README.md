@@ -5,43 +5,48 @@
 ## 项目结构
 
 ```
-├── src_model/                          # 模型定义
-│   ├── model_deberta_v3_adversarial.py # 核心：DeBERTa-V3 + 条件 GRL 对抗去偏
-│   ├── model_deberta_v3_mtl.py         # MTL 多任务学习 (毒性/子类型/身份)
-│   ├── model_bert_cnn_bilstm.py        # Baseline: BERT+CNN+BiLSTM
-│   ├── model_vanilla_bert.py           # Baseline: BERT
-│   ├── model_vanilla_roberta.py        # Baseline: RoBERTa
-│   └── model_vanilla_deberta_v3.py     # Baseline: Vanilla DeBERTa-V3
+├── src_model/                              # 模型定义
+│   ├── model_deberta_v3_adversarial.py     # 核心：DeBERTa-V3 + 条件 GRL 对抗去偏
+│   ├── model_deberta_v3_mtl.py             # MTL 多任务学习 (毒性/子类型/身份)
+│   ├── model_vanilla_deberta_v3.py         # Baseline: Vanilla DeBERTa-V3
+│   ├── model_vanilla_bert.py               # Baseline: BERT
+│   ├── model_vanilla_roberta.py            # Baseline: RoBERTa
+│   └── model_bert_cnn_bilstm.py            # Baseline: BERT+CNN+BiLSTM
 ├── src_script/
-│   ├── train/                          # 训练脚本
-│   │   ├── train_deberta_v3_adv.py     # 对抗去偏两阶段训练
-│   │   ├── train_deberta_v3_mtl_s1.py  # MTL 第一阶段 (多任务预训练)
-│   │   ├── train_deberta_v3_mtl_s2.py  # MTL 第二阶段 (微调)
-│   │   ├── train_deberta_v3_fair_s2.py # Fair S2 (公平性优化)
-│   │   ├── train_vanilla_deberta_v3.py # Vanilla DeBERTa
-│   │   ├── train_vanilla_bert.py       # Vanilla BERT
-│   │   ├── train_vanilla_roberta.py    # Vanilla RoBERTa
-│   │   ├── train_bert_cnn_bilstm.py    # BERT+CNN+BiLSTM
-│   │   └── train_classical_tfidf_lr.py # TF-IDF + LR
-│   ├── eval/                           # 评估脚本
-│   │   ├── eval_universal_runner.py    # 通用评估 (Jigsaw Official Metric)
-│   │   ├── eval_per_subgroup.py        # 子群细粒度分析
-│   │   └── eval_bias_analysis.py       # 偏见分析
-│   ├── data/                           # 数据处理
-│   │   ├── exp_data_preprocess.py      # 数据预处理
-│   │   └── exp_data_loader.py          # Dataset 定义
-│   ├── utils/                          # 工具函数
-│   └── viz/                            # 可视化
-├── src_result/                         # 实验产出
-│   ├── models/                         # 模型权重
-│   ├── eval/                           # 评估报告 (JSON + 阈值扫描图)
-│   ├── logs/                           # 训练 loss 曲线 (JSON + PNG)
-│   └── viz/                            # 可视化图表
-├── data/                               # 数据集 (平衡采样)
-├── data/natural/                       # 数据集 (自然分布)
-├── data_eda/                           # 数据探索分析
-├── docs/                               # 论文草稿与方案
-└── pretrained_models/                  # HuggingFace 预训练权重
+│   ├── train/                              # 训练脚本
+│   │   ├── train_deberta_v3_adv.py         # 对抗去偏两阶段训练
+│   │   ├── train_deberta_v3_mtl_s1.py      # MTL 第一阶段 (多任务预训练)
+│   │   ├── train_deberta_v3_mtl_s2.py      # MTL 第二阶段 (微调)
+│   │   ├── train_deberta_v3_mtl_s1_ablation_bce.py  # MTL S1 消融 (BCE)
+│   │   ├── train_deberta_v3_mtl_s2_ablation_bce.py  # MTL S2 消融 (BCE)
+│   │   ├── train_deberta_v3_fair_s2.py     # Fair S2 (公平性优化)
+│   │   ├── train_vanilla_deberta_v3.py     # Vanilla DeBERTa
+│   │   ├── train_vanilla_bert.py           # Vanilla BERT
+│   │   ├── train_vanilla_roberta.py        # Vanilla RoBERTa
+│   │   ├── train_bert_cnn_bilstm.py        # BERT+CNN+BiLSTM
+│   │   └── train_classical_tfidf_lr.py     # TF-IDF + LR
+│   ├── eval/                               # 评估脚本
+│   │   ├── eval_universal_runner.py        # 通用评估 (Jigsaw Official Metric)
+│   │   ├── eval_per_subgroup.py            # 子群细粒度分析
+│   │   ├── eval_bias_analysis.py           # 偏见分析
+│   │   └── eval_log_extractor.py           # 训练日志提取
+│   ├── data/                               # 数据处理
+│   │   ├── exp_data_preprocess.py          # 数据预处理
+│   │   └── exp_data_loader.py              # Dataset 定义
+│   ├── utils/                              # 工具函数
+│   └── viz/                                # 可视化
+├── src_result/                             # 实验产出
+│   ├── models/                             # 模型权重
+│   ├── eval/                               # 评估报告 (JSON + 阈值扫描图)
+│   ├── logs/                               # 训练 loss 曲线 (JSON + PNG)
+│   └── viz/                                # 可视化图表
+├── data/                                   # 数据集
+│   ├── natural/                            # 自然分布 (~8% 毒性率)
+│   └── backup_balanced/                    # 平衡采样备份 (50/50)
+├── data_eda/                               # 数据探索分析
+├── docs/                                   # 论文草稿与方案
+├── logs/                                   # 运行日志
+└── pretrained_models/                      # HuggingFace 预训练权重
 ```
 
 ---
@@ -212,9 +217,6 @@ BiasScore = (PM₋₅(Subgroup_AUCs) + PM₋₅(BPSN_AUCs) + PM₋₅(BNSP_AUCs)
 | **Cond-GRL (ours)** | **0.9302** | **0.9196** | 0.9623 | 0.6845 | 0.8889 | 0.9281 | 0.9417 | 0.8483 |
 | Vanilla DeBERTa-V3 | 0.9295 | 0.9176 | 0.9653 | 0.6900 | 0.8928 | 0.8950 | 0.9651 | 0.8421 |
 | GRL (全样本对抗) | 0.9283 | 0.9161 | 0.9647 | 0.6918 | 0.8884 | 0.8969 | 0.9631 | 0.8389 |
-
-- **Cond-GRL 超过 Vanilla baseline**：Final 0.9302 vs 0.9295（+0.0007），BiasScore 0.9196 vs 0.9176（+0.0020）
-- **全样本 GRL 不如 Vanilla**：对所有样本统一施加对抗（包括毒性样本）反而损害性能，说明条件反转是关键设计
 
 - **Cond-GRL 超过 Vanilla baseline**：Final 0.9302 vs 0.9295（+0.0007），BiasScore 0.9196 vs 0.9176（+0.0020）
 - **全样本 GRL 不如 Vanilla**：对所有样本统一施加对抗（包括毒性样本）反而损害性能，说明条件反转是关键设计
