@@ -1,7 +1,7 @@
 # Data & Datasets
-data/*.csv
-data/*.parquet
-data/
+/data/*.csv
+/data/*.parquet
+/data/
 src_result/
 !data/.gitkeep
 .idea/
@@ -11,6 +11,7 @@ src_result/*.joblib
 src_result/*.png
 # src_result/*.csv
 pretrained_models/
+models/
 src_result/
 # Python environment
 __pycache__/
