@@ -76,7 +76,18 @@ def load_model(method, checkpoint, model_name, device):
             return main_logits - tde_alpha * bias_logits
         return model, predict_fn
 
-    elif method in ("getfair", "ear", "ours"):
+    elif method in ("getfair", "ear"):
+        # EAR/GetFair 用的是 Vanilla 架构 (无 projector)
+        from train_baseline_vanilla import DebertaV3Vanilla
+        model = DebertaV3Vanilla(model_name, num_classes=2).to(device)
+        state_dict = torch.load(checkpoint, map_location=device)
+        model.load_state_dict(state_dict)
+
+        def predict_fn(m, ids, mask):
+            return m(ids, mask)['logits']
+        return model, predict_fn
+
+    elif method == "ours":
         from model_deberta_cf import DebertaV3CausalFair
         model = DebertaV3CausalFair(model_name, num_classes=2).to(device)
         state_dict = torch.load(checkpoint, map_location=device)
@@ -227,14 +238,14 @@ def evaluate_all(model, predict_fn, tokenizer, test_df, cf_test_df,
     results['per_group_f1_std'] = None
 
     group_col = None
-    if 'coarse_groups' in test_df.columns:
+    if 'target_group' in test_df.columns:
+        group_col = 'target_group'
+    elif 'coarse_groups' in test_df.columns:
         test_df = test_df.copy()
         test_df['_primary_group'] = test_df['coarse_groups'].apply(
             lambda x: x[0] if isinstance(x, list) and len(x) > 0 else 'none'
         )
         group_col = '_primary_group'
-    elif 'target_group' in test_df.columns:
-        group_col = 'target_group'
 
     if group_col and test_df[group_col].nunique() > 1:
         print("[C] 群体公平...")
@@ -308,7 +319,7 @@ def main():
         save_path = args.output
     else:
         ckpt_name = os.path.basename(args.checkpoint).replace('.pth', '')
-        save_path = get_eval_path(f"{ckpt_name}_7metrics.json")
+        save_path = get_eval_path(f"{ckpt_name}_7metrics_{args.cf_method}.json")
 
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
     with open(save_path, 'w') as f:
