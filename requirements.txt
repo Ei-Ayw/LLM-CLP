@@ -21,3 +21,10 @@ seaborn
 # Environment
 python-dotenv
 protobuf==3.20.0
+
+# === 方向B: LLM反事实增强 + 因果公平 ===
+# 数据集下载
+datasets
+
+# 智谱 LLM API (反事实生成)
+zai-sdk>=0.2.2
