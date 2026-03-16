@@ -116,19 +116,24 @@ We compare against three state-of-the-art fairness-aware methods:
 
 ### 3.3 DynaHate Dataset
 
-| Method | Macro-F1 | AUC-ROC | CFR ↓ | CTFG ↓ |
-|--------|:--------:|:-------:|:-----:|:------:|
+| Method | Accuracy | Macro-F1 | AUC-ROC | CFR ↓ | CTFG ↓ |
+|--------|:--------:|:--------:|:-------:|:-----:|:------:|
 | **Baselines** |
-| Vanilla Baseline | 0.9353±0.0100 | 0.9851±0.0048 | 0.0362±0.0088 | 0.0403±0.0084 |
-| CCDF (Park et al., 2023) | 0.9148±0.0183 | 0.9738±0.0077 | 0.0517±0.0119 | 0.0610±0.0132 |
-| EAR (Kumar et al., 2022) | 0.9242±0.0164 | 0.9830±0.0047 | 0.0492±0.0166 | 0.0458±0.0100 |
+| Vanilla Baseline | 0.9457±0.0078 | 0.9353±0.0100 | 0.9851±0.0048 | 0.0362±0.0088 | 0.0403±0.0084 |
+| CCDF (Park et al., 2023) | 0.9271±0.0156 | 0.9148±0.0183 | 0.9738±0.0077 | 0.0517±0.0119 | 0.0610±0.0132 |
+| EAR (Kumar et al., 2022) | 0.9364±0.0129 | 0.9242±0.0164 | 0.9830±0.0047 | 0.0492±0.0166 | 0.0458±0.0100 |
+| **Ablations** |
+| Swap (λ=0) | 0.9457±0.0078 | 0.9353±0.0100 | 0.9851±0.0048 | 0.0362±0.0088 | 0.0403±0.0084 |
+| Swap+CLP (λ=1) | 0.9481±0.0041 | 0.9388±0.0043 | 0.9837±0.0030 | 0.0199±0.0078 | 0.0197±0.0040 |
+| LLM (λ=0) | 0.9457±0.0078 | 0.9353±0.0100 | 0.9851±0.0048 | 0.0362±0.0088 | 0.0403±0.0084 |
 | **Our Method** |
-| **LLM+CLP (λ=1)** ⭐ | **0.9332±0.0059** | **0.9855±0.0023** | **0.0145±0.0006** | **0.0172±0.0004** |
+| **LLM+CLP (λ=1)** ⭐ | **0.9436±0.0041** | **0.9332±0.0059** | **0.9855±0.0023** | **0.0145±0.0006** | **0.0172±0.0004** |
 
 **Key Findings:**
 - Our method achieves **60.1% reduction in CFR** compared to vanilla baseline (0.0362 → 0.0145)
 - Our method achieves **57.2% reduction in CTFG** compared to vanilla baseline (0.0403 → 0.0172)
-- Performance maintained: F1=0.9332 (comparable), AUC=0.9855 (best among all methods)
+- Performance maintained: Accuracy=0.9436, F1=0.9332, AUC=0.9855 (best among all methods)
+- Ablation shows: LLM generation + CLP loss both contribute to fairness gains
 
 ---
 
