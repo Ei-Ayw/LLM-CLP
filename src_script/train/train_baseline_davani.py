@@ -1,15 +1,16 @@
 """
 =============================================================================
-Baseline: CCDF (Causal Counterfactual Debiasing Framework, LREC-COLING 2024)
-论文: Lu et al., "Causal Counterfactual Debiasing Framework"
-参考: https://github.com/DUT-lujunyu/Debias
+Baseline: Davani et al., 2021 - Counterfactual Logit Pairing
+论文: "Dealing with Disagreements: Looking Beyond the Majority Vote
+       in Subjective Annotations"
+链接: https://aclanthology.org/2021.woah-1.10.pdf
 
-核心思想: 因果推断去偏 — 通过 TDE (Total Direct Effect) 去除身份词的虚假因果效应
-1. 训练一个 bias-only 模型 (只看身份词特征)
-2. 主模型训练时用 KL 散度引导主模型远离 bias
-3. **推理时使用 TDE: debiased_logits = main_logits - alpha * bias_logits**
+核心思想:
+1. 使用反事实数据对 (原始文本, 反事实文本)
+2. Logit Pairing: 强制模型对原始和反事实产生相似的 logits
+3. L_total = L_CE(orig) + L_CE(cf) + λ_lp * MSE(logits_orig, logits_cf)
 
-L_total = L_CE + λ_kl * KL(P_main || P_debiased)
+与我们方法的区别: Davani 只用 logit pairing (MSE)，不用对比学习
 =============================================================================
 """
 import os
@@ -34,39 +35,9 @@ sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
 from train_utils import EarlyStopping
 from path_config import get_model_path, get_log_path
 
-IDENTITY_TOKENS = {
-    'black', 'white', 'asian', 'hispanic', 'african', 'european',
-    'muslim', 'christian', 'jewish', 'islam', 'islamic', 'mosque', 'church',
-    'quran', 'bible', 'hijab',
-    'women', 'men', 'woman', 'man', 'she', 'he', 'her', 'his',
-    'gay', 'lesbian', 'homosexual', 'lgbtq', 'queer', 'trans',
-    'disabled', 'immigrant', 'refugee',
-    'arab', 'chinese', 'indian', 'mexican', 'hindu', 'buddhist',
-}
 
-
-class BiasOnlyModel(nn.Module):
-    """Bias-only 模型: 只基于身份词特征做预测 (捕获虚假相关)"""
-    def __init__(self, vocab_size, embed_dim=128, num_classes=2):
-        super().__init__()
-        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
-        self.classifier = nn.Sequential(
-            nn.Linear(embed_dim, 64),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(64, num_classes),
-        )
-
-    def forward(self, input_ids, identity_mask):
-        """只对身份词 token 做平均池化"""
-        embeds = self.embedding(input_ids)  # (B, L, D)
-        mask = identity_mask.unsqueeze(-1).float()  # (B, L, 1)
-        pooled = (embeds * mask).sum(dim=1) / (mask.sum(dim=1) + 1e-9)  # (B, D)
-        return self.classifier(pooled)
-
-
-class DebertaV3CCDF(nn.Module):
-    """DeBERTa-V3 主模型"""
+class DebertaV3Davani(nn.Module):
+    """DeBERTa-V3 with Logit Pairing"""
     def __init__(self, model_path, num_classes=2):
         super().__init__()
         self.config = DebertaV2Config.from_pretrained(model_path)
@@ -82,16 +53,74 @@ class DebertaV3CCDF(nn.Module):
         return {"logits": logits}
 
 
-def build_identity_mask(input_ids, tokenizer):
-    batch_size, seq_len = input_ids.shape
-    mask = torch.zeros_like(input_ids, dtype=torch.float32)
-    for i in range(batch_size):
-        tokens = tokenizer.convert_ids_to_tokens(input_ids[i].tolist())
-        for j, token in enumerate(tokens):
-            clean = token.replace('▁', '').replace('Ġ', '').lower()
-            if clean in IDENTITY_TOKENS:
-                mask[i, j] = 1.0
-    return mask
+class CounterfactualPairDataset(Dataset):
+    """训练集: 原始文本 + 反事实文本配对"""
+    def __init__(self, train_df, cf_df, tokenizer, max_len=128):
+        self.tokenizer = tokenizer
+        self.max_len = max_len
+
+        # 原始训练数据
+        self.orig_texts = train_df['text'].values
+        self.orig_labels = train_df['binary_label'].values
+
+        # 构建 post_id -> cf 映射 (每个原始样本可能有多个反事实)
+        self.cf_map = {}
+        if cf_df is not None and len(cf_df) > 0:
+            for _, row in cf_df.iterrows():
+                orig = row['original_text']
+                if orig not in self.cf_map:
+                    self.cf_map[orig] = []
+                self.cf_map[orig].append(row['cf_text'])
+
+    def __len__(self):
+        return len(self.orig_texts)
+
+    def __getitem__(self, idx):
+        text = str(self.orig_texts[idx])
+        label = self.orig_labels[idx]
+
+        enc = self.tokenizer.encode_plus(
+            text, add_special_tokens=True,
+            max_length=self.max_len, padding='max_length', truncation=True,
+            return_attention_mask=True,
+        )
+
+        item = {
+            'input_ids': torch.tensor(enc['input_ids'], dtype=torch.long),
+            'attention_mask': torch.tensor(enc['attention_mask'], dtype=torch.long),
+            'label': torch.tensor(label, dtype=torch.long),
+            'has_cf': torch.tensor(0, dtype=torch.long),
+        }
+
+        # 随机选一个反事实
+        if text in self.cf_map and len(self.cf_map[text]) > 0:
+            cf_text = np.random.choice(self.cf_map[text])
+            cf_enc = self.tokenizer.encode_plus(
+                str(cf_text), add_special_tokens=True,
+                max_length=self.max_len, padding='max_length', truncation=True,
+                return_attention_mask=True,
+            )
+            item['cf_input_ids'] = torch.tensor(cf_enc['input_ids'], dtype=torch.long)
+            item['cf_attention_mask'] = torch.tensor(cf_enc['attention_mask'], dtype=torch.long)
+            item['has_cf'] = torch.tensor(1, dtype=torch.long)
+
+        return item
+
+
+def cf_collate_fn(batch):
+    """自定义 collate: 处理有/无反事实的混合 batch"""
+    keys = ['input_ids', 'attention_mask', 'label', 'has_cf']
+    result = {k: torch.stack([b[k] for b in batch]) for k in keys}
+
+    # 只对有反事实的样本堆叠 cf 字段
+    cf_items = [b for b in batch if b['has_cf'].item() == 1]
+    if cf_items:
+        result['cf_input_ids'] = torch.stack([b['cf_input_ids'] for b in cf_items])
+        result['cf_attention_mask'] = torch.stack([b['cf_attention_mask'] for b in cf_items])
+        result['cf_indices'] = torch.tensor(
+            [i for i, b in enumerate(batch) if b['has_cf'].item() == 1], dtype=torch.long
+        )
+    return result
 
 
 class SimpleTextDataset(Dataset):
@@ -117,38 +146,9 @@ class SimpleTextDataset(Dataset):
         }
 
 
-def train_bias_model(bias_model, loader, device, tokenizer, epochs=5, lr=1e-3):
-    """第一阶段: 训练 bias-only 模型"""
-    print("\n[Phase 1] Training bias-only model...")
-    optimizer = AdamW(bias_model.parameters(), lr=lr)
-    criterion = nn.CrossEntropyLoss()
-    bias_model.train()
-
-    for epoch in range(epochs):
-        total_loss, n = 0, 0
-        for batch in tqdm(loader, desc=f"[Bias Epoch {epoch+1}]"):
-            ids = batch['input_ids'].to(device)
-            labels = batch['label'].to(device)
-            id_mask = build_identity_mask(ids, tokenizer).to(device)
-
-            logits = bias_model(ids, id_mask)
-            loss = criterion(logits, labels)
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-            n += 1
-        print(f"  Bias Epoch {epoch+1}: loss={total_loss/n:.4f}")
-
-    bias_model.eval()
-    print("[Phase 1] Bias model trained.")
-
-
-def train_one_epoch(model, bias_model, loader, optimizer, scheduler, scaler, device, args, tokenizer):
+def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, args):
     model.train()
-    bias_model.eval()
-    total_loss, total_ce, total_kl, n = 0, 0, 0, 0
+    total_loss, total_ce, total_lp, n = 0, 0, 0, 0
     pbar = tqdm(loader, desc="[Train]")
     optimizer.zero_grad()
 
@@ -161,26 +161,31 @@ def train_one_epoch(model, bias_model, loader, optimizer, scheduler, scaler, dev
             out = model(ids, mask)
             l_ce = args._criterion_ce(out['logits'], labels)
 
-            # TDE: 主模型 logits - bias 模型 logits
-            l_kl = torch.tensor(0.0, device=device)
-            if args.lambda_kl > 0:
-                with torch.no_grad():
-                    id_mask = build_identity_mask(ids, tokenizer).to(device)
-                    bias_logits = bias_model(ids, id_mask)
+            # Logit Pairing
+            l_lp = torch.tensor(0.0, device=device)
+            if 'cf_input_ids' in batch and args.lambda_lp > 0:
+                cf_ids = batch['cf_input_ids'].to(device)
+                cf_mask = batch['cf_attention_mask'].to(device)
+                cf_indices = batch['cf_indices'].to(device)
 
-                # debiased logits = main - bias
-                debiased_logits = out['logits'] - args.tde_alpha * bias_logits
-                # KL divergence: 让主模型的输出接近 debiased 输出
-                p_main = F.log_softmax(out['logits'], dim=-1)
-                p_debiased = F.softmax(debiased_logits.detach(), dim=-1)
-                l_kl = F.kl_div(p_main, p_debiased, reduction='batchmean')
+                cf_out = model(cf_ids, cf_mask)
+                # MSE between original logits (at cf positions) and cf logits
+                orig_logits_matched = out['logits'][cf_indices]
+                l_lp = F.mse_loss(orig_logits_matched, cf_out['logits'])
 
-            loss = l_ce + args.lambda_kl * l_kl
+                # 反事实样本也参与 CE (标签与原始相同，因为只换了身份词)
+                cf_labels = labels[cf_indices]
+                l_ce_cf = args._criterion_ce(cf_out['logits'], cf_labels)
+                l_ce = (l_ce + l_ce_cf) / 2
+
+            loss = l_ce + args.lambda_lp * l_lp
 
         loss_scaled = loss / args.grad_accum
         scaler.scale(loss_scaled).backward()
 
         if (i + 1) % args.grad_accum == 0:
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             scaler.step(optimizer)
             scaler.update()
             if scheduler is not None:
@@ -189,29 +194,23 @@ def train_one_epoch(model, bias_model, loader, optimizer, scheduler, scaler, dev
 
         total_loss += loss.item()
         total_ce += l_ce.item()
-        total_kl += l_kl.item()
+        total_lp += l_lp.item()
         n += 1
-        pbar.set_postfix(loss=f"{total_loss/n:.4f}", ce=f"{total_ce/n:.4f}", kl=f"{total_kl/n:.4f}")
+        pbar.set_postfix(loss=f"{total_loss/n:.4f}", ce=f"{total_ce/n:.4f}", lp=f"{total_lp/n:.4f}")
 
-    return {'loss': total_loss/n, 'ce': total_ce/n, 'kl': total_kl/n}
+    return {'loss': total_loss/n, 'ce': total_ce/n, 'lp': total_lp/n}
 
 
 @torch.no_grad()
-def evaluate_tde(model, bias_model, loader, device, tokenizer, tde_alpha):
-    """推理时使用 TDE 去偏: debiased_logits = main_logits - alpha * bias_logits"""
+def evaluate(model, loader, device):
     model.eval()
-    bias_model.eval()
     all_probs, all_labels = [], []
-    for batch in tqdm(loader, desc="[Eval-TDE]"):
+    for batch in tqdm(loader, desc="[Eval]"):
         ids = batch['input_ids'].to(device)
         mask = batch['attention_mask'].to(device)
         with torch.cuda.amp.autocast():
             out = model(ids, mask)
-            id_mask = build_identity_mask(ids, tokenizer).to(device)
-            bias_logits = bias_model(ids, id_mask)
-            # TDE debiasing at inference
-            debiased_logits = out['logits'] - tde_alpha * bias_logits
-            probs = F.softmax(debiased_logits, dim=-1)[:, 1]
+            probs = F.softmax(out['logits'], dim=-1)[:, 1]
         all_probs.extend(probs.cpu().numpy())
         all_labels.extend(batch['label'].numpy())
 
@@ -227,7 +226,7 @@ def evaluate_tde(model, bias_model, loader, device, tokenizer, tde_alpha):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="CCDF Baseline Training")
+    parser = argparse.ArgumentParser(description="Davani et al., 2021 Baseline")
     parser.add_argument("--dataset", type=str, default="hatexplain",
                         choices=["hatexplain", "toxigen", "dynahate"])
     parser.add_argument("--model_name", type=str,
@@ -240,32 +239,44 @@ def main():
     parser.add_argument("--warmup_ratio", type=float, default=0.1)
     parser.add_argument("--weight_decay", type=float, default=0.01)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--lambda_kl", type=float, default=1.0,
-                        help="KL 散度损失权重")
-    parser.add_argument("--tde_alpha", type=float, default=0.5,
-                        help="TDE 减去 bias 的系数")
-    parser.add_argument("--bias_epochs", type=int, default=5,
-                        help="Bias-only 模型训练轮数")
+    parser.add_argument("--lambda_lp", type=float, default=1.0,
+                        help="Logit Pairing 权重")
+    parser.add_argument("--cf_method", type=str, default="swap",
+                        choices=["swap", "llm"],
+                        help="反事实生成方法")
     parser.add_argument("--data_dir", type=str,
                         default=os.path.join(BASE_DIR, "data", "causal_fair"))
-    parser.add_argument("--patience", type=int, default=2)
+    parser.add_argument("--patience", type=int, default=3)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
-    exp_name = f"CCDF_{args.dataset}_seed{args.seed}_{datetime.now().strftime('%m%d_%H%M')}"
+    exp_name = f"Davani_{args.dataset}_seed{args.seed}_{datetime.now().strftime('%m%d_%H%M')}"
     print(f"[Experiment] {exp_name}")
 
+    # 加载数据 (parquet)
     train_df = pd.read_parquet(os.path.join(args.data_dir, f"{args.dataset}_train.parquet"))
     val_df = pd.read_parquet(os.path.join(args.data_dir, f"{args.dataset}_val.parquet"))
     test_df = pd.read_parquet(os.path.join(args.data_dir, f"{args.dataset}_test.parquet"))
+
+    # 加载反事实数据
+    cf_suffix = "cf_swap" if args.cf_method == "swap" else "cf_llm"
+    cf_path = os.path.join(args.data_dir, f"{args.dataset}_train_{cf_suffix}.parquet")
+    cf_df = None
+    if os.path.exists(cf_path):
+        cf_df = pd.read_parquet(cf_path)
+        print(f"[CF] 加载反事实: {len(cf_df)} 条 ({args.cf_method})")
+    else:
+        print(f"[CF] 未找到反事实文件: {cf_path}，退化为普通 CE 训练")
+
     print(f"[Data] Train: {len(train_df)} | Val: {len(val_df)} | Test: {len(test_df)}")
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    train_loader = DataLoader(SimpleTextDataset(train_df, tokenizer, args.max_len),
-                              batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
+    train_dataset = CounterfactualPairDataset(train_df, cf_df, tokenizer, args.max_len)
+    train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True,
+                              num_workers=2, pin_memory=True, collate_fn=cf_collate_fn)
     val_loader = DataLoader(SimpleTextDataset(val_df, tokenizer, args.max_len),
                             batch_size=args.batch_size*2, shuffle=False, num_workers=2, pin_memory=True)
     test_loader = DataLoader(SimpleTextDataset(test_df, tokenizer, args.max_len),
@@ -278,14 +289,8 @@ def main():
     ).to(device)
     args._criterion_ce = nn.CrossEntropyLoss(weight=class_weight)
 
-    # Phase 1: Train bias-only model
-    vocab_size = tokenizer.vocab_size
-    bias_model = BiasOnlyModel(vocab_size, embed_dim=128, num_classes=2).to(device)
-    train_bias_model(bias_model, train_loader, device, tokenizer, epochs=args.bias_epochs)
-
-    # Phase 2: Train main model with TDE debiasing
-    model = DebertaV3CCDF(args.model_name, num_classes=2).to(device)
-    print(f"\n[Phase 2] Main model training | lambda_kl={args.lambda_kl} tde_alpha={args.tde_alpha}")
+    model = DebertaV3Davani(args.model_name, num_classes=2).to(device)
+    print(f"[Model] Davani LogitPairing | lambda_lp={args.lambda_lp} cf={args.cf_method}")
 
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scaler = torch.cuda.amp.GradScaler()
@@ -299,34 +304,23 @@ def main():
 
     for epoch in range(args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
-        train_metrics = train_one_epoch(model, bias_model, train_loader, optimizer, scheduler, scaler, device, args, tokenizer)
-        # 验证时也使用 TDE 去偏
-        val_metrics = evaluate_tde(model, bias_model, val_loader, device, tokenizer, args.tde_alpha)
-        print(f"  Train: loss={train_metrics['loss']:.4f} CE={train_metrics['ce']:.4f} KL={train_metrics['kl']:.4f}")
+        train_metrics = train_one_epoch(model, train_loader, optimizer, scheduler, scaler, device, args)
+        val_metrics = evaluate(model, val_loader, device)
+        print(f"  Train: loss={train_metrics['loss']:.4f} CE={train_metrics['ce']:.4f} LP={train_metrics['lp']:.4f}")
         print(f"  Val:   F1={val_metrics['macro_f1']:.4f} AUC={val_metrics['auc_roc']:.4f}")
 
         if val_metrics['macro_f1'] > best_f1:
             best_f1 = val_metrics['macro_f1']
-            # 同时保存主模型和bias模型
-            torch.save({
-                'main_model': model.state_dict(),
-                'bias_model': bias_model.state_dict(),
-                'tde_alpha': args.tde_alpha,
-                'vocab_size': vocab_size,
-            }, save_path)
+            torch.save(model.state_dict(), save_path)
             print(f"  [Save] Best F1={best_f1:.4f}")
 
         if early_stopping(-val_metrics['macro_f1']):
             print(f">>> [Early Stop] Best F1={best_f1:.4f}")
             break
 
-    # 加载最佳模型
-    ckpt = torch.load(save_path, map_location=device)
-    model.load_state_dict(ckpt['main_model'])
-    bias_model.load_state_dict(ckpt['bias_model'])
-
-    test_metrics = evaluate_tde(model, bias_model, test_loader, device, tokenizer, args.tde_alpha)
-    print(f"\nTest (TDE): F1={test_metrics['macro_f1']:.4f} AUC={test_metrics['auc_roc']:.4f}")
+    model.load_state_dict(torch.load(save_path, map_location=device))
+    test_metrics = evaluate(model, test_loader, device)
+    print(f"\nTest: F1={test_metrics['macro_f1']:.4f} AUC={test_metrics['auc_roc']:.4f}")
 
     results = {
         'experiment': exp_name, 'args': vars(args),

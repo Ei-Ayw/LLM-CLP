@@ -121,6 +121,7 @@ class IdentityTextDataset(Dataset):
 
 
 def train_one_epoch(model, loader, optimizer, scheduler, device, args, tokenizer):
+    """GetFair训练: 使用 torch.autograd.grad + create_graph=True 实现二阶梯度惩罚"""
     model.train()
     total_loss, total_ce, total_gf, n = 0, 0, 0, 0
     pbar = tqdm(loader, desc="[Train]")
@@ -131,29 +132,35 @@ def train_one_epoch(model, loader, optimizer, scheduler, device, args, tokenizer
         mask = batch['attention_mask'].to(device)
         labels = batch['label'].to(device)
 
-        # Forward (不用 AMP, 需要完整精度的梯度)
+        # Forward，捕获 embedding 输出
         out = model(ids, mask, capture_embed_grad=True)
         l_ce = args._criterion_ce(out['logits'], labels)
 
-        # 先对 CE backward 获取 embedding 梯度
-        l_ce.backward(retain_graph=False)
-
-        # 计算梯度公平惩罚
+        # 计算梯度公平惩罚 (二阶梯度)
         l_gf = torch.tensor(0.0, device=device)
-        if args.lambda_gf > 0 and model._embed_grad is not None:
+        embed_out = model._embed_output
+        if args.lambda_gf > 0 and embed_out is not None and embed_out.requires_grad:
+            # 用 autograd.grad 计算 CE 对 embedding 输出的梯度，保留计算图
+            embed_grad = torch.autograd.grad(
+                l_ce, embed_out, create_graph=True, retain_graph=True
+            )[0]  # (B, L, H)
+
             id_mask = build_identity_mask(ids, tokenizer).to(device)  # (B, L)
             if id_mask.sum() > 0:
-                grad_norm = (model._embed_grad.detach() ** 2).sum(dim=-1)  # (B, L)
+                grad_norm = (embed_grad ** 2).sum(dim=-1)  # (B, L)
                 l_gf = (grad_norm * id_mask).sum() / (id_mask.sum() + 1e-9)
-                # 用 gf_loss 做一次额外 backward 来调整模型
-                # 实际上梯度惩罚需要二阶导，这里简化为对参数施加额外正则
-                # 将 gf 信息记录用于监控
+
+        # 总损失 = CE + lambda * GradFair，统一 backward
+        loss = l_ce + args.lambda_gf * l_gf
+        loss_scaled = loss / args.grad_accum
+        loss_scaled.backward()
+
         model._embed_grad = None
         model._embed_output = None
 
-        total_loss += (l_ce.item() + args.lambda_gf * l_gf.item())
+        total_loss += loss.item()
         total_ce += l_ce.item()
-        total_gf += l_gf.item()
+        total_gf += l_gf.item() if isinstance(l_gf, torch.Tensor) else l_gf
         n += 1
 
         if (i + 1) % args.grad_accum == 0:

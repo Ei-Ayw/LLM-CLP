@@ -1,15 +1,17 @@
 """
 =============================================================================
-Baseline: CCDF (Causal Counterfactual Debiasing Framework, LREC-COLING 2024)
-论文: Lu et al., "Causal Counterfactual Debiasing Framework"
-参考: https://github.com/DUT-lujunyu/Debias
+Baseline: Ramponi & Tonelli, 2022 - Adversarial Debiasing
+论文: "Features or Spurious Artifacts? Data-centric Baselines for Fair
+       and Robust Hate Speech Detection"
+链接: https://aclanthology.org/2022.naacl-main.221.pdf
+代码: https://github.com/dhfbk/hate-speech-artifacts
 
-核心思想: 因果推断去偏 — 通过 TDE (Total Direct Effect) 去除身份词的虚假因果效应
-1. 训练一个 bias-only 模型 (只看身份词特征)
-2. 主模型训练时用 KL 散度引导主模型远离 bias
-3. **推理时使用 TDE: debiased_logits = main_logits - alpha * bias_logits**
-
-L_total = L_CE + λ_kl * KL(P_main || P_debiased)
+核心思想:
+1. 使用对抗训练移除虚假相关特征（如身份词）
+2. 主分类器学习预测毒性
+3. 对抗分类器尝试从主分类器的表示中预测"是否包含身份词"
+4. 通过 Gradient Reversal Layer，主分类器学习让表示对身份不变
+5. L_total = L_CE + λ_adv * L_adversarial (GRL 自动处理符号)
 =============================================================================
 """
 import os
@@ -34,67 +36,99 @@ sys.path.append(os.path.join(BASE_DIR, "src_script", "utils"))
 from train_utils import EarlyStopping
 from path_config import get_model_path, get_log_path
 
-IDENTITY_TOKENS = {
-    'black', 'white', 'asian', 'hispanic', 'african', 'european',
+IDENTITY_KEYWORDS = {
+    'black', 'white', 'asian', 'hispanic', 'latino', 'african', 'european',
     'muslim', 'christian', 'jewish', 'islam', 'islamic', 'mosque', 'church',
     'quran', 'bible', 'hijab',
-    'women', 'men', 'woman', 'man', 'she', 'he', 'her', 'his',
-    'gay', 'lesbian', 'homosexual', 'lgbtq', 'queer', 'trans',
+    'women', 'men', 'woman', 'man', 'female', 'male', 'she', 'he', 'her', 'his',
+    'gay', 'lesbian', 'homosexual', 'lgbtq', 'queer', 'transgender', 'trans',
     'disabled', 'immigrant', 'refugee',
     'arab', 'chinese', 'indian', 'mexican', 'hindu', 'buddhist',
 }
 
 
-class BiasOnlyModel(nn.Module):
-    """Bias-only 模型: 只基于身份词特征做预测 (捕获虚假相关)"""
-    def __init__(self, vocab_size, embed_dim=128, num_classes=2):
-        super().__init__()
-        self.embedding = nn.Embedding(vocab_size, embed_dim, padding_idx=0)
-        self.classifier = nn.Sequential(
-            nn.Linear(embed_dim, 64),
-            nn.ReLU(),
-            nn.Dropout(0.1),
-            nn.Linear(64, num_classes),
-        )
+class GradientReversalFunction(torch.autograd.Function):
+    """Gradient Reversal Layer: forward 不变，backward 反转梯度"""
+    @staticmethod
+    def forward(ctx, x, alpha):
+        ctx.alpha = alpha
+        return x.view_as(x)
 
-    def forward(self, input_ids, identity_mask):
-        """只对身份词 token 做平均池化"""
-        embeds = self.embedding(input_ids)  # (B, L, D)
-        mask = identity_mask.unsqueeze(-1).float()  # (B, L, 1)
-        pooled = (embeds * mask).sum(dim=1) / (mask.sum(dim=1) + 1e-9)  # (B, D)
-        return self.classifier(pooled)
+    @staticmethod
+    def backward(ctx, grad_output):
+        return -ctx.alpha * grad_output, None
 
 
-class DebertaV3CCDF(nn.Module):
-    """DeBERTa-V3 主模型"""
-    def __init__(self, model_path, num_classes=2):
+class DebertaV3Ramponi(nn.Module):
+    """DeBERTa-V3 with Adversarial Debiasing (GRL)"""
+    def __init__(self, model_path, num_classes=2, num_identity_classes=2):
         super().__init__()
         self.config = DebertaV2Config.from_pretrained(model_path)
         self.deberta = DebertaV2Model.from_pretrained(model_path)
         hidden_size = self.config.hidden_size
+
+        # 主分类器 (毒性)
         self.dropout = nn.Dropout(0.1)
         self.classifier = nn.Linear(hidden_size, num_classes)
 
-    def forward(self, input_ids, attention_mask):
+        # 对抗分类器 (身份属性)
+        self.adv_classifier = nn.Sequential(
+            nn.Linear(hidden_size, 128),
+            nn.ReLU(),
+            nn.Dropout(0.1),
+            nn.Linear(128, num_identity_classes),
+        )
+
+    def forward(self, input_ids, attention_mask, alpha=1.0):
         outputs = self.deberta(input_ids=input_ids, attention_mask=attention_mask)
         cls_hidden = outputs.last_hidden_state[:, 0, :]
-        logits = self.classifier(self.dropout(cls_hidden))
-        return {"logits": logits}
+
+        # 主任务
+        main_logits = self.classifier(self.dropout(cls_hidden))
+
+        # 对抗任务 (通过 GRL)
+        reversed_hidden = GradientReversalFunction.apply(cls_hidden, alpha)
+        adv_logits = self.adv_classifier(reversed_hidden)
+
+        return {"logits": main_logits, "adv_logits": adv_logits}
 
 
-def build_identity_mask(input_ids, tokenizer):
-    batch_size, seq_len = input_ids.shape
-    mask = torch.zeros_like(input_ids, dtype=torch.float32)
-    for i in range(batch_size):
-        tokens = tokenizer.convert_ids_to_tokens(input_ids[i].tolist())
-        for j, token in enumerate(tokens):
-            clean = token.replace('▁', '').replace('Ġ', '').lower()
-            if clean in IDENTITY_TOKENS:
-                mask[i, j] = 1.0
-    return mask
+class IdentityTextDataset(Dataset):
+    """数据集: 自动从文本中提取身份标签"""
+    def __init__(self, df, tokenizer, max_len=128):
+        self.texts = df['text'].values
+        self.labels = df['binary_label'].values
+        self.tokenizer = tokenizer
+        self.max_len = max_len
+
+        # 提取身份标签: 文本中是否包含身份词
+        if 'has_identity' in df.columns:
+            self.identity_labels = df['has_identity'].astype(int).values
+        else:
+            self.identity_labels = np.array([
+                int(any(kw in str(t).lower() for kw in IDENTITY_KEYWORDS))
+                for t in self.texts
+            ])
+
+    def __len__(self):
+        return len(self.texts)
+
+    def __getitem__(self, idx):
+        inputs = self.tokenizer.encode_plus(
+            str(self.texts[idx]), add_special_tokens=True,
+            max_length=self.max_len, padding='max_length', truncation=True,
+            return_attention_mask=True,
+        )
+        return {
+            'input_ids': torch.tensor(inputs['input_ids'], dtype=torch.long),
+            'attention_mask': torch.tensor(inputs['attention_mask'], dtype=torch.long),
+            'label': torch.tensor(self.labels[idx], dtype=torch.long),
+            'identity_label': torch.tensor(self.identity_labels[idx], dtype=torch.long),
+        }
 
 
 class SimpleTextDataset(Dataset):
+    """评估用简单数据集"""
     def __init__(self, df, tokenizer, max_len=128):
         self.texts = df['text'].values
         self.labels = df['binary_label'].values
@@ -117,70 +151,35 @@ class SimpleTextDataset(Dataset):
         }
 
 
-def train_bias_model(bias_model, loader, device, tokenizer, epochs=5, lr=1e-3):
-    """第一阶段: 训练 bias-only 模型"""
-    print("\n[Phase 1] Training bias-only model...")
-    optimizer = AdamW(bias_model.parameters(), lr=lr)
-    criterion = nn.CrossEntropyLoss()
-    bias_model.train()
-
-    for epoch in range(epochs):
-        total_loss, n = 0, 0
-        for batch in tqdm(loader, desc=f"[Bias Epoch {epoch+1}]"):
-            ids = batch['input_ids'].to(device)
-            labels = batch['label'].to(device)
-            id_mask = build_identity_mask(ids, tokenizer).to(device)
-
-            logits = bias_model(ids, id_mask)
-            loss = criterion(logits, labels)
-
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            total_loss += loss.item()
-            n += 1
-        print(f"  Bias Epoch {epoch+1}: loss={total_loss/n:.4f}")
-
-    bias_model.eval()
-    print("[Phase 1] Bias model trained.")
-
-
-def train_one_epoch(model, bias_model, loader, optimizer, scheduler, scaler, device, args, tokenizer):
+def train_one_epoch(model, loader, optimizer, scheduler, scaler, device, args, epoch, total_epochs):
     model.train()
-    bias_model.eval()
-    total_loss, total_ce, total_kl, n = 0, 0, 0, 0
+    total_loss, total_ce, total_adv, n = 0, 0, 0, 0
     pbar = tqdm(loader, desc="[Train]")
     optimizer.zero_grad()
+
+    # 渐进式增加对抗强度 (DANN schedule)
+    p = float(epoch) / total_epochs
+    alpha = 2.0 / (1.0 + np.exp(-10 * p)) - 1.0
 
     for i, batch in enumerate(pbar):
         ids = batch['input_ids'].to(device)
         mask = batch['attention_mask'].to(device)
         labels = batch['label'].to(device)
+        id_labels = batch['identity_label'].to(device)
 
         with torch.cuda.amp.autocast():
-            out = model(ids, mask)
+            out = model(ids, mask, alpha=alpha)
             l_ce = args._criterion_ce(out['logits'], labels)
-
-            # TDE: 主模型 logits - bias 模型 logits
-            l_kl = torch.tensor(0.0, device=device)
-            if args.lambda_kl > 0:
-                with torch.no_grad():
-                    id_mask = build_identity_mask(ids, tokenizer).to(device)
-                    bias_logits = bias_model(ids, id_mask)
-
-                # debiased logits = main - bias
-                debiased_logits = out['logits'] - args.tde_alpha * bias_logits
-                # KL divergence: 让主模型的输出接近 debiased 输出
-                p_main = F.log_softmax(out['logits'], dim=-1)
-                p_debiased = F.softmax(debiased_logits.detach(), dim=-1)
-                l_kl = F.kl_div(p_main, p_debiased, reduction='batchmean')
-
-            loss = l_ce + args.lambda_kl * l_kl
+            l_adv = F.cross_entropy(out['adv_logits'], id_labels)
+            # GRL 已经处理了符号，所以这里直接加
+            loss = l_ce + args.lambda_adv * l_adv
 
         loss_scaled = loss / args.grad_accum
         scaler.scale(loss_scaled).backward()
 
         if (i + 1) % args.grad_accum == 0:
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             scaler.step(optimizer)
             scaler.update()
             if scheduler is not None:
@@ -189,29 +188,24 @@ def train_one_epoch(model, bias_model, loader, optimizer, scheduler, scaler, dev
 
         total_loss += loss.item()
         total_ce += l_ce.item()
-        total_kl += l_kl.item()
+        total_adv += l_adv.item()
         n += 1
-        pbar.set_postfix(loss=f"{total_loss/n:.4f}", ce=f"{total_ce/n:.4f}", kl=f"{total_kl/n:.4f}")
+        pbar.set_postfix(loss=f"{total_loss/n:.4f}", ce=f"{total_ce/n:.4f}",
+                         adv=f"{total_adv/n:.4f}", alpha=f"{alpha:.3f}")
 
-    return {'loss': total_loss/n, 'ce': total_ce/n, 'kl': total_kl/n}
+    return {'loss': total_loss/n, 'ce': total_ce/n, 'adv': total_adv/n, 'alpha': alpha}
 
 
 @torch.no_grad()
-def evaluate_tde(model, bias_model, loader, device, tokenizer, tde_alpha):
-    """推理时使用 TDE 去偏: debiased_logits = main_logits - alpha * bias_logits"""
+def evaluate(model, loader, device):
     model.eval()
-    bias_model.eval()
     all_probs, all_labels = [], []
-    for batch in tqdm(loader, desc="[Eval-TDE]"):
+    for batch in tqdm(loader, desc="[Eval]"):
         ids = batch['input_ids'].to(device)
         mask = batch['attention_mask'].to(device)
         with torch.cuda.amp.autocast():
-            out = model(ids, mask)
-            id_mask = build_identity_mask(ids, tokenizer).to(device)
-            bias_logits = bias_model(ids, id_mask)
-            # TDE debiasing at inference
-            debiased_logits = out['logits'] - tde_alpha * bias_logits
-            probs = F.softmax(debiased_logits, dim=-1)[:, 1]
+            out = model(ids, mask, alpha=0.0)  # 评估时不需要对抗
+            probs = F.softmax(out['logits'], dim=-1)[:, 1]
         all_probs.extend(probs.cpu().numpy())
         all_labels.extend(batch['label'].numpy())
 
@@ -227,7 +221,7 @@ def evaluate_tde(model, bias_model, loader, device, tokenizer, tde_alpha):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="CCDF Baseline Training")
+    parser = argparse.ArgumentParser(description="Ramponi & Tonelli, 2022 Baseline")
     parser.add_argument("--dataset", type=str, default="hatexplain",
                         choices=["hatexplain", "toxigen", "dynahate"])
     parser.add_argument("--model_name", type=str,
@@ -240,31 +234,28 @@ def main():
     parser.add_argument("--warmup_ratio", type=float, default=0.1)
     parser.add_argument("--weight_decay", type=float, default=0.01)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--lambda_kl", type=float, default=1.0,
-                        help="KL 散度损失权重")
-    parser.add_argument("--tde_alpha", type=float, default=0.5,
-                        help="TDE 减去 bias 的系数")
-    parser.add_argument("--bias_epochs", type=int, default=5,
-                        help="Bias-only 模型训练轮数")
+    parser.add_argument("--lambda_adv", type=float, default=0.1,
+                        help="对抗损失权重")
     parser.add_argument("--data_dir", type=str,
                         default=os.path.join(BASE_DIR, "data", "causal_fair"))
-    parser.add_argument("--patience", type=int, default=2)
+    parser.add_argument("--patience", type=int, default=3)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 
-    exp_name = f"CCDF_{args.dataset}_seed{args.seed}_{datetime.now().strftime('%m%d_%H%M')}"
+    exp_name = f"Ramponi_{args.dataset}_seed{args.seed}_{datetime.now().strftime('%m%d_%H%M')}"
     print(f"[Experiment] {exp_name}")
 
+    # 加载数据 (parquet)
     train_df = pd.read_parquet(os.path.join(args.data_dir, f"{args.dataset}_train.parquet"))
     val_df = pd.read_parquet(os.path.join(args.data_dir, f"{args.dataset}_val.parquet"))
     test_df = pd.read_parquet(os.path.join(args.data_dir, f"{args.dataset}_test.parquet"))
     print(f"[Data] Train: {len(train_df)} | Val: {len(val_df)} | Test: {len(test_df)}")
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
-    train_loader = DataLoader(SimpleTextDataset(train_df, tokenizer, args.max_len),
+    train_loader = DataLoader(IdentityTextDataset(train_df, tokenizer, args.max_len),
                               batch_size=args.batch_size, shuffle=True, num_workers=2, pin_memory=True)
     val_loader = DataLoader(SimpleTextDataset(val_df, tokenizer, args.max_len),
                             batch_size=args.batch_size*2, shuffle=False, num_workers=2, pin_memory=True)
@@ -278,14 +269,8 @@ def main():
     ).to(device)
     args._criterion_ce = nn.CrossEntropyLoss(weight=class_weight)
 
-    # Phase 1: Train bias-only model
-    vocab_size = tokenizer.vocab_size
-    bias_model = BiasOnlyModel(vocab_size, embed_dim=128, num_classes=2).to(device)
-    train_bias_model(bias_model, train_loader, device, tokenizer, epochs=args.bias_epochs)
-
-    # Phase 2: Train main model with TDE debiasing
-    model = DebertaV3CCDF(args.model_name, num_classes=2).to(device)
-    print(f"\n[Phase 2] Main model training | lambda_kl={args.lambda_kl} tde_alpha={args.tde_alpha}")
+    model = DebertaV3Ramponi(args.model_name, num_classes=2, num_identity_classes=2).to(device)
+    print(f"[Model] Ramponi Adversarial | lambda_adv={args.lambda_adv}")
 
     optimizer = AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     scaler = torch.cuda.amp.GradScaler()
@@ -299,34 +284,25 @@ def main():
 
     for epoch in range(args.epochs):
         print(f"\nEpoch {epoch+1}/{args.epochs}")
-        train_metrics = train_one_epoch(model, bias_model, train_loader, optimizer, scheduler, scaler, device, args, tokenizer)
-        # 验证时也使用 TDE 去偏
-        val_metrics = evaluate_tde(model, bias_model, val_loader, device, tokenizer, args.tde_alpha)
-        print(f"  Train: loss={train_metrics['loss']:.4f} CE={train_metrics['ce']:.4f} KL={train_metrics['kl']:.4f}")
+        train_metrics = train_one_epoch(model, train_loader, optimizer, scheduler, scaler,
+                                         device, args, epoch, args.epochs)
+        val_metrics = evaluate(model, val_loader, device)
+        print(f"  Train: loss={train_metrics['loss']:.4f} CE={train_metrics['ce']:.4f} "
+              f"ADV={train_metrics['adv']:.4f} α={train_metrics['alpha']:.3f}")
         print(f"  Val:   F1={val_metrics['macro_f1']:.4f} AUC={val_metrics['auc_roc']:.4f}")
 
         if val_metrics['macro_f1'] > best_f1:
             best_f1 = val_metrics['macro_f1']
-            # 同时保存主模型和bias模型
-            torch.save({
-                'main_model': model.state_dict(),
-                'bias_model': bias_model.state_dict(),
-                'tde_alpha': args.tde_alpha,
-                'vocab_size': vocab_size,
-            }, save_path)
+            torch.save(model.state_dict(), save_path)
             print(f"  [Save] Best F1={best_f1:.4f}")
 
         if early_stopping(-val_metrics['macro_f1']):
             print(f">>> [Early Stop] Best F1={best_f1:.4f}")
             break
 
-    # 加载最佳模型
-    ckpt = torch.load(save_path, map_location=device)
-    model.load_state_dict(ckpt['main_model'])
-    bias_model.load_state_dict(ckpt['bias_model'])
-
-    test_metrics = evaluate_tde(model, bias_model, test_loader, device, tokenizer, args.tde_alpha)
-    print(f"\nTest (TDE): F1={test_metrics['macro_f1']:.4f} AUC={test_metrics['auc_roc']:.4f}")
+    model.load_state_dict(torch.load(save_path, map_location=device))
+    test_metrics = evaluate(model, test_loader, device)
+    print(f"\nTest: F1={test_metrics['macro_f1']:.4f} AUC={test_metrics['auc_roc']:.4f}")
 
     results = {
         'experiment': exp_name, 'args': vars(args),
