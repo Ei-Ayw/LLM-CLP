@@ -1,0 +1,46 @@
+/root/miniconda/lib/python3.8/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda/lib/python3.8/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+[Hardware] TF32 acceleration enabled for Ampere+ GPUs.
+[Model] Loaded (ear): /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/EAR_toxigen_seed42_0315_0404.pth
+[CF] 加载测试集反事实: 936 条
+
+[A] 任务性能评估...
+  Macro-F1: 0.8524
+  AUC-ROC:  0.9317
+
+[B] 因果公平评估...
+  CFR (翻转率):  0.0353  (理想: 0.0)
+  CTFG (预测差): 0.0354  (理想: 0.0)
+  各群体 CFR:
+    disabled            : CFR=0.1395  CTFG=0.1255  (n=43)
+    christian           : CFR=0.0909  CTFG=0.0296  (n=11)
+    white               : CFR=0.0820  CTFG=0.0630  (n=61)
+    asian               : CFR=0.0588  CTFG=0.0440  (n=68)
+    muslim              : CFR=0.0319  CTFG=0.0240  (n=94)
+    black               : CFR=0.0303  CTFG=0.0424  (n=33)
+    men                 : CFR=0.0236  CTFG=0.0245  (n=381)
+    women               : CFR=0.0221  CTFG=0.0280  (n=181)
+    jewish              : CFR=0.0000  CTFG=0.0290  (n=43)
+    gay                 : CFR=0.0000  CTFG=0.0611  (n=21)
+
+[C] 群体公平评估 (by target_group)...
+  FPED (假阳性差异): 0.5520  (理想: 0.0)
+  FNED (假阴性差异): 0.8782  (理想: 0.0)
+  各群体 F1:
+    asian               : F1=0.7510
+    latino              : F1=0.7678
+    native_american     : F1=0.8191
+    mental_dis          : F1=0.8405
+    black               : F1=0.8440
+    lgbtq               : F1=0.8539
+    physical_dis        : F1=0.8609
+    chinese             : F1=0.8612
+    jewish              : F1=0.8622
+    mexican             : F1=0.8665
+    middle_east         : F1=0.9087
+    muslim              : F1=0.9108
+    women               : F1=0.9123
+
+结果保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_toxigen_seed42_0315_0404_fairness.json

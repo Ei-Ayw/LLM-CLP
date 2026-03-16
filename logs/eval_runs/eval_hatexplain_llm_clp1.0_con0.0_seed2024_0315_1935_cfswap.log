@@ -1,0 +1,27 @@
+/root/miniconda/lib/python3.8/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda/lib/python3.8/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+[Model] Loaded (ours): /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/hatexplain_llm_clp1.0_con0.0_seed2024_0315_1935.pth
+[CF] 加载测试集反事实: 2796 条
+
+[A] 任务性能评估...
+  Macro-F1: 0.7813
+  AUC-ROC:  0.8639
+
+[B] 因果公平评估...
+  CFR (翻转率):  0.0436  (理想: 0.0)
+  CTFG (预测差): 0.0373  (理想: 0.0)
+
+[C] 群体公平评估 (by _primary_group)...
+  FPED (假阳性差异): 0.9055  (理想: 0.0)
+  FNED (假阴性差异): 0.3009  (理想: 0.0)
+  各群体 F1:
+    disability          : F1=0.5846
+    religion            : F1=0.7025
+    race                : F1=0.7090
+    none                : F1=0.7226
+    sexual_orientation  : F1=0.7444
+    gender              : F1=0.7476
+
+结果保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/hatexplain_llm_clp1.0_con0.0_seed2024_0315_1935_fairness.json

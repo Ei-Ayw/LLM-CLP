@@ -1,0 +1,35 @@
+/root/miniconda/lib/python3.8/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda/lib/python3.8/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+[Model] Loaded: src_result/models/hatexplain_llm_clp1.0_con0.0_seed42_0312_1350.pth
+[CF] 加载测试集反事实: 4612 条
+
+[A] 任务性能评估...
+  Macro-F1: 0.7755
+  AUC-ROC:  0.8757
+
+[B] 因果公平评估...
+  CFR (翻转率):  0.0549  (理想: 0.0)
+  CTFG (预测差): 0.0431  (理想: 0.0)
+  各群体 CFR:
+    disabled            : CFR=0.1622  CTFG=0.1302  (n=413)
+    black               : CFR=0.0760  CTFG=0.0529  (n=434)
+    women               : CFR=0.0651  CTFG=0.0484  (n=691)
+    gay                 : CFR=0.0415  CTFG=0.0358  (n=434)
+    muslim              : CFR=0.0363  CTFG=0.0311  (n=798)
+    men                 : CFR=0.0331  CTFG=0.0262  (n=1842)
+
+[C] 群体公平评估 (by target_group)...
+  FPED (假阳性差异): 0.7361  (理想: 0.0)
+  FNED (假阴性差异): 0.2743  (理想: 0.0)
+  各群体 F1:
+    disabled people     : F1=0.7206
+    Muslims             : F1=0.7479
+    trans people        : F1=0.7650
+    women               : F1=0.7789
+    immigrants          : F1=0.7962
+    gay people          : F1=0.8008
+    black people        : F1=0.8061
+
+结果保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/hatexplain_llm_clp1.0_con0.0_seed42_0312_1350_fairness.json
