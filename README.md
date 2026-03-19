@@ -64,7 +64,7 @@ L = L_CE + λ_clp · L_CLP
    - **HateXplain**: 遵循 [HateXplain 官方仓库](https://github.com/hate-alert/HateXplain) 获取数据集。
    - **ToxiGen**: 推荐使用 HuggingFace Datasets 官方 API 拉取 `load_dataset("skg/toxigen-data")`。
    - **DynaHate**: 参见 [DynaHate 官方指南](https://github.com/bvidgen/Dynamically-Generated-Hate-Speech-Dataset) 获取四轮对抗数据。
-   - *说明*：获取后请统一处理为 `.parquet` 格式字典（包含 `text` 和 `label` 字段），拆分为 `train/val/test` 并存放在工程的 `data/causal_fair/` 目录下（如 `hatexplain_train.parquet`）。
+   - *说明*：获取后请统一处理为 `.parquet` 格式字典（**务必包含 `text` 和 `binary_label` 字段**），拆分为 `train/val/test` 并存放在工程的 `data/causal_fair/` 目录下（如 `hatexplain_train.parquet`）。
 
 2. **生成 LLM 反事实数据 (Counterfactual Generation)**
    原始训练集准备好后，首先调用本仓库提供的反事实生成脚本进行数据扩增和身份词改写：
