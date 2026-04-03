@@ -1,0 +1,126 @@
+{
+  "macro_f1": 0.8385,
+  "auc_roc": 0.9171,
+  "accuracy": 0.8438,
+  "binary_f1": 0.8093,
+  "cfr": 0.0767,
+  "ctfg": 0.0736,
+  "fped": 0.9086,
+  "fned": 0.9164,
+  "per_group_f1_std": 0.0559,
+  "group_details": {
+    "asian": {
+      "fpr": 0.1538,
+      "fnr": 0.2581,
+      "fpr_gap": 0.0298,
+      "fnr_gap": 0.0565,
+      "count": 70
+    },
+    "black": {
+      "fpr": 0.1795,
+      "fnr": 0.1562,
+      "fpr_gap": 0.0554,
+      "fnr_gap": 0.0454,
+      "count": 71
+    },
+    "chinese": {
+      "fpr": 0.1333,
+      "fnr": 0.16,
+      "fpr_gap": 0.0093,
+      "fnr_gap": 0.0416,
+      "count": 70
+    },
+    "jewish": {
+      "fpr": 0.0476,
+      "fnr": 0.0741,
+      "fpr_gap": 0.0764,
+      "fnr_gap": 0.1275,
+      "count": 69
+    },
+    "latino": {
+      "fpr": 0.2609,
+      "fnr": 0.303,
+      "fpr_gap": 0.1368,
+      "fnr_gap": 0.1014,
+      "count": 56
+    },
+    "lgbtq": {
+      "fpr": 0.0952,
+      "fnr": 0.2333,
+      "fpr_gap": 0.0288,
+      "fnr_gap": 0.0317,
+      "count": 72
+    },
+    "mental_dis": {
+      "fpr": 0.0714,
+      "fnr": 0.1724,
+      "fpr_gap": 0.0526,
+      "fnr_gap": 0.0292,
+      "count": 71
+    },
+    "mexican": {
+      "fpr": 0.0682,
+      "fnr": 0.16,
+      "fpr_gap": 0.0559,
+      "fnr_gap": 0.0416,
+      "count": 69
+    },
+    "middle_east": {
+      "fpr": 0.0256,
+      "fnr": 0.2333,
+      "fpr_gap": 0.0984,
+      "fnr_gap": 0.0317,
+      "count": 69
+    },
+    "muslim": {
+      "fpr": 0.0256,
+      "fnr": 0.2667,
+      "fpr_gap": 0.0984,
+      "fnr_gap": 0.0651,
+      "count": 69
+    },
+    "native_american": {
+      "fpr": 0.1905,
+      "fnr": 0.25,
+      "fpr_gap": 0.0664,
+      "fnr_gap": 0.0484,
+      "count": 70
+    },
+    "physical_dis": {
+      "fpr": 0.0976,
+      "fnr": 0.2963,
+      "fpr_gap": 0.0265,
+      "fnr_gap": 0.0947,
+      "count": 68
+    },
+    "women": {
+      "fpr": 0.2979,
+      "fnr": 0.0,
+      "fpr_gap": 0.1738,
+      "fnr_gap": 0.2016,
+      "count": 72
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.7958,
+    "black": 0.8301,
+    "chinese": 0.847,
+    "jewish": 0.9392,
+    "latino": 0.711,
+    "lgbtq": 0.8403,
+    "mental_dis": 0.8821,
+    "mexican": 0.8892,
+    "middle_east": 0.8783,
+    "muslim": 0.8622,
+    "native_american": 0.7781,
+    "physical_dis": 0.8102,
+    "women": 0.8031
+  },
+  "_meta": {
+    "method": "ramponi",
+    "backbone": "bert",
+    "dataset": "toxigen",
+    "cf_method": "swap",
+    "checkpoint": "/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/Ramponi_bert_toxigen_seed2024_0403_1139.pth"
+  }
+}

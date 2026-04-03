@@ -1,0 +1,102 @@
+{
+  "macro_f1": 0.8967,
+  "auc_roc": 0.9583,
+  "accuracy": 0.9118,
+  "binary_f1": 0.9362,
+  "cfr": 0.0575,
+  "ctfg": 0.0573,
+  "fped": 1.4846,
+  "fned": 0.4121,
+  "per_group_f1_std": 0.0688,
+  "group_details": {
+    "asian": {
+      "fpr": 0.6667,
+      "fnr": 0.0,
+      "fpr_gap": 0.5139,
+      "fnr_gap": 0.0589,
+      "count": 24
+    },
+    "black": {
+      "fpr": 0.2083,
+      "fnr": 0.0274,
+      "fpr_gap": 0.0556,
+      "fnr_gap": 0.0315,
+      "count": 97
+    },
+    "christian": {
+      "fpr": 0.2,
+      "fnr": 0.1667,
+      "fpr_gap": 0.0473,
+      "fnr_gap": 0.1078,
+      "count": 17
+    },
+    "disabled": {
+      "fpr": 0.0,
+      "fnr": 0.1429,
+      "fpr_gap": 0.1527,
+      "fnr_gap": 0.084,
+      "count": 20
+    },
+    "gay": {
+      "fpr": 0.1429,
+      "fnr": 0.0851,
+      "fpr_gap": 0.0099,
+      "fnr_gap": 0.0262,
+      "count": 54
+    },
+    "jewish": {
+      "fpr": 0.4,
+      "fnr": 0.0667,
+      "fpr_gap": 0.2473,
+      "fnr_gap": 0.0078,
+      "count": 35
+    },
+    "men": {
+      "fpr": 0.1511,
+      "fnr": 0.087,
+      "fpr_gap": 0.0017,
+      "fnr_gap": 0.0281,
+      "count": 346
+    },
+    "muslim": {
+      "fpr": 0.3889,
+      "fnr": 0.0444,
+      "fpr_gap": 0.2362,
+      "fnr_gap": 0.0145,
+      "count": 63
+    },
+    "none": {
+      "fpr": 0.0656,
+      "fnr": 0.0529,
+      "fpr_gap": 0.0872,
+      "fnr_gap": 0.006,
+      "count": 349
+    },
+    "women": {
+      "fpr": 0.2857,
+      "fnr": 0.0115,
+      "fpr_gap": 0.133,
+      "fnr_gap": 0.0474,
+      "count": 101
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.7,
+    "black": 0.8987,
+    "christian": 0.7984,
+    "disabled": 0.8901,
+    "gay": 0.8255,
+    "jewish": 0.7667,
+    "men": 0.8823,
+    "muslim": 0.8075,
+    "none": 0.9375,
+    "women": 0.8859
+  },
+  "_meta": {
+    "method": "getfair",
+    "backbone": "bert",
+    "dataset": "dynahate",
+    "cf_method": "llm",
+    "checkpoint": "/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/GetFair_bert_dynahate_seed42_0402_2059.pth"
+  }
+}

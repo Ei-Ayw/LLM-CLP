@@ -1,0 +1,102 @@
+{
+  "macro_f1": 0.8789,
+  "auc_roc": 0.9573,
+  "accuracy": 0.8929,
+  "binary_f1": 0.9201,
+  "cfr": 0.0694,
+  "ctfg": 0.0595,
+  "fped": 1.5348,
+  "fned": 0.5703,
+  "per_group_f1_std": 0.0675,
+  "group_details": {
+    "asian": {
+      "fpr": 0.6667,
+      "fnr": 0.0,
+      "fpr_gap": 0.5514,
+      "fnr_gap": 0.1034,
+      "count": 24
+    },
+    "black": {
+      "fpr": 0.125,
+      "fnr": 0.0685,
+      "fpr_gap": 0.0097,
+      "fnr_gap": 0.0349,
+      "count": 97
+    },
+    "christian": {
+      "fpr": 0.2,
+      "fnr": 0.1667,
+      "fpr_gap": 0.0847,
+      "fnr_gap": 0.0633,
+      "count": 17
+    },
+    "disabled": {
+      "fpr": 0.0,
+      "fnr": 0.2857,
+      "fpr_gap": 0.1153,
+      "fnr_gap": 0.1823,
+      "count": 20
+    },
+    "gay": {
+      "fpr": 0.0,
+      "fnr": 0.1702,
+      "fpr_gap": 0.1153,
+      "fnr_gap": 0.0668,
+      "count": 54
+    },
+    "jewish": {
+      "fpr": 0.4,
+      "fnr": 0.1,
+      "fpr_gap": 0.2847,
+      "fnr_gap": 0.0034,
+      "count": 35
+    },
+    "men": {
+      "fpr": 0.1007,
+      "fnr": 0.1304,
+      "fpr_gap": 0.0146,
+      "fnr_gap": 0.027,
+      "count": 346
+    },
+    "muslim": {
+      "fpr": 0.3889,
+      "fnr": 0.0667,
+      "fpr_gap": 0.2736,
+      "fnr_gap": 0.0367,
+      "count": 63
+    },
+    "none": {
+      "fpr": 0.0574,
+      "fnr": 0.0969,
+      "fpr_gap": 0.0579,
+      "fnr_gap": 0.0065,
+      "count": 349
+    },
+    "women": {
+      "fpr": 0.1429,
+      "fnr": 0.0575,
+      "fpr_gap": 0.0276,
+      "fnr_gap": 0.0459,
+      "count": 101
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.7,
+    "black": 0.8922,
+    "christian": 0.7984,
+    "disabled": 0.7917,
+    "gay": 0.7717,
+    "jewish": 0.7304,
+    "men": 0.8784,
+    "muslim": 0.7906,
+    "none": 0.911,
+    "women": 0.8666
+  },
+  "_meta": {
+    "method": "getfair",
+    "backbone": "bert",
+    "dataset": "dynahate",
+    "cf_method": "llm",
+    "checkpoint": "/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/GetFair_bert_dynahate_seed2024_0403_1059.pth"
+  }
+}

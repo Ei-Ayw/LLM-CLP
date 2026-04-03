@@ -1,0 +1,101 @@
+{
+  "macro_f1": 0.9397,
+  "auc_roc": 0.9849,
+  "accuracy": 0.9487,
+  "binary_f1": 0.963,
+  "cfr": 0.0174,
+  "ctfg": 0.019,
+  "fped": 1.1159,
+  "fned": 0.3348,
+  "per_group_f1_std": 0.0807,
+  "group_details": {
+    "asian": {
+      "fpr": 0.6667,
+      "fnr": 0.0,
+      "fpr_gap": 0.5658,
+      "fnr_gap": 0.0288,
+      "count": 24
+    },
+    "black": {
+      "fpr": 0.0833,
+      "fnr": 0.0411,
+      "fpr_gap": 0.0175,
+      "fnr_gap": 0.0123,
+      "count": 97
+    },
+    "christian": {
+      "fpr": 0.2,
+      "fnr": 0.1667,
+      "fpr_gap": 0.0991,
+      "fnr_gap": 0.1379,
+      "count": 17
+    },
+    "disabled": {
+      "fpr": 0.0,
+      "fnr": 0.0714,
+      "fpr_gap": 0.1009,
+      "fnr_gap": 0.0426,
+      "count": 20
+    },
+    "gay": {
+      "fpr": 0.1429,
+      "fnr": 0.0213,
+      "fpr_gap": 0.042,
+      "fnr_gap": 0.0075,
+      "count": 54
+    },
+    "jewish": {
+      "fpr": 0.2,
+      "fnr": 0.0667,
+      "fpr_gap": 0.0991,
+      "fnr_gap": 0.0379,
+      "count": 35
+    },
+    "men": {
+      "fpr": 0.0791,
+      "fnr": 0.0048,
+      "fpr_gap": 0.0217,
+      "fnr_gap": 0.024,
+      "count": 346
+    },
+    "muslim": {
+      "fpr": 0.2222,
+      "fnr": 0.0444,
+      "fpr_gap": 0.1214,
+      "fnr_gap": 0.0156,
+      "count": 63
+    },
+    "none": {
+      "fpr": 0.082,
+      "fnr": 0.0396,
+      "fpr_gap": 0.0189,
+      "fnr_gap": 0.0109,
+      "count": 349
+    },
+    "women": {
+      "fpr": 0.0714,
+      "fnr": 0.0115,
+      "fpr_gap": 0.0294,
+      "fnr_gap": 0.0173,
+      "count": 101
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.7,
+    "black": 0.9317,
+    "christian": 0.7984,
+    "disabled": 0.943,
+    "gay": 0.9179,
+    "jewish": 0.8382,
+    "men": 0.9635,
+    "muslim": 0.8792,
+    "none": 0.94,
+    "women": 0.9585
+  },
+  "_meta": {
+    "method": "ours",
+    "dataset": "dynahate",
+    "cf_method": "llm",
+    "checkpoint": "src_result/models/dynahate_swap_clp0.0_con0.0_seed42_0315_2132.pth"
+  }
+}

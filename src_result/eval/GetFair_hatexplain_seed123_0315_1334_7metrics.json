@@ -1,0 +1,109 @@
+{
+  "macro_f1": 0.7886,
+  "auc_roc": 0.8822,
+  "accuracy": 0.7989,
+  "binary_f1": 0.8351,
+  "cfr": 0.1447,
+  "ctfg": 0.1263,
+  "fped": 2.6429,
+  "fned": 0.9405,
+  "per_group_f1_std": 0.1426,
+  "group_details": {
+    "asian": {
+      "fpr": 0.0,
+      "fnr": 0.2222,
+      "fpr_gap": 0.2877,
+      "fnr_gap": 0.0804,
+      "count": 21
+    },
+    "black": {
+      "fpr": 0.3538,
+      "fnr": 0.0506,
+      "fpr_gap": 0.0661,
+      "fnr_gap": 0.0912,
+      "count": 223
+    },
+    "christian": {
+      "fpr": 1.0,
+      "fnr": 0.0,
+      "fpr_gap": 0.7123,
+      "fnr_gap": 0.1419,
+      "count": 14
+    },
+    "disabled": {
+      "fpr": 1.0,
+      "fnr": 0.0,
+      "fpr_gap": 0.7123,
+      "fnr_gap": 0.1419,
+      "count": 62
+    },
+    "gay": {
+      "fpr": 0.1471,
+      "fnr": 0.3548,
+      "fpr_gap": 0.1407,
+      "fnr_gap": 0.213,
+      "count": 65
+    },
+    "jewish": {
+      "fpr": 0.8,
+      "fnr": 0.0577,
+      "fpr_gap": 0.5123,
+      "fnr_gap": 0.0842,
+      "count": 67
+    },
+    "men": {
+      "fpr": 0.2971,
+      "fnr": 0.1494,
+      "fpr_gap": 0.0094,
+      "fnr_gap": 0.0075,
+      "count": 728
+    },
+    "muslim": {
+      "fpr": 0.2292,
+      "fnr": 0.1733,
+      "fpr_gap": 0.0586,
+      "fnr_gap": 0.0315,
+      "count": 123
+    },
+    "none": {
+      "fpr": 0.2658,
+      "fnr": 0.1371,
+      "fpr_gap": 0.0219,
+      "fnr_gap": 0.0048,
+      "count": 203
+    },
+    "white": {
+      "fpr": 0.1724,
+      "fnr": 0.24,
+      "fpr_gap": 0.1153,
+      "fnr_gap": 0.0981,
+      "count": 216
+    },
+    "women": {
+      "fpr": 0.2941,
+      "fnr": 0.188,
+      "fpr_gap": 0.0064,
+      "fnr_gap": 0.0462,
+      "count": 202
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.899,
+    "black": 0.8184,
+    "christian": 0.4815,
+    "disabled": 0.4364,
+    "gay": 0.749,
+    "jewish": 0.5765,
+    "men": 0.7797,
+    "muslim": 0.7965,
+    "none": 0.8012,
+    "white": 0.7945,
+    "women": 0.7601
+  },
+  "_meta": {
+    "method": "getfair",
+    "dataset": "hatexplain",
+    "cf_method": "llm",
+    "checkpoint": "src_result/models/GetFair_hatexplain_seed123_0315_1334.pth"
+  }
+}

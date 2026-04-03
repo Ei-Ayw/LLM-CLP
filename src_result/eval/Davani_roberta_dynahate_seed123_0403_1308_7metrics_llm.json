@@ -1,0 +1,102 @@
+{
+  "macro_f1": 0.8952,
+  "auc_roc": 0.9681,
+  "accuracy": 0.9127,
+  "binary_f1": 0.938,
+  "cfr": 0.0141,
+  "ctfg": 0.0226,
+  "fped": 1.3827,
+  "fned": 0.2835,
+  "per_group_f1_std": 0.0754,
+  "group_details": {
+    "asian": {
+      "fpr": 0.6667,
+      "fnr": 0.0556,
+      "fpr_gap": 0.4736,
+      "fnr_gap": 0.0163,
+      "count": 24
+    },
+    "black": {
+      "fpr": 0.1667,
+      "fnr": 0.0411,
+      "fpr_gap": 0.0264,
+      "fnr_gap": 0.0018,
+      "count": 97
+    },
+    "christian": {
+      "fpr": 0.4,
+      "fnr": 0.0,
+      "fpr_gap": 0.2069,
+      "fnr_gap": 0.0393,
+      "count": 17
+    },
+    "disabled": {
+      "fpr": 0.1667,
+      "fnr": 0.1429,
+      "fpr_gap": 0.0264,
+      "fnr_gap": 0.1036,
+      "count": 20
+    },
+    "gay": {
+      "fpr": 0.2857,
+      "fnr": 0.0638,
+      "fpr_gap": 0.0926,
+      "fnr_gap": 0.0246,
+      "count": 54
+    },
+    "jewish": {
+      "fpr": 0.4,
+      "fnr": 0.0667,
+      "fpr_gap": 0.2069,
+      "fnr_gap": 0.0274,
+      "count": 35
+    },
+    "men": {
+      "fpr": 0.223,
+      "fnr": 0.029,
+      "fpr_gap": 0.0299,
+      "fnr_gap": 0.0103,
+      "count": 346
+    },
+    "muslim": {
+      "fpr": 0.3889,
+      "fnr": 0.0,
+      "fpr_gap": 0.1958,
+      "fnr_gap": 0.0393,
+      "count": 63
+    },
+    "none": {
+      "fpr": 0.0902,
+      "fnr": 0.0441,
+      "fpr_gap": 0.1029,
+      "fnr_gap": 0.0048,
+      "count": 349
+    },
+    "women": {
+      "fpr": 0.2143,
+      "fnr": 0.023,
+      "fpr_gap": 0.0212,
+      "fnr_gap": 0.0163,
+      "count": 101
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.6581,
+    "black": 0.9017,
+    "christian": 0.8365,
+    "disabled": 0.8291,
+    "gay": 0.8065,
+    "jewish": 0.7667,
+    "men": 0.8847,
+    "muslim": 0.8432,
+    "none": 0.9337,
+    "women": 0.8931
+  },
+  "_meta": {
+    "method": "davani",
+    "backbone": "roberta",
+    "dataset": "dynahate",
+    "cf_method": "llm",
+    "checkpoint": "/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/Davani_roberta_dynahate_seed123_0403_1308.pth"
+  }
+}

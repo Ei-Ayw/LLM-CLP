@@ -1,0 +1,101 @@
+{
+  "macro_f1": 0.9304,
+  "auc_roc": 0.9876,
+  "accuracy": 0.9424,
+  "binary_f1": 0.9593,
+  "cfr": 0.0369,
+  "ctfg": 0.0375,
+  "fped": 1.0901,
+  "fned": 0.1078,
+  "per_group_f1_std": 0.071,
+  "group_details": {
+    "asian": {
+      "fpr": 0.6667,
+      "fnr": 0.0,
+      "fpr_gap": 0.511,
+      "fnr_gap": 0.0131,
+      "count": 24
+    },
+    "black": {
+      "fpr": 0.125,
+      "fnr": 0.0137,
+      "fpr_gap": 0.0306,
+      "fnr_gap": 0.0006,
+      "count": 97
+    },
+    "christian": {
+      "fpr": 0.2,
+      "fnr": 0.0,
+      "fpr_gap": 0.0444,
+      "fnr_gap": 0.0131,
+      "count": 17
+    },
+    "disabled": {
+      "fpr": 0.1667,
+      "fnr": 0.0,
+      "fpr_gap": 0.011,
+      "fnr_gap": 0.0131,
+      "count": 20
+    },
+    "gay": {
+      "fpr": 0.2857,
+      "fnr": 0.0,
+      "fpr_gap": 0.1301,
+      "fnr_gap": 0.0131,
+      "count": 54
+    },
+    "jewish": {
+      "fpr": 0.0,
+      "fnr": 0.0333,
+      "fpr_gap": 0.1556,
+      "fnr_gap": 0.0202,
+      "count": 35
+    },
+    "men": {
+      "fpr": 0.1942,
+      "fnr": 0.0097,
+      "fpr_gap": 0.0386,
+      "fnr_gap": 0.0034,
+      "count": 346
+    },
+    "muslim": {
+      "fpr": 0.1111,
+      "fnr": 0.0222,
+      "fpr_gap": 0.0445,
+      "fnr_gap": 0.0091,
+      "count": 63
+    },
+    "none": {
+      "fpr": 0.0902,
+      "fnr": 0.022,
+      "fpr_gap": 0.0655,
+      "fnr_gap": 0.0089,
+      "count": 349
+    },
+    "women": {
+      "fpr": 0.2143,
+      "fnr": 0.0,
+      "fpr_gap": 0.0587,
+      "fnr_gap": 0.0131,
+      "count": 101
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.7,
+    "black": 0.943,
+    "christian": 0.9244,
+    "disabled": 0.9373,
+    "gay": 0.9062,
+    "jewish": 0.9461,
+    "men": 0.9097,
+    "muslim": 0.9407,
+    "none": 0.949,
+    "women": 0.9315
+  },
+  "_meta": {
+    "method": "getfair",
+    "dataset": "dynahate",
+    "cf_method": "llm",
+    "checkpoint": "src_result/models/GetFair_dynahate_seed42_0315_1543.pth"
+  }
+}

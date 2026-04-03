@@ -1,0 +1,102 @@
+{
+  "macro_f1": 0.8906,
+  "auc_roc": 0.9582,
+  "accuracy": 0.9073,
+  "binary_f1": 0.9333,
+  "cfr": 0.0514,
+  "ctfg": 0.0462,
+  "fped": 1.3073,
+  "fned": 0.4884,
+  "per_group_f1_std": 0.066,
+  "group_details": {
+    "asian": {
+      "fpr": 0.6667,
+      "fnr": 0.0,
+      "fpr_gap": 0.4938,
+      "fnr_gap": 0.0563,
+      "count": 24
+    },
+    "black": {
+      "fpr": 0.2083,
+      "fnr": 0.0137,
+      "fpr_gap": 0.0354,
+      "fnr_gap": 0.0426,
+      "count": 97
+    },
+    "christian": {
+      "fpr": 0.2,
+      "fnr": 0.0833,
+      "fpr_gap": 0.0271,
+      "fnr_gap": 0.0271,
+      "count": 17
+    },
+    "disabled": {
+      "fpr": 0.0,
+      "fnr": 0.2857,
+      "fpr_gap": 0.1729,
+      "fnr_gap": 0.2294,
+      "count": 20
+    },
+    "gay": {
+      "fpr": 0.1429,
+      "fnr": 0.0638,
+      "fpr_gap": 0.0301,
+      "fnr_gap": 0.0075,
+      "count": 54
+    },
+    "jewish": {
+      "fpr": 0.4,
+      "fnr": 0.0667,
+      "fpr_gap": 0.2271,
+      "fnr_gap": 0.0104,
+      "count": 35
+    },
+    "men": {
+      "fpr": 0.1511,
+      "fnr": 0.0918,
+      "fpr_gap": 0.0218,
+      "fnr_gap": 0.0355,
+      "count": 346
+    },
+    "muslim": {
+      "fpr": 0.3889,
+      "fnr": 0.0222,
+      "fpr_gap": 0.216,
+      "fnr_gap": 0.0341,
+      "count": 63
+    },
+    "none": {
+      "fpr": 0.1311,
+      "fnr": 0.0441,
+      "fpr_gap": 0.0418,
+      "fnr_gap": 0.0122,
+      "count": 349
+    },
+    "women": {
+      "fpr": 0.2143,
+      "fnr": 0.023,
+      "fpr_gap": 0.0414,
+      "fnr_gap": 0.0333,
+      "count": 101
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.7,
+    "black": 0.9118,
+    "christian": 0.8583,
+    "disabled": 0.7917,
+    "gay": 0.8533,
+    "jewish": 0.7667,
+    "men": 0.8795,
+    "muslim": 0.825,
+    "none": 0.9171,
+    "women": 0.8931
+  },
+  "_meta": {
+    "method": "ours",
+    "backbone": "bert",
+    "dataset": "dynahate",
+    "cf_method": "swap",
+    "checkpoint": "/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/Ours_bert_dynahate_llm_clp0.6_con0.5_seed42_0403_0307.pth"
+  }
+}

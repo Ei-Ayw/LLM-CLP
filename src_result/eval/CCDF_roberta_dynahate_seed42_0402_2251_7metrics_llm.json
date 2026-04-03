@@ -1,0 +1,102 @@
+{
+  "macro_f1": 0.8436,
+  "auc_roc": 0.9544,
+  "accuracy": 0.8569,
+  "binary_f1": 0.8892,
+  "cfr": 0.103,
+  "ctfg": 0.0918,
+  "fped": 0.9182,
+  "fned": 0.8267,
+  "per_group_f1_std": 0.1039,
+  "group_details": {
+    "asian": {
+      "fpr": 0.3333,
+      "fnr": 0.2222,
+      "fpr_gap": 0.2382,
+      "fnr_gap": 0.0573,
+      "count": 24
+    },
+    "black": {
+      "fpr": 0.1667,
+      "fnr": 0.137,
+      "fpr_gap": 0.0716,
+      "fnr_gap": 0.0279,
+      "count": 97
+    },
+    "christian": {
+      "fpr": 0.0,
+      "fnr": 0.0833,
+      "fpr_gap": 0.0951,
+      "fnr_gap": 0.0816,
+      "count": 17
+    },
+    "disabled": {
+      "fpr": 0.0,
+      "fnr": 0.2857,
+      "fpr_gap": 0.0951,
+      "fnr_gap": 0.1208,
+      "count": 20
+    },
+    "gay": {
+      "fpr": 0.1429,
+      "fnr": 0.383,
+      "fpr_gap": 0.0478,
+      "fnr_gap": 0.2181,
+      "count": 54
+    },
+    "jewish": {
+      "fpr": 0.2,
+      "fnr": 0.1,
+      "fpr_gap": 0.1049,
+      "fnr_gap": 0.0649,
+      "count": 35
+    },
+    "men": {
+      "fpr": 0.1007,
+      "fnr": 0.1304,
+      "fpr_gap": 0.0056,
+      "fnr_gap": 0.0345,
+      "count": 346
+    },
+    "muslim": {
+      "fpr": 0.2222,
+      "fnr": 0.0667,
+      "fpr_gap": 0.1271,
+      "fnr_gap": 0.0983,
+      "count": 63
+    },
+    "none": {
+      "fpr": 0.0574,
+      "fnr": 0.141,
+      "fpr_gap": 0.0377,
+      "fnr_gap": 0.024,
+      "count": 349
+    },
+    "women": {
+      "fpr": 0.0,
+      "fnr": 0.2644,
+      "fpr_gap": 0.0951,
+      "fnr_gap": 0.0994,
+      "count": 101
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.6975,
+    "black": 0.8204,
+    "christian": 0.9328,
+    "disabled": 0.7917,
+    "gay": 0.5702,
+    "jewish": 0.7989,
+    "men": 0.8784,
+    "muslim": 0.8615,
+    "none": 0.8821,
+    "women": 0.6984
+  },
+  "_meta": {
+    "method": "ccdf",
+    "backbone": "roberta",
+    "dataset": "dynahate",
+    "cf_method": "llm",
+    "checkpoint": "/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/CCDF_roberta_dynahate_seed42_0402_2251.pth"
+  }
+}

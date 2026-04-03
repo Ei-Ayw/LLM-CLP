@@ -1,0 +1,102 @@
+{
+  "macro_f1": 0.9022,
+  "auc_roc": 0.957,
+  "accuracy": 0.9163,
+  "binary_f1": 0.9393,
+  "cfr": 0.0553,
+  "ctfg": 0.059,
+  "fped": 1.4186,
+  "fned": 0.2653,
+  "per_group_f1_std": 0.0753,
+  "group_details": {
+    "asian": {
+      "fpr": 0.6667,
+      "fnr": 0.0,
+      "fpr_gap": 0.5255,
+      "fnr_gap": 0.0576,
+      "count": 24
+    },
+    "black": {
+      "fpr": 0.1667,
+      "fnr": 0.0685,
+      "fpr_gap": 0.0255,
+      "fnr_gap": 0.0109,
+      "count": 97
+    },
+    "christian": {
+      "fpr": 0.2,
+      "fnr": 0.1667,
+      "fpr_gap": 0.0588,
+      "fnr_gap": 0.1091,
+      "count": 17
+    },
+    "disabled": {
+      "fpr": 0.0,
+      "fnr": 0.0714,
+      "fpr_gap": 0.1412,
+      "fnr_gap": 0.0138,
+      "count": 20
+    },
+    "gay": {
+      "fpr": 0.1429,
+      "fnr": 0.0851,
+      "fpr_gap": 0.0016,
+      "fnr_gap": 0.0275,
+      "count": 54
+    },
+    "jewish": {
+      "fpr": 0.4,
+      "fnr": 0.0667,
+      "fpr_gap": 0.2588,
+      "fnr_gap": 0.0091,
+      "count": 35
+    },
+    "men": {
+      "fpr": 0.1439,
+      "fnr": 0.058,
+      "fpr_gap": 0.0027,
+      "fnr_gap": 0.0004,
+      "count": 346
+    },
+    "muslim": {
+      "fpr": 0.3889,
+      "fnr": 0.0667,
+      "fpr_gap": 0.2477,
+      "fnr_gap": 0.0091,
+      "count": 63
+    },
+    "none": {
+      "fpr": 0.0574,
+      "fnr": 0.0529,
+      "fpr_gap": 0.0838,
+      "fnr_gap": 0.0047,
+      "count": 349
+    },
+    "women": {
+      "fpr": 0.2143,
+      "fnr": 0.0345,
+      "fpr_gap": 0.0731,
+      "fnr_gap": 0.0231,
+      "count": 101
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.7,
+    "black": 0.8771,
+    "christian": 0.7984,
+    "disabled": 0.943,
+    "gay": 0.8255,
+    "jewish": 0.7667,
+    "men": 0.9028,
+    "muslim": 0.7906,
+    "none": 0.9407,
+    "women": 0.8756
+  },
+  "_meta": {
+    "method": "vanilla",
+    "backbone": "bert",
+    "dataset": "dynahate",
+    "cf_method": "llm",
+    "checkpoint": "/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/Vanilla_bert_dynahate_seed2024_0403_1033.pth"
+  }
+}
