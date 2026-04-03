@@ -1,0 +1,102 @@
+{
+  "macro_f1": 0.9155,
+  "auc_roc": 0.9595,
+  "accuracy": 0.9298,
+  "binary_f1": 0.9503,
+  "cfr": 0.0626,
+  "ctfg": 0.0599,
+  "fped": 1.5622,
+  "fned": 0.1724,
+  "per_group_f1_std": 0.0682,
+  "group_details": {
+    "asian": {
+      "fpr": 0.6667,
+      "fnr": 0.0,
+      "fpr_gap": 0.4966,
+      "fnr_gap": 0.0249,
+      "count": 24
+    },
+    "black": {
+      "fpr": 0.2083,
+      "fnr": 0.0548,
+      "fpr_gap": 0.0383,
+      "fnr_gap": 0.0299,
+      "count": 97
+    },
+    "christian": {
+      "fpr": 0.2,
+      "fnr": 0.0,
+      "fpr_gap": 0.03,
+      "fnr_gap": 0.0249,
+      "count": 17
+    },
+    "disabled": {
+      "fpr": 0.3333,
+      "fnr": 0.0,
+      "fpr_gap": 0.1633,
+      "fnr_gap": 0.0249,
+      "count": 20
+    },
+    "gay": {
+      "fpr": 0.2857,
+      "fnr": 0.0,
+      "fpr_gap": 0.1157,
+      "fnr_gap": 0.0249,
+      "count": 54
+    },
+    "jewish": {
+      "fpr": 0.4,
+      "fnr": 0.0333,
+      "fpr_gap": 0.23,
+      "fnr_gap": 0.0085,
+      "count": 35
+    },
+    "men": {
+      "fpr": 0.1871,
+      "fnr": 0.0097,
+      "fpr_gap": 0.017,
+      "fnr_gap": 0.0152,
+      "count": 346
+    },
+    "muslim": {
+      "fpr": 0.3333,
+      "fnr": 0.0222,
+      "fpr_gap": 0.1633,
+      "fnr_gap": 0.0026,
+      "count": 63
+    },
+    "none": {
+      "fpr": 0.0492,
+      "fnr": 0.0396,
+      "fpr_gap": 0.1208,
+      "fnr_gap": 0.0148,
+      "count": 349
+    },
+    "women": {
+      "fpr": 0.3571,
+      "fnr": 0.023,
+      "fpr_gap": 0.1871,
+      "fnr_gap": 0.0019,
+      "count": 101
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.7,
+    "black": 0.8736,
+    "christian": 0.9244,
+    "disabled": 0.8667,
+    "gay": 0.9062,
+    "jewish": 0.8087,
+    "men": 0.9129,
+    "muslim": 0.8503,
+    "none": 0.953,
+    "women": 0.8402
+  },
+  "_meta": {
+    "method": "ear",
+    "backbone": "bert",
+    "dataset": "dynahate",
+    "cf_method": "swap",
+    "checkpoint": "/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/EAR_bert_dynahate_seed123_0402_1855.pth"
+  }
+}

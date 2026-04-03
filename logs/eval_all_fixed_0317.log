@@ -1,0 +1,882 @@
+===== 重新评估全部 (修复cf命名) =====
+开始: Tue Mar 17 05:01:36 CST 2026
+
+=== Vanilla ===
+>>> vanilla dynahate cf=swap (05:01:37)
+  Macro-F1=0.9327  AUC=0.9845
+  CFR=0.0567  CTFG=0.0591
+  FPED=1.0095  FNED=0.2725
+  Macro-F1:  0.9327
+  CFR:       0.0567
+  FPED:      1.0095
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_dynahate_seed123_0317_0110_7metrics_swap.json
+>>> vanilla dynahate cf=llm (05:02:02)
+  Macro-F1=0.9327  AUC=0.9845
+  CFR=0.0369  CTFG=0.0412
+  FPED=1.0095  FNED=0.2725
+  Macro-F1:  0.9327
+  CFR:       0.0369
+  FPED:      1.0095
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_dynahate_seed123_0317_0110_7metrics_llm.json
+>>> vanilla dynahate cf=swap (05:02:16)
+  Macro-F1=0.9358  AUC=0.9899
+  CFR=0.0487  CTFG=0.0474
+  FPED=1.3255  FNED=0.1948
+  Macro-F1:  0.9358
+  CFR:       0.0487
+  FPED:      1.3255
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_dynahate_seed2024_0317_0117_7metrics_swap.json
+>>> vanilla dynahate cf=llm (05:02:40)
+  Macro-F1=0.9358  AUC=0.9899
+  CFR=0.039  CTFG=0.0386
+  FPED=1.3255  FNED=0.1948
+  Macro-F1:  0.9358
+  CFR:       0.039
+  FPED:      1.3255
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_dynahate_seed2024_0317_0117_7metrics_llm.json
+>>> vanilla dynahate cf=swap (05:02:52)
+  Macro-F1=0.9372  AUC=0.9876
+  CFR=0.0441  CTFG=0.0438
+  FPED=1.0284  FNED=0.115
+  Macro-F1:  0.9372
+  CFR:       0.0441
+  FPED:      1.0284
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_dynahate_seed42_0317_0104_7metrics_swap.json
+>>> vanilla dynahate cf=llm (05:03:19)
+  Macro-F1=0.9372  AUC=0.9876
+  CFR=0.0369  CTFG=0.0358
+  FPED=1.0284  FNED=0.115
+  Macro-F1:  0.9372
+  CFR:       0.0369
+  FPED:      1.0284
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_dynahate_seed42_0317_0104_7metrics_llm.json
+>>> vanilla hatexplain cf=swap (05:03:32)
+  Macro-F1=0.789  AUC=0.8833
+  CFR=0.0826  CTFG=0.0659
+  FPED=2.7213  FNED=1.0705
+  Macro-F1:  0.789
+  CFR:       0.0826
+  FPED:      2.7213
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_hatexplain_seed123_0317_0029_7metrics_swap.json
+>>> vanilla hatexplain cf=llm (05:04:01)
+  Macro-F1=0.789  AUC=0.8833
+  CFR=0.1553  CTFG=0.1337
+  FPED=2.7213  FNED=1.0705
+  Macro-F1:  0.789
+  CFR:       0.1553
+  FPED:      2.7213
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_hatexplain_seed123_0317_0029_7metrics_llm.json
+>>> vanilla hatexplain cf=swap (05:04:23)
+  Macro-F1=0.7922  AUC=0.886
+  CFR=0.0801  CTFG=0.0682
+  FPED=2.5444  FNED=0.9728
+  Macro-F1:  0.7922
+  CFR:       0.0801
+  FPED:      2.5444
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_hatexplain_seed2024_0317_0038_7metrics_swap.json
+>>> vanilla hatexplain cf=llm (05:04:52)
+  Macro-F1=0.7922  AUC=0.886
+  CFR=0.1572  CTFG=0.1401
+  FPED=2.5444  FNED=0.9728
+  Macro-F1:  0.7922
+  CFR:       0.1572
+  FPED:      2.5444
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_hatexplain_seed2024_0317_0038_7metrics_llm.json
+>>> vanilla hatexplain cf=swap (05:05:15)
+  Macro-F1=0.8074  AUC=0.8817
+  CFR=0.0726  CTFG=0.0717
+  FPED=1.8092  FNED=1.1967
+  Macro-F1:  0.8074
+  CFR:       0.0726
+  FPED:      1.8092
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_hatexplain_seed42_0317_0018_7metrics_swap.json
+>>> vanilla hatexplain cf=llm (05:05:44)
+  Macro-F1=0.8074  AUC=0.8817
+  CFR=0.1621  CTFG=0.158
+  FPED=1.8092  FNED=1.1967
+  Macro-F1:  0.8074
+  CFR:       0.1621
+  FPED:      1.8092
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_hatexplain_seed42_0317_0018_7metrics_llm.json
+>>> vanilla toxigen cf=swap (05:06:06)
+  Macro-F1=0.8548  AUC=0.9274
+  CFR=0.0501  CTFG=0.0515
+  FPED=0.4543  FNED=0.8586
+  Macro-F1:  0.8548
+  CFR:       0.0501
+  FPED:      0.4543
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_toxigen_seed123_0317_0054_7metrics_swap.json
+>>> vanilla toxigen cf=llm (05:06:31)
+  Macro-F1=0.8548  AUC=0.9274
+  CFR=0.0438  CTFG=0.0448
+  FPED=0.4543  FNED=0.8586
+  Macro-F1:  0.8548
+  CFR:       0.0438
+  FPED:      0.4543
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_toxigen_seed123_0317_0054_7metrics_llm.json
+>>> vanilla toxigen cf=swap (05:06:44)
+  Macro-F1=0.8528  AUC=0.9301
+  CFR=0.0406  CTFG=0.0465
+  FPED=0.7407  FNED=0.9019
+  Macro-F1:  0.8528
+  CFR:       0.0406
+  FPED:      0.7407
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_toxigen_seed2024_0317_0059_7metrics_swap.json
+>>> vanilla toxigen cf=llm (05:07:06)
+  Macro-F1=0.8528  AUC=0.9301
+  CFR=0.0353  CTFG=0.0361
+  FPED=0.7407  FNED=0.9019
+  Macro-F1:  0.8528
+  CFR:       0.0353
+  FPED:      0.7407
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_toxigen_seed2024_0317_0059_7metrics_llm.json
+>>> vanilla toxigen cf=swap (05:07:19)
+  Macro-F1=0.8671  AUC=0.9342
+  CFR=0.0311  CTFG=0.041
+  FPED=0.5248  FNED=0.8689
+  Macro-F1:  0.8671
+  CFR:       0.0311
+  FPED:      0.5248
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_toxigen_seed42_0317_0049_7metrics_swap.json
+>>> vanilla toxigen cf=llm (05:07:43)
+  Macro-F1=0.8671  AUC=0.9342
+  CFR=0.0278  CTFG=0.0383
+  FPED=0.5248  FNED=0.8689
+  Macro-F1:  0.8671
+  CFR:       0.0278
+  FPED:      0.5248
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Vanilla_toxigen_seed42_0317_0049_7metrics_llm.json
+
+=== Davani ===
+>>> davani dynahate cf=swap (05:07:55)
+  Macro-F1=0.9245  AUC=0.9804
+  CFR=0.0257  CTFG=0.0276
+  FPED=0.8443  FNED=0.3922
+  Macro-F1:  0.9245
+  CFR:       0.0257
+  FPED:      0.8443
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_dynahate_seed123_0317_0255_7metrics_swap.json
+>>> davani dynahate cf=llm (05:08:18)
+  Macro-F1=0.9245  AUC=0.9804
+  CFR=0.0206  CTFG=0.0239
+  FPED=0.8443  FNED=0.3922
+  Macro-F1:  0.9245
+  CFR:       0.0206
+  FPED:      0.8443
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_dynahate_seed123_0317_0255_7metrics_llm.json
+>>> davani dynahate cf=swap (05:08:31)
+  Macro-F1=0.9383  AUC=0.9801
+  CFR=0.029  CTFG=0.0267
+  FPED=1.1583  FNED=0.2776
+  Macro-F1:  0.9383
+  CFR:       0.029
+  FPED:      1.1583
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_dynahate_seed2024_0317_0305_7metrics_swap.json
+>>> davani dynahate cf=llm (05:08:54)
+  Macro-F1=0.9383  AUC=0.9801
+  CFR=0.0206  CTFG=0.0235
+  FPED=1.1583  FNED=0.2776
+  Macro-F1:  0.9383
+  CFR:       0.0206
+  FPED:      1.1583
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_dynahate_seed2024_0317_0305_7metrics_llm.json
+>>> davani dynahate cf=swap (05:09:07)
+  Macro-F1=0.9358  AUC=0.9817
+  CFR=0.0375  CTFG=0.0306
+  FPED=1.1659  FNED=0.2962
+  Macro-F1:  0.9358
+  CFR:       0.0375
+  FPED:      1.1659
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_dynahate_seed42_0317_0244_7metrics_swap.json
+>>> davani dynahate cf=llm (05:09:31)
+  Macro-F1=0.9358  AUC=0.9817
+  CFR=0.0184  CTFG=0.019
+  FPED=1.1659  FNED=0.2962
+  Macro-F1:  0.9358
+  CFR:       0.0184
+  FPED:      1.1659
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_dynahate_seed42_0317_0244_7metrics_llm.json
+>>> davani hatexplain cf=swap (05:09:45)
+  Macro-F1=0.7994  AUC=0.8882
+  CFR=0.0265  CTFG=0.0198
+  FPED=1.9645  FNED=1.2182
+  Macro-F1:  0.7994
+  CFR:       0.0265
+  FPED:      1.9645
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_hatexplain_seed123_0317_0141_7metrics_swap.json
+>>> davani hatexplain cf=llm (05:10:15)
+  Macro-F1=0.7994  AUC=0.8882
+  CFR=0.1277  CTFG=0.1085
+  FPED=1.9645  FNED=1.2182
+  Macro-F1:  0.7994
+  CFR:       0.1277
+  FPED:      1.9645
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_hatexplain_seed123_0317_0141_7metrics_llm.json
+>>> davani hatexplain cf=swap (05:10:37)
+  Macro-F1=0.8034  AUC=0.8879
+  CFR=0.0222  CTFG=0.02
+  FPED=2.0786  FNED=1.216
+  Macro-F1:  0.8034
+  CFR:       0.0222
+  FPED:      2.0786
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_hatexplain_seed2024_0317_0159_7metrics_swap.json
+>>> davani hatexplain cf=llm (05:11:05)
+  Macro-F1=0.8034  AUC=0.8879
+  CFR=0.1303  CTFG=0.1148
+  FPED=2.0786  FNED=1.216
+  Macro-F1:  0.8034
+  CFR:       0.1303
+  FPED:      2.0786
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_hatexplain_seed2024_0317_0159_7metrics_llm.json
+>>> davani hatexplain cf=swap (05:11:23)
+  Macro-F1=0.8046  AUC=0.8864
+  CFR=0.024  CTFG=0.0171
+  FPED=2.7591  FNED=1.4732
+  Macro-F1:  0.8046
+  CFR:       0.024
+  FPED:      2.7591
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_hatexplain_seed42_0317_0123_7metrics_swap.json
+>>> davani hatexplain cf=llm (05:11:47)
+  Macro-F1=0.8046  AUC=0.8864
+  CFR=0.1299  CTFG=0.1068
+  FPED=2.7591  FNED=1.4732
+  Macro-F1:  0.8046
+  CFR:       0.1299
+  FPED:      2.7591
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_hatexplain_seed42_0317_0123_7metrics_llm.json
+>>> davani toxigen cf=swap (05:12:04)
+  Macro-F1=0.859  AUC=0.9333
+  CFR=0.0209  CTFG=0.0197
+  FPED=0.5281  FNED=0.865
+  Macro-F1:  0.859
+  CFR:       0.0209
+  FPED:      0.5281
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_toxigen_seed123_0317_0227_7metrics_swap.json
+>>> davani toxigen cf=llm (05:12:24)
+  Macro-F1=0.859  AUC=0.9333
+  CFR=0.0246  CTFG=0.0261
+  FPED=0.5281  FNED=0.865
+  Macro-F1:  0.859
+  CFR:       0.0246
+  FPED:      0.5281
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_toxigen_seed123_0317_0227_7metrics_llm.json
+>>> davani toxigen cf=swap (05:12:35)
+  Macro-F1=0.8633  AUC=0.9363
+  CFR=0.0133  CTFG=0.017
+  FPED=0.6439  FNED=0.7626
+  Macro-F1:  0.8633
+  CFR:       0.0133
+  FPED:      0.6439
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_toxigen_seed2024_0317_0235_7metrics_swap.json
+>>> davani toxigen cf=llm (05:12:58)
+  Macro-F1=0.8633  AUC=0.9363
+  CFR=0.0256  CTFG=0.0231
+  FPED=0.6439  FNED=0.7626
+  Macro-F1:  0.8633
+  CFR:       0.0256
+  FPED:      0.6439
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_toxigen_seed2024_0317_0235_7metrics_llm.json
+>>> davani toxigen cf=swap (05:13:11)
+  Macro-F1=0.8549  AUC=0.9315
+  CFR=0.0184  CTFG=0.016
+  FPED=0.4759  FNED=1.0054
+  Macro-F1:  0.8549
+  CFR:       0.0184
+  FPED:      0.4759
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_toxigen_seed42_0317_0218_7metrics_swap.json
+>>> davani toxigen cf=llm (05:13:34)
+  Macro-F1=0.8549  AUC=0.9315
+  CFR=0.031  CTFG=0.0216
+  FPED=0.4759  FNED=1.0054
+  Macro-F1:  0.8549
+  CFR:       0.031
+  FPED:      0.4759
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Davani_toxigen_seed42_0317_0218_7metrics_llm.json
+
+=== Ramponi ===
+>>> ramponi dynahate cf=swap (05:13:47)
+  Macro-F1=0.9042  AUC=0.9719
+  CFR=0.0356  CTFG=0.0421
+  FPED=1.0555  FNED=0.2418
+  Macro-F1:  0.9042
+  CFR:       0.0356
+  FPED:      1.0555
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_dynahate_seed123_0317_0409_7metrics_swap.json
+>>> ramponi dynahate cf=llm (05:14:09)
+  Macro-F1=0.9042  AUC=0.9719
+  CFR=0.0369  CTFG=0.0372
+  FPED=1.0555  FNED=0.2418
+  Macro-F1:  0.9042
+  CFR:       0.0369
+  FPED:      1.0555
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_dynahate_seed123_0317_0409_7metrics_llm.json
+>>> ramponi dynahate cf=swap (05:14:23)
+  Macro-F1=0.9322  AUC=0.969
+  CFR=0.0547  CTFG=0.0579
+  FPED=1.4369  FNED=0.2156
+  Macro-F1:  0.9322
+  CFR:       0.0547
+  FPED:      1.4369
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_dynahate_seed2024_0317_0416_7metrics_swap.json
+>>> ramponi dynahate cf=llm (05:14:44)
+  Macro-F1=0.9322  AUC=0.969
+  CFR=0.0542  CTFG=0.0584
+  FPED=1.4369  FNED=0.2156
+  Macro-F1:  0.9322
+  CFR:       0.0542
+  FPED:      1.4369
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_dynahate_seed2024_0317_0416_7metrics_llm.json
+>>> ramponi dynahate cf=swap (05:14:57)
+  Macro-F1=0.9233  AUC=0.9633
+  CFR=0.058  CTFG=0.0649
+  FPED=1.3956  FNED=0.3121
+  Macro-F1:  0.9233
+  CFR:       0.058
+  FPED:      1.3956
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_dynahate_seed42_0317_0402_7metrics_swap.json
+>>> ramponi dynahate cf=llm (05:15:21)
+  Macro-F1=0.9233  AUC=0.9633
+  CFR=0.0369  CTFG=0.0459
+  FPED=1.3956  FNED=0.3121
+  Macro-F1:  0.9233
+  CFR:       0.0369
+  FPED:      1.3956
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_dynahate_seed42_0317_0402_7metrics_llm.json
+>>> ramponi hatexplain cf=swap (05:15:34)
+  Macro-F1=0.8059  AUC=0.8887
+  CFR=0.0722  CTFG=0.0628
+  FPED=2.6748  FNED=1.0725
+  Macro-F1:  0.8059
+  CFR:       0.0722
+  FPED:      2.6748
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_hatexplain_seed123_0317_0326_7metrics_swap.json
+>>> ramponi hatexplain cf=llm (05:16:04)
+  Macro-F1=0.8059  AUC=0.8887
+  CFR=0.1511  CTFG=0.1374
+  FPED=2.6748  FNED=1.0725
+  Macro-F1:  0.8059
+  CFR:       0.1511
+  FPED:      2.6748
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_hatexplain_seed123_0317_0326_7metrics_llm.json
+>>> ramponi hatexplain cf=swap (05:16:27)
+  Macro-F1=0.8007  AUC=0.8841
+  CFR=0.0765  CTFG=0.0717
+  FPED=2.0367  FNED=0.9077
+  Macro-F1:  0.8007
+  CFR:       0.0765
+  FPED:      2.0367
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_hatexplain_seed2024_0317_0337_7metrics_swap.json
+>>> ramponi hatexplain cf=llm (05:16:53)
+  Macro-F1=0.8007  AUC=0.8841
+  CFR=0.1553  CTFG=0.1493
+  FPED=2.0367  FNED=0.9077
+  Macro-F1:  0.8007
+  CFR:       0.1553
+  FPED:      2.0367
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_hatexplain_seed2024_0317_0337_7metrics_llm.json
+>>> ramponi hatexplain cf=swap (05:17:16)
+  Macro-F1=0.7974  AUC=0.8802
+  CFR=0.0787  CTFG=0.0753
+  FPED=2.0009  FNED=1.1612
+  Macro-F1:  0.7974
+  CFR:       0.0787
+  FPED:      2.0009
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_hatexplain_seed42_0317_0316_7metrics_swap.json
+>>> ramponi hatexplain cf=llm (05:17:47)
+  Macro-F1=0.7974  AUC=0.8802
+  CFR=0.1515  CTFG=0.145
+  FPED=2.0009  FNED=1.1612
+  Macro-F1:  0.7974
+  CFR:       0.1515
+  FPED:      2.0009
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_hatexplain_seed42_0317_0316_7metrics_llm.json
+>>> ramponi toxigen cf=swap (05:18:09)
+  Macro-F1=0.8548  AUC=0.9257
+  CFR=0.0374  CTFG=0.0458
+  FPED=0.4412  FNED=1.0243
+  Macro-F1:  0.8548
+  CFR:       0.0374
+  FPED:      0.4412
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_toxigen_seed123_0317_0353_7metrics_swap.json
+>>> ramponi toxigen cf=llm (05:18:33)
+  Macro-F1=0.8548  AUC=0.9257
+  CFR=0.0481  CTFG=0.045
+  FPED=0.4412  FNED=1.0243
+  Macro-F1:  0.8548
+  CFR:       0.0481
+  FPED:      0.4412
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_toxigen_seed123_0317_0353_7metrics_llm.json
+>>> ramponi toxigen cf=swap (05:18:46)
+  Macro-F1=0.8592  AUC=0.9293
+  CFR=0.0406  CTFG=0.0398
+  FPED=0.5486  FNED=0.9536
+  Macro-F1:  0.8592
+  CFR:       0.0406
+  FPED:      0.5486
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_toxigen_seed2024_0317_0358_7metrics_swap.json
+>>> ramponi toxigen cf=llm (05:19:05)
+  Macro-F1=0.8592  AUC=0.9293
+  CFR=0.0342  CTFG=0.0345
+  FPED=0.5486  FNED=0.9536
+  Macro-F1:  0.8592
+  CFR:       0.0342
+  FPED:      0.5486
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_toxigen_seed2024_0317_0358_7metrics_llm.json
+>>> ramponi toxigen cf=swap (05:19:18)
+  Macro-F1=0.8585  AUC=0.9197
+  CFR=0.052  CTFG=0.0512
+  FPED=0.667  FNED=0.8879
+  Macro-F1:  0.8585
+  CFR:       0.052
+  FPED:      0.667
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_toxigen_seed42_0317_0347_7metrics_swap.json
+>>> ramponi toxigen cf=llm (05:19:41)
+  Macro-F1=0.8585  AUC=0.9197
+  CFR=0.0417  CTFG=0.0412
+  FPED=0.667  FNED=0.8879
+  Macro-F1:  0.8585
+  CFR:       0.0417
+  FPED:      0.667
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/Ramponi_toxigen_seed42_0317_0347_7metrics_llm.json
+
+=== EAR ===
+>>> ear dynahate cf=swap (05:19:54)
+  Macro-F1=0.9092  AUC=0.9776
+  CFR=0.0527  CTFG=0.0522
+  FPED=1.161  FNED=0.205
+  Macro-F1:  0.9092
+  CFR:       0.0527
+  FPED:      1.161
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_dynahate_seed123_0315_0626_7metrics_swap.json
+>>> ear dynahate cf=llm (05:20:19)
+  Macro-F1=0.9092  AUC=0.9776
+  CFR=0.0456  CTFG=0.0413
+  FPED=1.161  FNED=0.205
+  Macro-F1:  0.9092
+  CFR:       0.0456
+  FPED:      1.161
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_dynahate_seed123_0315_0626_7metrics_llm.json
+>>> ear dynahate cf=swap (05:20:32)
+  Macro-F1=0.9217  AUC=0.9847
+  CFR=0.0652  CTFG=0.0633
+  FPED=1.3826  FNED=0.2857
+  Macro-F1:  0.9217
+  CFR:       0.0652
+  FPED:      1.3826
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_dynahate_seed2024_0315_0706_7metrics_swap.json
+>>> ear dynahate cf=llm (05:20:55)
+  Macro-F1=0.9217  AUC=0.9847
+  CFR=0.0672  CTFG=0.0573
+  FPED=1.3826  FNED=0.2857
+  Macro-F1:  0.9217
+  CFR:       0.0672
+  FPED:      1.3826
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_dynahate_seed2024_0315_0706_7metrics_llm.json
+>>> ear dynahate cf=swap (05:21:08)
+  Macro-F1=0.9418  AUC=0.9866
+  CFR=0.0599  CTFG=0.0587
+  FPED=0.9258  FNED=0.167
+  Macro-F1:  0.9418
+  CFR:       0.0599
+  FPED:      0.9258
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_dynahate_seed42_0315_0544_7metrics_swap.json
+>>> ear dynahate cf=llm (05:21:32)
+  Macro-F1=0.9418  AUC=0.9866
+  CFR=0.0347  CTFG=0.0389
+  FPED=0.9258  FNED=0.167
+  Macro-F1:  0.9418
+  CFR:       0.0347
+  FPED:      0.9258
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_dynahate_seed42_0315_0544_7metrics_llm.json
+>>> ear hatexplain cf=swap (05:21:44)
+  Macro-F1=0.7907  AUC=0.8844
+  CFR=0.0669  CTFG=0.0612
+  FPED=2.6282  FNED=1.1528
+  Macro-F1:  0.7907
+  CFR:       0.0669
+  FPED:      2.6282
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_hatexplain_seed123_0315_0159_7metrics_swap.json
+>>> ear hatexplain cf=llm (05:22:15)
+  Macro-F1=0.7907  AUC=0.8844
+  CFR=0.1527  CTFG=0.1337
+  FPED=2.6282  FNED=1.1528
+  Macro-F1:  0.7907
+  CFR:       0.1527
+  FPED:      2.6282
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_hatexplain_seed123_0315_0159_7metrics_llm.json
+>>> ear hatexplain cf=swap (05:22:37)
+  Macro-F1=0.7991  AUC=0.8868
+  CFR=0.0787  CTFG=0.0678
+  FPED=1.9303  FNED=0.9694
+  Macro-F1:  0.7991
+  CFR:       0.0787
+  FPED:      1.9303
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_hatexplain_seed2024_0315_0311_7metrics_swap.json
+>>> ear hatexplain cf=llm (05:23:07)
+  Macro-F1=0.7991  AUC=0.8868
+  CFR=0.1583  CTFG=0.1408
+  FPED=1.9303  FNED=0.9694
+  Macro-F1:  0.7991
+  CFR:       0.1583
+  FPED:      1.9303
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_hatexplain_seed2024_0315_0311_7metrics_llm.json
+>>> ear hatexplain cf=swap (05:23:27)
+  Macro-F1=0.7953  AUC=0.8805
+  CFR=0.068  CTFG=0.0661
+  FPED=1.7209  FNED=1.3174
+  Macro-F1:  0.7953
+  CFR:       0.068
+  FPED:      1.7209
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_hatexplain_seed42_0315_0045_7metrics_swap.json
+>>> ear hatexplain cf=llm (05:23:59)
+  Macro-F1=0.7953  AUC=0.8805
+  CFR=0.1648  CTFG=0.1568
+  FPED=1.7209  FNED=1.3174
+  Macro-F1:  0.7953
+  CFR:       0.1648
+  FPED:      1.7209
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_hatexplain_seed42_0315_0045_7metrics_llm.json
+>>> ear toxigen cf=swap (05:24:21)
+  Macro-F1=0.8526  AUC=0.9286
+  CFR=0.0583  CTFG=0.0503
+  FPED=0.4452  FNED=0.7582
+  Macro-F1:  0.8526
+  CFR:       0.0583
+  FPED:      0.4452
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_toxigen_seed123_0315_0432_7metrics_swap.json
+>>> ear toxigen cf=llm (05:24:45)
+  Macro-F1=0.8526  AUC=0.9286
+  CFR=0.0438  CTFG=0.0407
+  FPED=0.4452  FNED=0.7582
+  Macro-F1:  0.8526
+  CFR:       0.0438
+  FPED:      0.4452
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_toxigen_seed123_0315_0432_7metrics_llm.json
+>>> ear toxigen cf=swap (05:24:58)
+  Macro-F1=0.8465  AUC=0.9274
+  CFR=0.0438  CTFG=0.044
+  FPED=0.5494  FNED=0.9857
+  Macro-F1:  0.8465
+  CFR:       0.0438
+  FPED:      0.5494
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_toxigen_seed2024_0315_0506_7metrics_swap.json
+>>> ear toxigen cf=llm (05:25:20)
+  Macro-F1=0.8465  AUC=0.9274
+  CFR=0.0395  CTFG=0.0347
+  FPED=0.5494  FNED=0.9857
+  Macro-F1:  0.8465
+  CFR:       0.0395
+  FPED:      0.5494
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_toxigen_seed2024_0315_0506_7metrics_llm.json
+>>> ear toxigen cf=swap (05:25:33)
+  Macro-F1=0.8524  AUC=0.9317
+  CFR=0.0425  CTFG=0.0394
+  FPED=0.552  FNED=0.8782
+  Macro-F1:  0.8524
+  CFR:       0.0425
+  FPED:      0.552
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_toxigen_seed42_0315_0404_7metrics_swap.json
+>>> ear toxigen cf=llm (05:25:57)
+  Macro-F1=0.8524  AUC=0.9317
+  CFR=0.0353  CTFG=0.0354
+  FPED=0.552  FNED=0.8782
+  Macro-F1:  0.8524
+  CFR:       0.0353
+  FPED:      0.552
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/EAR_toxigen_seed42_0315_0404_7metrics_llm.json
+
+=== GetFair ===
+>>> getfair dynahate cf=swap (05:26:09)
+  Macro-F1=0.9315  AUC=0.9844
+  CFR=0.0672  CTFG=0.065
+  FPED=0.9523  FNED=0.2462
+  Macro-F1:  0.9315
+  CFR:       0.0672
+  FPED:      0.9523
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_dynahate_seed123_0315_1550_7metrics_swap.json
+>>> getfair dynahate cf=llm (05:26:30)
+  Macro-F1=0.9315  AUC=0.9844
+  CFR=0.0456  CTFG=0.0503
+  FPED=0.9523  FNED=0.2462
+  Macro-F1:  0.9315
+  CFR:       0.0456
+  FPED:      0.9523
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_dynahate_seed123_0315_1550_7metrics_llm.json
+>>> getfair dynahate cf=swap (05:26:42)
+  Macro-F1=0.9306  AUC=0.9872
+  CFR=0.0639  CTFG=0.062
+  FPED=1.341  FNED=0.1877
+  Macro-F1:  0.9306
+  CFR:       0.0639
+  FPED:      1.341
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_dynahate_seed2024_0315_1557_7metrics_swap.json
+>>> getfair dynahate cf=llm (05:27:03)
+  Macro-F1=0.9306  AUC=0.9872
+  CFR=0.0488  CTFG=0.0468
+  FPED=1.341  FNED=0.1877
+  Macro-F1:  0.9306
+  CFR:       0.0488
+  FPED:      1.341
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_dynahate_seed2024_0315_1557_7metrics_llm.json
+>>> getfair dynahate cf=swap (05:27:14)
+>>> getfair dynahate cf=llm (05:27:25)
+>>> getfair dynahate cf=swap (05:27:31)
+  Macro-F1=0.9304  AUC=0.9876
+  CFR=0.0356  CTFG=0.0385
+  FPED=1.0901  FNED=0.1078
+  Macro-F1:  0.9304
+  CFR:       0.0356
+  FPED:      1.0901
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_dynahate_seed42_0315_1543_7metrics_swap.json
+>>> getfair dynahate cf=llm (05:27:55)
+  Macro-F1=0.9304  AUC=0.9876
+  CFR=0.0369  CTFG=0.0375
+  FPED=1.0901  FNED=0.1078
+  Macro-F1:  0.9304
+  CFR:       0.0369
+  FPED:      1.0901
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_dynahate_seed42_0315_1543_7metrics_llm.json
+>>> getfair hatexplain cf=swap (05:28:08)
+  Macro-F1=0.7886  AUC=0.8822
+  CFR=0.0701  CTFG=0.0605
+  FPED=2.6429  FNED=0.9405
+  Macro-F1:  0.7886
+  CFR:       0.0701
+  FPED:      2.6429
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_hatexplain_seed123_0315_1334_7metrics_swap.json
+>>> getfair hatexplain cf=llm (05:28:39)
+  Macro-F1=0.7886  AUC=0.8822
+  CFR=0.1447  CTFG=0.1263
+  FPED=2.6429  FNED=0.9405
+  Macro-F1:  0.7886
+  CFR:       0.1447
+  FPED:      2.6429
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_hatexplain_seed123_0315_1334_7metrics_llm.json
+>>> getfair hatexplain cf=swap (05:29:01)
+  Macro-F1=0.8021  AUC=0.8844
+  CFR=0.0544  CTFG=0.0514
+  FPED=2.3844  FNED=1.5013
+  Macro-F1:  0.8021
+  CFR:       0.0544
+  FPED:      2.3844
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_hatexplain_seed2024_0315_1343_7metrics_swap.json
+>>> getfair hatexplain cf=llm (05:29:30)
+  Macro-F1=0.8021  AUC=0.8844
+  CFR=0.1625  CTFG=0.1448
+  FPED=2.3844  FNED=1.5013
+  Macro-F1:  0.8021
+  CFR:       0.1625
+  FPED:      2.3844
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_hatexplain_seed2024_0315_1343_7metrics_llm.json
+>>> getfair hatexplain cf=swap (05:29:50)
+  Macro-F1=0.8048  AUC=0.8811
+  CFR=0.0733  CTFG=0.0723
+  FPED=2.0053  FNED=1.1906
+  Macro-F1:  0.8048
+  CFR:       0.0733
+  FPED:      2.0053
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_hatexplain_seed42_0315_1322_7metrics_swap.json
+>>> getfair hatexplain cf=llm (05:30:20)
+  Macro-F1=0.8048  AUC=0.8811
+  CFR=0.1614  CTFG=0.158
+  FPED=2.0053  FNED=1.1906
+  Macro-F1:  0.8048
+  CFR:       0.1614
+  FPED:      2.0053
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_hatexplain_seed42_0315_1322_7metrics_llm.json
+>>> getfair toxigen cf=swap (05:30:42)
+  Macro-F1=0.8508  AUC=0.9295
+  CFR=0.038  CTFG=0.0465
+  FPED=0.5306  FNED=1.1307
+  Macro-F1:  0.8508
+  CFR:       0.038
+  FPED:      0.5306
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_toxigen_seed123_0315_1357_7metrics_swap.json
+>>> getfair toxigen cf=llm (05:31:06)
+  Macro-F1=0.8508  AUC=0.9295
+  CFR=0.0353  CTFG=0.04
+  FPED=0.5306  FNED=1.1307
+  Macro-F1:  0.8508
+  CFR:       0.0353
+  FPED:      0.5306
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_toxigen_seed123_0315_1357_7metrics_llm.json
+>>> getfair toxigen cf=swap (05:31:19)
+  Macro-F1=0.8549  AUC=0.9293
+  CFR=0.0457  CTFG=0.0492
+  FPED=0.7366  FNED=0.8781
+  Macro-F1:  0.8549
+  CFR:       0.0457
+  FPED:      0.7366
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_toxigen_seed2024_0315_1403_7metrics_swap.json
+>>> getfair toxigen cf=llm (05:31:42)
+  Macro-F1=0.8549  AUC=0.9293
+  CFR=0.0331  CTFG=0.0369
+  FPED=0.7366  FNED=0.8781
+  Macro-F1:  0.8549
+  CFR:       0.0331
+  FPED:      0.7366
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_toxigen_seed2024_0315_1403_7metrics_llm.json
+>>> getfair toxigen cf=swap (05:31:53)
+  Macro-F1=0.8639  AUC=0.9331
+  CFR=0.0349  CTFG=0.0403
+  FPED=0.5577  FNED=0.7889
+  Macro-F1:  0.8639
+  CFR:       0.0349
+  FPED:      0.5577
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_toxigen_seed42_0315_1352_7metrics_swap.json
+>>> getfair toxigen cf=llm (05:32:25)
+  Macro-F1=0.8639  AUC=0.9331
+  CFR=0.0256  CTFG=0.037
+  FPED=0.5577  FNED=0.7889
+  Macro-F1:  0.8639
+  CFR:       0.0256
+  FPED:      0.5577
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/GetFair_toxigen_seed42_0315_1352_7metrics_llm.json
+
+=== Ours ===
+>>> ours toxigen cf=swap (05:32:47)
+  Macro-F1=0.8495  AUC=0.9296
+  CFR=0.0266  CTFG=0.0283
+  FPED=0.5926  FNED=0.8711
+  Macro-F1:  0.8495
+  CFR:       0.0266
+  FPED:      0.5926
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/toxigen_llm_clp1.0_con0.0_seed123_0315_2051_7metrics_swap.json
+>>> ours toxigen cf=llm (05:33:15)
+  Macro-F1=0.8495  AUC=0.9296
+  CFR=0.0171  CTFG=0.0169
+  FPED=0.5926  FNED=0.8711
+  Macro-F1:  0.8495
+  CFR:       0.0171
+  FPED:      0.5926
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/toxigen_llm_clp1.0_con0.0_seed123_0315_2051_7metrics_llm.json
+>>> ours hatexplain cf=swap (05:33:28)
+  Macro-F1=0.7806  AUC=0.8695
+  CFR=0.0465  CTFG=0.037
+  FPED=2.4923  FNED=0.9338
+  Macro-F1:  0.7806
+  CFR:       0.0465
+  FPED:      2.4923
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/hatexplain_llm_clp1.0_con0.0_seed42_0315_1709_7metrics_swap.json
+>>> ours hatexplain cf=llm (05:33:53)
+  Macro-F1=0.7806  AUC=0.8695
+  CFR=0.0564  CTFG=0.0428
+  FPED=2.4923  FNED=0.9338
+  Macro-F1:  0.7806
+  CFR:       0.0564
+  FPED:      2.4923
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/hatexplain_llm_clp1.0_con0.0_seed42_0315_1709_7metrics_llm.json
+>>> ours hatexplain cf=swap (05:34:13)
+  Macro-F1=0.7813  AUC=0.8639
+  CFR=0.0436  CTFG=0.0373
+  FPED=2.0867  FNED=0.8976
+  Macro-F1:  0.7813
+  CFR:       0.0436
+  FPED:      2.0867
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/hatexplain_llm_clp1.0_con0.0_seed2024_0315_1935_7metrics_swap.json
+>>> ours hatexplain cf=llm (05:34:43)
+  Macro-F1=0.7813  AUC=0.8639
+  CFR=0.0515  CTFG=0.0413
+  FPED=2.0867  FNED=0.8976
+  Macro-F1:  0.7813
+  CFR:       0.0515
+  FPED:      2.0867
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/hatexplain_llm_clp1.0_con0.0_seed2024_0315_1935_7metrics_llm.json
+>>> ours toxigen cf=swap (05:35:05)
+  Macro-F1=0.855  AUC=0.9258
+  CFR=0.033  CTFG=0.0265
+  FPED=0.7444  FNED=0.6244
+  Macro-F1:  0.855
+  CFR:       0.033
+  FPED:      0.7444
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/toxigen_llm_clp1.0_con0.0_seed2024_0315_2125_7metrics_swap.json
+>>> ours toxigen cf=llm (05:35:27)
+  Macro-F1=0.855  AUC=0.9258
+  CFR=0.015  CTFG=0.0157
+  FPED=0.7444  FNED=0.6244
+  Macro-F1:  0.855
+  CFR:       0.015
+  FPED:      0.7444
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/toxigen_llm_clp1.0_con0.0_seed2024_0315_2125_7metrics_llm.json
+>>> ours dynahate cf=swap (05:35:40)
+  Macro-F1=0.9129  AUC=0.9793
+  CFR=0.0224  CTFG=0.0249
+  FPED=1.3039  FNED=0.1485
+  Macro-F1:  0.9129
+  CFR:       0.0224
+  FPED:      1.3039
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/dynahate_llm_clp1.0_con0.0_seed2024_0315_2332_7metrics_swap.json
+>>> ours dynahate cf=llm (05:35:58)
+  Macro-F1=0.9129  AUC=0.9793
+  CFR=0.0184  CTFG=0.0176
+  FPED=1.3039  FNED=0.1485
+  Macro-F1:  0.9129
+  CFR:       0.0184
+  FPED:      1.3039
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/dynahate_llm_clp1.0_con0.0_seed2024_0315_2332_7metrics_llm.json
+>>> ours dynahate cf=swap (05:36:11)
+  Macro-F1=0.9236  AUC=0.9825
+  CFR=0.0184  CTFG=0.0243
+  FPED=1.3994  FNED=0.1081
+  Macro-F1:  0.9236
+  CFR:       0.0184
+  FPED:      1.3994
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/dynahate_llm_clp1.0_con0.0_seed42_0315_2206_7metrics_swap.json
+>>> ours dynahate cf=llm (05:36:34)
+  Macro-F1=0.9236  AUC=0.9825
+  CFR=0.0152  CTFG=0.0137
+  FPED=1.3994  FNED=0.1081
+  Macro-F1:  0.9236
+  CFR:       0.0152
+  FPED:      1.3994
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/dynahate_llm_clp1.0_con0.0_seed42_0315_2206_7metrics_llm.json
+>>> ours hatexplain cf=swap (05:36:48)
+  Macro-F1=0.7811  AUC=0.8707
+  CFR=0.0433  CTFG=0.0393
+  FPED=2.4106  FNED=0.7412
+  Macro-F1:  0.7811
+  CFR:       0.0433
+  FPED:      2.4106
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/hatexplain_llm_clp1.0_con0.0_seed123_0315_1823_7metrics_swap.json
+>>> ours hatexplain cf=llm (05:37:19)
+  Macro-F1=0.7811  AUC=0.8707
+  CFR=0.0489  CTFG=0.0408
+  FPED=2.4106  FNED=0.7412
+  Macro-F1:  0.7811
+  CFR:       0.0489
+  FPED:      2.4106
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/hatexplain_llm_clp1.0_con0.0_seed123_0315_1823_7metrics_llm.json
+>>> ours dynahate cf=swap (05:37:41)
+  Macro-F1=0.9342  AUC=0.9843
+  CFR=0.0296  CTFG=0.0322
+  FPED=1.1257  FNED=0.2222
+  Macro-F1:  0.9342
+  CFR:       0.0296
+  FPED:      1.1257
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/dynahate_llm_clp1.0_con0.0_seed123_0315_2250_7metrics_swap.json
+>>> ours dynahate cf=llm (05:38:04)
+  Macro-F1=0.9342  AUC=0.9843
+  CFR=0.0174  CTFG=0.0176
+  FPED=1.1257  FNED=0.2222
+  Macro-F1:  0.9342
+  CFR:       0.0174
+  FPED:      1.1257
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/dynahate_llm_clp1.0_con0.0_seed123_0315_2250_7metrics_llm.json
+>>> ours toxigen cf=swap (05:38:18)
+  Macro-F1=0.848  AUC=0.9263
+  CFR=0.0349  CTFG=0.0291
+  FPED=0.5371  FNED=0.9973
+  Macro-F1:  0.848
+  CFR:       0.0349
+  FPED:      0.5371
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/toxigen_llm_clp1.0_con0.0_seed42_0315_2020_7metrics_swap.json
+>>> ours toxigen cf=llm (05:38:41)
+  Macro-F1=0.848  AUC=0.9263
+  CFR=0.0182  CTFG=0.0164
+  FPED=0.5371  FNED=0.9973
+  Macro-F1:  0.848
+  CFR:       0.0182
+  FPED:      0.5371
+保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/toxigen_llm_clp1.0_con0.0_seed42_0315_2020_7metrics_llm.json
+
+===== 全部完成: Tue Mar 17 05:38:54 CST 2026 =====

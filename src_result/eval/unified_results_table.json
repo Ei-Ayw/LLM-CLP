@@ -1,0 +1,3880 @@
+{
+  "swap": {
+    "Vanilla": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7844,
+            "std": 0.0041
+          },
+          "auc_roc": {
+            "mean": 0.8783,
+            "std": 0.0024
+          },
+          "cfr": {
+            "mean": 0.0715,
+            "std": 0.0107
+          },
+          "ctfg": {
+            "mean": 0.0585,
+            "std": 0.0065
+          },
+          "fped": {
+            "mean": 2.4849,
+            "std": 0.1646
+          },
+          "fned": {
+            "mean": 1.3751,
+            "std": 0.1928
+          },
+          "per_group_f1_std": {
+            "mean": 0.1208,
+            "std": 0.0105
+          },
+          "n_seeds": 7
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8326,
+            "std": 0.0038
+          },
+          "auc_roc": {
+            "mean": 0.9128,
+            "std": 0.0025
+          },
+          "cfr": {
+            "mean": 0.0655,
+            "std": 0.0066
+          },
+          "ctfg": {
+            "mean": 0.0635,
+            "std": 0.0039
+          },
+          "fped": {
+            "mean": 0.6419,
+            "std": 0.1033
+          },
+          "fned": {
+            "mean": 0.7924,
+            "std": 0.096
+          },
+          "per_group_f1_std": {
+            "mean": 0.0574,
+            "std": 0.0061
+          },
+          "n_seeds": 6
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.906,
+            "std": 0.0086
+          },
+          "auc_roc": {
+            "mean": 0.9606,
+            "std": 0.0039
+          },
+          "cfr": {
+            "mean": 0.0731,
+            "std": 0.0097
+          },
+          "ctfg": {
+            "mean": 0.0738,
+            "std": 0.0088
+          },
+          "fped": {
+            "mean": 1.4449,
+            "std": 0.1257
+          },
+          "fned": {
+            "mean": 0.3544,
+            "std": 0.1329
+          },
+          "per_group_f1_std": {
+            "mean": 0.074,
+            "std": 0.0035
+          },
+          "n_seeds": 6
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7984,
+            "std": 0.0066
+          },
+          "auc_roc": {
+            "mean": 0.8891,
+            "std": 0.0026
+          },
+          "cfr": {
+            "mean": 0.0645,
+            "std": 0.0037
+          },
+          "ctfg": {
+            "mean": 0.0532,
+            "std": 0.0013
+          },
+          "fped": {
+            "mean": 2.5598,
+            "std": 0.0628
+          },
+          "fned": {
+            "mean": 1.0899,
+            "std": 0.1144
+          },
+          "per_group_f1_std": {
+            "mean": 0.1342,
+            "std": 0.0023
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8476,
+            "std": 0.0007
+          },
+          "auc_roc": {
+            "mean": 0.9266,
+            "std": 0.0008
+          },
+          "cfr": {
+            "mean": 0.0552,
+            "std": 0.0084
+          },
+          "ctfg": {
+            "mean": 0.0529,
+            "std": 0.002
+          },
+          "fped": {
+            "mean": 0.6439,
+            "std": 0.1074
+          },
+          "fned": {
+            "mean": 0.9031,
+            "std": 0.1698
+          },
+          "per_group_f1_std": {
+            "mean": 0.0539,
+            "std": 0.0045
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9169,
+            "std": 0.0014
+          },
+          "auc_roc": {
+            "mean": 0.9672,
+            "std": 0.0068
+          },
+          "cfr": {
+            "mean": 0.056,
+            "std": 0.0062
+          },
+          "ctfg": {
+            "mean": 0.0557,
+            "std": 0.0049
+          },
+          "fped": {
+            "mean": 1.404,
+            "std": 0.0513
+          },
+          "fned": {
+            "mean": 0.3423,
+            "std": 0.1112
+          },
+          "per_group_f1_std": {
+            "mean": 0.0833,
+            "std": 0.0025
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7962,
+            "std": 0.008
+          },
+          "auc_roc": {
+            "mean": 0.8837,
+            "std": 0.0018
+          },
+          "cfr": {
+            "mean": 0.0784,
+            "std": 0.0042
+          },
+          "ctfg": {
+            "mean": 0.0686,
+            "std": 0.0024
+          },
+          "fped": {
+            "mean": 2.3583,
+            "std": 0.3949
+          },
+          "fned": {
+            "mean": 1.08,
+            "std": 0.0917
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8582,
+            "std": 0.0063
+          },
+          "auc_roc": {
+            "mean": 0.9306,
+            "std": 0.0028
+          },
+          "cfr": {
+            "mean": 0.0406,
+            "std": 0.0078
+          },
+          "ctfg": {
+            "mean": 0.0463,
+            "std": 0.0043
+          },
+          "fped": {
+            "mean": 0.5733,
+            "std": 0.1218
+          },
+          "fned": {
+            "mean": 0.8765,
+            "std": 0.0185
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9352,
+            "std": 0.0019
+          },
+          "auc_roc": {
+            "mean": 0.9873,
+            "std": 0.0022
+          },
+          "cfr": {
+            "mean": 0.0498,
+            "std": 0.0052
+          },
+          "ctfg": {
+            "mean": 0.0501,
+            "std": 0.0065
+          },
+          "fped": {
+            "mean": 1.1211,
+            "std": 0.1447
+          },
+          "fned": {
+            "mean": 0.1941,
+            "std": 0.0643
+          },
+          "n_seeds": 3
+        }
+      }
+    },
+    "EAR": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7861,
+            "std": 0.0077
+          },
+          "auc_roc": {
+            "mean": 0.8758,
+            "std": 0.0052
+          },
+          "cfr": {
+            "mean": 0.0746,
+            "std": 0.0096
+          },
+          "ctfg": {
+            "mean": 0.0648,
+            "std": 0.0108
+          },
+          "fped": {
+            "mean": 2.4143,
+            "std": 0.1814
+          },
+          "fned": {
+            "mean": 1.3097,
+            "std": 0.2129
+          },
+          "per_group_f1_std": {
+            "mean": 0.1163,
+            "std": 0.0059
+          },
+          "n_seeds": 6
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8334,
+            "std": 0.0034
+          },
+          "auc_roc": {
+            "mean": 0.9132,
+            "std": 0.0017
+          },
+          "cfr": {
+            "mean": 0.0708,
+            "std": 0.0056
+          },
+          "ctfg": {
+            "mean": 0.0677,
+            "std": 0.0049
+          },
+          "fped": {
+            "mean": 0.6405,
+            "std": 0.0948
+          },
+          "fned": {
+            "mean": 0.8299,
+            "std": 0.0683
+          },
+          "per_group_f1_std": {
+            "mean": 0.0538,
+            "std": 0.0037
+          },
+          "n_seeds": 6
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9006,
+            "std": 0.0084
+          },
+          "auc_roc": {
+            "mean": 0.9602,
+            "std": 0.0048
+          },
+          "cfr": {
+            "mean": 0.076,
+            "std": 0.0076
+          },
+          "ctfg": {
+            "mean": 0.0754,
+            "std": 0.0078
+          },
+          "fped": {
+            "mean": 1.4921,
+            "std": 0.0838
+          },
+          "fned": {
+            "mean": 0.3732,
+            "std": 0.1151
+          },
+          "per_group_f1_std": {
+            "mean": 0.072,
+            "std": 0.0026
+          },
+          "n_seeds": 6
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7985,
+            "std": 0.0031
+          },
+          "auc_roc": {
+            "mean": 0.8881,
+            "std": 0.001
+          },
+          "cfr": {
+            "mean": 0.0626,
+            "std": 0.0027
+          },
+          "ctfg": {
+            "mean": 0.0523,
+            "std": 0.0019
+          },
+          "fped": {
+            "mean": 2.438,
+            "std": 0.0709
+          },
+          "fned": {
+            "mean": 1.15,
+            "std": 0.0693
+          },
+          "per_group_f1_std": {
+            "mean": 0.1267,
+            "std": 0.0046
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8457,
+            "std": 0.0059
+          },
+          "auc_roc": {
+            "mean": 0.9258,
+            "std": 0.0015
+          },
+          "cfr": {
+            "mean": 0.055,
+            "std": 0.0044
+          },
+          "ctfg": {
+            "mean": 0.0542,
+            "std": 0.0026
+          },
+          "fped": {
+            "mean": 0.5927,
+            "std": 0.0412
+          },
+          "fned": {
+            "mean": 0.9825,
+            "std": 0.1854
+          },
+          "per_group_f1_std": {
+            "mean": 0.0565,
+            "std": 0.007
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9063,
+            "std": 0.0094
+          },
+          "auc_roc": {
+            "mean": 0.9687,
+            "std": 0.0033
+          },
+          "cfr": {
+            "mean": 0.0536,
+            "std": 0.0106
+          },
+          "ctfg": {
+            "mean": 0.0561,
+            "std": 0.0101
+          },
+          "fped": {
+            "mean": 1.5166,
+            "std": 0.0311
+          },
+          "fned": {
+            "mean": 0.288,
+            "std": 0.1101
+          },
+          "per_group_f1_std": {
+            "mean": 0.0824,
+            "std": 0.0121
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.795,
+            "std": 0.0034
+          },
+          "auc_roc": {
+            "mean": 0.8839,
+            "std": 0.0026
+          },
+          "cfr": {
+            "mean": 0.0712,
+            "std": 0.0053
+          },
+          "ctfg": {
+            "mean": 0.065,
+            "std": 0.0028
+          },
+          "fped": {
+            "mean": 2.0931,
+            "std": 0.3879
+          },
+          "fned": {
+            "mean": 1.1465,
+            "std": 0.1421
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8505,
+            "std": 0.0028
+          },
+          "auc_roc": {
+            "mean": 0.9292,
+            "std": 0.0018
+          },
+          "cfr": {
+            "mean": 0.0482,
+            "std": 0.0072
+          },
+          "ctfg": {
+            "mean": 0.0446,
+            "std": 0.0045
+          },
+          "fped": {
+            "mean": 0.5155,
+            "std": 0.0497
+          },
+          "fned": {
+            "mean": 0.874,
+            "std": 0.0929
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9242,
+            "std": 0.0134
+          },
+          "auc_roc": {
+            "mean": 0.983,
+            "std": 0.0039
+          },
+          "cfr": {
+            "mean": 0.0593,
+            "std": 0.0051
+          },
+          "ctfg": {
+            "mean": 0.0581,
+            "std": 0.0046
+          },
+          "fped": {
+            "mean": 1.1565,
+            "std": 0.1865
+          },
+          "fned": {
+            "mean": 0.2192,
+            "std": 0.0495
+          },
+          "n_seeds": 3
+        }
+      }
+    },
+    "GetFair": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7876,
+            "std": 0.0043
+          },
+          "auc_roc": {
+            "mean": 0.8796,
+            "std": 0.0026
+          },
+          "cfr": {
+            "mean": 0.0714,
+            "std": 0.0063
+          },
+          "ctfg": {
+            "mean": 0.0594,
+            "std": 0.0066
+          },
+          "fped": {
+            "mean": 2.5464,
+            "std": 0.11
+          },
+          "fned": {
+            "mean": 1.405,
+            "std": 0.192
+          },
+          "per_group_f1_std": {
+            "mean": 0.1157,
+            "std": 0.0037
+          },
+          "n_seeds": 4
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8365,
+            "std": 0.0041
+          },
+          "auc_roc": {
+            "mean": 0.9143,
+            "std": 0.0013
+          },
+          "cfr": {
+            "mean": 0.075,
+            "std": 0.0037
+          },
+          "ctfg": {
+            "mean": 0.0673,
+            "std": 0.0009
+          },
+          "fped": {
+            "mean": 0.7606,
+            "std": 0.0783
+          },
+          "fned": {
+            "mean": 0.7689,
+            "std": 0.1197
+          },
+          "per_group_f1_std": {
+            "mean": 0.0559,
+            "std": 0.0044
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.8867,
+            "std": 0.0074
+          },
+          "auc_roc": {
+            "mean": 0.9569,
+            "std": 0.0014
+          },
+          "cfr": {
+            "mean": 0.0729,
+            "std": 0.0063
+          },
+          "ctfg": {
+            "mean": 0.073,
+            "std": 0.0042
+          },
+          "fped": {
+            "mean": 1.4963,
+            "std": 0.0279
+          },
+          "fned": {
+            "mean": 0.4869,
+            "std": 0.0649
+          },
+          "per_group_f1_std": {
+            "mean": 0.0707,
+            "std": 0.0036
+          },
+          "n_seeds": 3
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7989,
+            "std": 0.0066
+          },
+          "auc_roc": {
+            "mean": 0.8884,
+            "std": 0.0019
+          },
+          "cfr": {
+            "mean": 0.0653,
+            "std": 0.0012
+          },
+          "ctfg": {
+            "mean": 0.0566,
+            "std": 0.0005
+          },
+          "fped": {
+            "mean": 2.2771,
+            "std": 0.2867
+          },
+          "fned": {
+            "mean": 1.3162,
+            "std": 0.0857
+          },
+          "per_group_f1_std": {
+            "mean": 0.1207,
+            "std": 0.0041
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8454,
+            "std": 0.0055
+          },
+          "auc_roc": {
+            "mean": 0.9265,
+            "std": 0.0018
+          },
+          "cfr": {
+            "mean": 0.0552,
+            "std": 0.0029
+          },
+          "ctfg": {
+            "mean": 0.0541,
+            "std": 0.0011
+          },
+          "fped": {
+            "mean": 0.5277,
+            "std": 0.1749
+          },
+          "fned": {
+            "mean": 0.8907,
+            "std": 0.0667
+          },
+          "per_group_f1_std": {
+            "mean": 0.0486,
+            "std": 0.005
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9158,
+            "std": 0.0033
+          },
+          "auc_roc": {
+            "mean": 0.9712,
+            "std": 0.0019
+          },
+          "cfr": {
+            "mean": 0.0503,
+            "std": 0.0079
+          },
+          "ctfg": {
+            "mean": 0.0555,
+            "std": 0.0058
+          },
+          "fped": {
+            "mean": 1.4183,
+            "std": 0.1143
+          },
+          "fned": {
+            "mean": 0.2764,
+            "std": 0.0967
+          },
+          "per_group_f1_std": {
+            "mean": 0.0875,
+            "std": 0.0105
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7985,
+            "std": 0.0071
+          },
+          "auc_roc": {
+            "mean": 0.8826,
+            "std": 0.0014
+          },
+          "cfr": {
+            "mean": 0.0659,
+            "std": 0.0083
+          },
+          "ctfg": {
+            "mean": 0.0614,
+            "std": 0.0086
+          },
+          "fped": {
+            "mean": 2.3442,
+            "std": 0.2618
+          },
+          "fned": {
+            "mean": 1.2108,
+            "std": 0.2294
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8565,
+            "std": 0.0055
+          },
+          "auc_roc": {
+            "mean": 0.9306,
+            "std": 0.0017
+          },
+          "cfr": {
+            "mean": 0.0395,
+            "std": 0.0045
+          },
+          "ctfg": {
+            "mean": 0.0453,
+            "std": 0.0037
+          },
+          "fped": {
+            "mean": 0.6083,
+            "std": 0.0914
+          },
+          "fned": {
+            "mean": 0.9326,
+            "std": 0.1448
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9308,
+            "std": 0.0005
+          },
+          "auc_roc": {
+            "mean": 0.9864,
+            "std": 0.0014
+          },
+          "cfr": {
+            "mean": 0.0556,
+            "std": 0.0142
+          },
+          "ctfg": {
+            "mean": 0.0552,
+            "std": 0.0118
+          },
+          "fped": {
+            "mean": 1.1278,
+            "std": 0.1609
+          },
+          "fned": {
+            "mean": 0.1806,
+            "std": 0.0567
+          },
+          "n_seeds": 3
+        }
+      }
+    },
+    "CCDF": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7912,
+            "std": 0.0023
+          },
+          "auc_roc": {
+            "mean": 0.8779,
+            "std": 0.0012
+          },
+          "cfr": {
+            "mean": 0.0754,
+            "std": 0.0061
+          },
+          "ctfg": {
+            "mean": 0.0664,
+            "std": 0.0025
+          },
+          "fped": {
+            "mean": 2.3721,
+            "std": 0.1007
+          },
+          "fned": {
+            "mean": 1.3095,
+            "std": 0.0323
+          },
+          "per_group_f1_std": {
+            "mean": 0.1105,
+            "std": 0.0082
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.823,
+            "std": 0.0049
+          },
+          "auc_roc": {
+            "mean": 0.9101,
+            "std": 0.0022
+          },
+          "cfr": {
+            "mean": 0.0782,
+            "std": 0.01
+          },
+          "ctfg": {
+            "mean": 0.0703,
+            "std": 0.0049
+          },
+          "fped": {
+            "mean": 0.755,
+            "std": 0.0126
+          },
+          "fned": {
+            "mean": 0.7577,
+            "std": 0.1228
+          },
+          "per_group_f1_std": {
+            "mean": 0.0552,
+            "std": 0.0061
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.8184,
+            "std": 0.0115
+          },
+          "auc_roc": {
+            "mean": 0.9419,
+            "std": 0.0027
+          },
+          "cfr": {
+            "mean": 0.2067,
+            "std": 0.0335
+          },
+          "ctfg": {
+            "mean": 0.1867,
+            "std": 0.028
+          },
+          "fped": {
+            "mean": 1.1106,
+            "std": 0.072
+          },
+          "fned": {
+            "mean": 1.2181,
+            "std": 0.3952
+          },
+          "per_group_f1_std": {
+            "mean": 0.133,
+            "std": 0.0295
+          },
+          "n_seeds": 3
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7925,
+            "std": 0.005
+          },
+          "auc_roc": {
+            "mean": 0.8845,
+            "std": 0.0012
+          },
+          "cfr": {
+            "mean": 0.0678,
+            "std": 0.0025
+          },
+          "ctfg": {
+            "mean": 0.0571,
+            "std": 0.0026
+          },
+          "fped": {
+            "mean": 2.1114,
+            "std": 0.3942
+          },
+          "fned": {
+            "mean": 1.2006,
+            "std": 0.0481
+          },
+          "per_group_f1_std": {
+            "mean": 0.1047,
+            "std": 0.0226
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8425,
+            "std": 0.0077
+          },
+          "auc_roc": {
+            "mean": 0.9257,
+            "std": 0.0014
+          },
+          "cfr": {
+            "mean": 0.0803,
+            "std": 0.0086
+          },
+          "ctfg": {
+            "mean": 0.0729,
+            "std": 0.001
+          },
+          "fped": {
+            "mean": 0.5636,
+            "std": 0.0472
+          },
+          "fned": {
+            "mean": 0.7746,
+            "std": 0.0571
+          },
+          "per_group_f1_std": {
+            "mean": 0.0418,
+            "std": 0.0009
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.8521,
+            "std": 0.0124
+          },
+          "auc_roc": {
+            "mean": 0.9476,
+            "std": 0.0131
+          },
+          "cfr": {
+            "mean": 0.1076,
+            "std": 0.0149
+          },
+          "ctfg": {
+            "mean": 0.1004,
+            "std": 0.0073
+          },
+          "fped": {
+            "mean": 1.2227,
+            "std": 0.2897
+          },
+          "fned": {
+            "mean": 0.778,
+            "std": 0.1598
+          },
+          "per_group_f1_std": {
+            "mean": 0.1125,
+            "std": 0.0062
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.8022,
+            "std": 0.0047
+          },
+          "auc_roc": {
+            "mean": 0.8796,
+            "std": 0.0026
+          },
+          "cfr": {
+            "mean": 0.0765,
+            "std": 0.0096
+          },
+          "ctfg": {
+            "mean": 0.0741,
+            "std": 0.0048
+          },
+          "fped": {
+            "mean": 1.9903,
+            "std": 0.2875
+          },
+          "fned": {
+            "mean": 1.0227,
+            "std": 0.1269
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8577,
+            "std": 0.0076
+          },
+          "auc_roc": {
+            "mean": 0.9333,
+            "std": 0.0018
+          },
+          "cfr": {
+            "mean": 0.0474,
+            "std": 0.0085
+          },
+          "ctfg": {
+            "mean": 0.0465,
+            "std": 0.0035
+          },
+          "fped": {
+            "mean": 0.5467,
+            "std": 0.1151
+          },
+          "fned": {
+            "mean": 0.8466,
+            "std": 0.1008
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.885,
+            "std": 0.0134
+          },
+          "auc_roc": {
+            "mean": 0.9633,
+            "std": 0.0055
+          },
+          "cfr": {
+            "mean": 0.0883,
+            "std": 0.0043
+          },
+          "ctfg": {
+            "mean": 0.0853,
+            "std": 0.0074
+          },
+          "fped": {
+            "mean": 1.2238,
+            "std": 0.1328
+          },
+          "fned": {
+            "mean": 0.3648,
+            "std": 0.0967
+          },
+          "n_seeds": 3
+        }
+      }
+    },
+    "Davani": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7876,
+            "std": 0.0018
+          },
+          "auc_roc": {
+            "mean": 0.8789,
+            "std": 0.0016
+          },
+          "cfr": {
+            "mean": 0.0261,
+            "std": 0.0009
+          },
+          "ctfg": {
+            "mean": 0.0185,
+            "std": 0.001
+          },
+          "fped": {
+            "mean": 2.6763,
+            "std": 0.0991
+          },
+          "fned": {
+            "mean": 1.6193,
+            "std": 0.0502
+          },
+          "per_group_f1_std": {
+            "mean": 0.1271,
+            "std": 0.0042
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8275,
+            "std": 0.0037
+          },
+          "auc_roc": {
+            "mean": 0.9115,
+            "std": 0.0016
+          },
+          "cfr": {
+            "mean": 0.0262,
+            "std": 0.0026
+          },
+          "ctfg": {
+            "mean": 0.0223,
+            "std": 0.0003
+          },
+          "fped": {
+            "mean": 0.8109,
+            "std": 0.1176
+          },
+          "fned": {
+            "mean": 0.6713,
+            "std": 0.0769
+          },
+          "per_group_f1_std": {
+            "mean": 0.048,
+            "std": 0.0047
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9036,
+            "std": 0.002
+          },
+          "auc_roc": {
+            "mean": 0.9565,
+            "std": 0.0001
+          },
+          "cfr": {
+            "mean": 0.0283,
+            "std": 0.0043
+          },
+          "ctfg": {
+            "mean": 0.0251,
+            "std": 0.0016
+          },
+          "fped": {
+            "mean": 1.3299,
+            "std": 0.0873
+          },
+          "fned": {
+            "mean": 0.3375,
+            "std": 0.0457
+          },
+          "per_group_f1_std": {
+            "mean": 0.0645,
+            "std": 0.0019
+          },
+          "n_seeds": 3
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7994,
+            "std": 0.0003
+          },
+          "auc_roc": {
+            "mean": 0.8853,
+            "std": 0.0003
+          },
+          "cfr": {
+            "mean": 0.0246,
+            "std": 0.0025
+          },
+          "ctfg": {
+            "mean": 0.0186,
+            "std": 0.0003
+          },
+          "fped": {
+            "mean": 2.5598,
+            "std": 0.0531
+          },
+          "fned": {
+            "mean": 1.4084,
+            "std": 0.0442
+          },
+          "per_group_f1_std": {
+            "mean": 0.1309,
+            "std": 0.0024
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8515,
+            "std": 0.0023
+          },
+          "auc_roc": {
+            "mean": 0.9283,
+            "std": 0.0008
+          },
+          "cfr": {
+            "mean": 0.0285,
+            "std": 0.001
+          },
+          "ctfg": {
+            "mean": 0.0228,
+            "std": 0.0008
+          },
+          "fped": {
+            "mean": 0.7292,
+            "std": 0.0461
+          },
+          "fned": {
+            "mean": 0.7989,
+            "std": 0.1059
+          },
+          "per_group_f1_std": {
+            "mean": 0.0531,
+            "std": 0.0038
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9053,
+            "std": 0.0083
+          },
+          "auc_roc": {
+            "mean": 0.9686,
+            "std": 0.002
+          },
+          "cfr": {
+            "mean": 0.0187,
+            "std": 0.0071
+          },
+          "ctfg": {
+            "mean": 0.0208,
+            "std": 0.0023
+          },
+          "fped": {
+            "mean": 1.3252,
+            "std": 0.0778
+          },
+          "fned": {
+            "mean": 0.3057,
+            "std": 0.0163
+          },
+          "per_group_f1_std": {
+            "mean": 0.0727,
+            "std": 0.0021
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.8025,
+            "std": 0.0022
+          },
+          "auc_roc": {
+            "mean": 0.8875,
+            "std": 0.0008
+          },
+          "cfr": {
+            "mean": 0.0242,
+            "std": 0.0018
+          },
+          "ctfg": {
+            "mean": 0.019,
+            "std": 0.0013
+          },
+          "fped": {
+            "mean": 2.2674,
+            "std": 0.3508
+          },
+          "fned": {
+            "mean": 1.3025,
+            "std": 0.1207
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8591,
+            "std": 0.0034
+          },
+          "auc_roc": {
+            "mean": 0.9337,
+            "std": 0.002
+          },
+          "cfr": {
+            "mean": 0.0175,
+            "std": 0.0032
+          },
+          "ctfg": {
+            "mean": 0.0176,
+            "std": 0.0016
+          },
+          "fped": {
+            "mean": 0.5493,
+            "std": 0.0702
+          },
+          "fned": {
+            "mean": 0.8777,
+            "std": 0.0995
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9329,
+            "std": 0.006
+          },
+          "auc_roc": {
+            "mean": 0.9807,
+            "std": 0.0007
+          },
+          "cfr": {
+            "mean": 0.0307,
+            "std": 0.005
+          },
+          "ctfg": {
+            "mean": 0.0283,
+            "std": 0.0017
+          },
+          "fped": {
+            "mean": 1.0562,
+            "std": 0.1498
+          },
+          "fned": {
+            "mean": 0.322,
+            "std": 0.0502
+          },
+          "n_seeds": 3
+        }
+      }
+    },
+    "Ramponi": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7829,
+            "std": 0.0026
+          },
+          "auc_roc": {
+            "mean": 0.8778,
+            "std": 0.0004
+          },
+          "cfr": {
+            "mean": 0.0671,
+            "std": 0.002
+          },
+          "ctfg": {
+            "mean": 0.0576,
+            "std": 0.0027
+          },
+          "fped": {
+            "mean": 2.5796,
+            "std": 0.0804
+          },
+          "fned": {
+            "mean": 1.5851,
+            "std": 0.0178
+          },
+          "per_group_f1_std": {
+            "mean": 0.1223,
+            "std": 0.0027
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8381,
+            "std": 0.0016
+          },
+          "auc_roc": {
+            "mean": 0.9152,
+            "std": 0.0014
+          },
+          "cfr": {
+            "mean": 0.0738,
+            "std": 0.0033
+          },
+          "ctfg": {
+            "mean": 0.0723,
+            "std": 0.001
+          },
+          "fped": {
+            "mean": 0.8333,
+            "std": 0.0584
+          },
+          "fned": {
+            "mean": 0.8299,
+            "std": 0.073
+          },
+          "per_group_f1_std": {
+            "mean": 0.0597,
+            "std": 0.0027
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.8891,
+            "std": 0.0058
+          },
+          "auc_roc": {
+            "mean": 0.9588,
+            "std": 0.0015
+          },
+          "cfr": {
+            "mean": 0.0839,
+            "std": 0.004
+          },
+          "ctfg": {
+            "mean": 0.0807,
+            "std": 0.0076
+          },
+          "fped": {
+            "mean": 1.3857,
+            "std": 0.0217
+          },
+          "fned": {
+            "mean": 0.523,
+            "std": 0.0315
+          },
+          "per_group_f1_std": {
+            "mean": 0.0712,
+            "std": 0.0077
+          },
+          "n_seeds": 3
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7971,
+            "std": 0.004
+          },
+          "auc_roc": {
+            "mean": 0.8874,
+            "std": 0.0022
+          },
+          "cfr": {
+            "mean": 0.0628,
+            "std": 0.0042
+          },
+          "ctfg": {
+            "mean": 0.0524,
+            "std": 0.0016
+          },
+          "fped": {
+            "mean": 2.4553,
+            "std": 0.0588
+          },
+          "fned": {
+            "mean": 1.2572,
+            "std": 0.0593
+          },
+          "per_group_f1_std": {
+            "mean": 0.1207,
+            "std": 0.0033
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8492,
+            "std": 0.0027
+          },
+          "auc_roc": {
+            "mean": 0.9263,
+            "std": 0.0005
+          },
+          "cfr": {
+            "mean": 0.0522,
+            "std": 0.0011
+          },
+          "ctfg": {
+            "mean": 0.052,
+            "std": 0.0023
+          },
+          "fped": {
+            "mean": 0.658,
+            "std": 0.0477
+          },
+          "fned": {
+            "mean": 0.8545,
+            "std": 0.0605
+          },
+          "per_group_f1_std": {
+            "mean": 0.0466,
+            "std": 0.0013
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9193,
+            "std": 0.003
+          },
+          "auc_roc": {
+            "mean": 0.9676,
+            "std": 0.003
+          },
+          "cfr": {
+            "mean": 0.0461,
+            "std": 0.0035
+          },
+          "ctfg": {
+            "mean": 0.053,
+            "std": 0.0047
+          },
+          "fped": {
+            "mean": 1.5001,
+            "std": 0.0929
+          },
+          "fned": {
+            "mean": 0.2654,
+            "std": 0.055
+          },
+          "per_group_f1_std": {
+            "mean": 0.091,
+            "std": 0.0144
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.8013,
+            "std": 0.0035
+          },
+          "auc_roc": {
+            "mean": 0.8843,
+            "std": 0.0035
+          },
+          "cfr": {
+            "mean": 0.0758,
+            "std": 0.0027
+          },
+          "ctfg": {
+            "mean": 0.0699,
+            "std": 0.0053
+          },
+          "fped": {
+            "mean": 2.2375,
+            "std": 0.3096
+          },
+          "fned": {
+            "mean": 1.0471,
+            "std": 0.105
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8575,
+            "std": 0.0019
+          },
+          "auc_roc": {
+            "mean": 0.9249,
+            "std": 0.004
+          },
+          "cfr": {
+            "mean": 0.0433,
+            "std": 0.0063
+          },
+          "ctfg": {
+            "mean": 0.0456,
+            "std": 0.0047
+          },
+          "fped": {
+            "mean": 0.5523,
+            "std": 0.0922
+          },
+          "fned": {
+            "mean": 0.9553,
+            "std": 0.0557
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9199,
+            "std": 0.0117
+          },
+          "auc_roc": {
+            "mean": 0.9681,
+            "std": 0.0036
+          },
+          "cfr": {
+            "mean": 0.0494,
+            "std": 0.0099
+          },
+          "ctfg": {
+            "mean": 0.055,
+            "std": 0.0095
+          },
+          "fped": {
+            "mean": 1.296,
+            "std": 0.1709
+          },
+          "fned": {
+            "mean": 0.2565,
+            "std": 0.0407
+          },
+          "n_seeds": 3
+        }
+      }
+    },
+    "Ours": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7722,
+            "std": 0.0025
+          },
+          "auc_roc": {
+            "mean": 0.8648,
+            "std": 0.0007
+          },
+          "cfr": {
+            "mean": 0.051,
+            "std": 0.0044
+          },
+          "ctfg": {
+            "mean": 0.035,
+            "std": 0.0019
+          },
+          "fped": {
+            "mean": 2.4149,
+            "std": 0.0271
+          },
+          "fned": {
+            "mean": 1.1796,
+            "std": 0.0485
+          },
+          "per_group_f1_std": {
+            "mean": 0.1071,
+            "std": 0.0036
+          },
+          "n_seeds": 6
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8292,
+            "std": 0.0044
+          },
+          "auc_roc": {
+            "mean": 0.9108,
+            "std": 0.0011
+          },
+          "cfr": {
+            "mean": 0.0499,
+            "std": 0.0043
+          },
+          "ctfg": {
+            "mean": 0.044,
+            "std": 0.0009
+          },
+          "fped": {
+            "mean": 0.7935,
+            "std": 0.0751
+          },
+          "fned": {
+            "mean": 0.7395,
+            "std": 0.0594
+          },
+          "per_group_f1_std": {
+            "mean": 0.0524,
+            "std": 0.002
+          },
+          "n_seeds": 6
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9078,
+            "std": 0.0031
+          },
+          "auc_roc": {
+            "mean": 0.9581,
+            "std": 0.0021
+          },
+          "cfr": {
+            "mean": 0.0441,
+            "std": 0.0044
+          },
+          "ctfg": {
+            "mean": 0.0399,
+            "std": 0.0031
+          },
+          "fped": {
+            "mean": 1.3325,
+            "std": 0.0559
+          },
+          "fned": {
+            "mean": 0.2754,
+            "std": 0.0074
+          },
+          "per_group_f1_std": {
+            "mean": 0.0676,
+            "std": 0.0031
+          },
+          "n_seeds": 6
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7772,
+            "std": 0.0015
+          },
+          "auc_roc": {
+            "mean": 0.8741,
+            "std": 0.0014
+          },
+          "cfr": {
+            "mean": 0.0485,
+            "std": 0.0009
+          },
+          "ctfg": {
+            "mean": 0.0306,
+            "std": 0.0005
+          },
+          "fped": {
+            "mean": 2.3775,
+            "std": 0.0401
+          },
+          "fned": {
+            "mean": 0.998,
+            "std": 0.0375
+          },
+          "per_group_f1_std": {
+            "mean": 0.1149,
+            "std": 0.0023
+          },
+          "n_seeds": 4
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8405,
+            "std": 0.0057
+          },
+          "auc_roc": {
+            "mean": 0.9229,
+            "std": 0.0018
+          },
+          "cfr": {
+            "mean": 0.0363,
+            "std": 0.003
+          },
+          "ctfg": {
+            "mean": 0.0326,
+            "std": 0.0013
+          },
+          "fped": {
+            "mean": 0.6463,
+            "std": 0.0679
+          },
+          "fned": {
+            "mean": 0.9314,
+            "std": 0.0334
+          },
+          "per_group_f1_std": {
+            "mean": 0.0563,
+            "std": 0.0034
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9188,
+            "std": 0.0055
+          },
+          "auc_roc": {
+            "mean": 0.9702,
+            "std": 0.0069
+          },
+          "cfr": {
+            "mean": 0.0275,
+            "std": 0.003
+          },
+          "ctfg": {
+            "mean": 0.0271,
+            "std": 0.0023
+          },
+          "fped": {
+            "mean": 1.33,
+            "std": 0.0206
+          },
+          "fned": {
+            "mean": 0.1745,
+            "std": 0.0069
+          },
+          "per_group_f1_std": {
+            "mean": 0.072,
+            "std": 0.0014
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.781,
+            "std": 0.0003
+          },
+          "auc_roc": {
+            "mean": 0.868,
+            "std": 0.003
+          },
+          "cfr": {
+            "mean": 0.0445,
+            "std": 0.0014
+          },
+          "ctfg": {
+            "mean": 0.0379,
+            "std": 0.001
+          },
+          "fped": {
+            "mean": 2.3299,
+            "std": 0.1751
+          },
+          "fned": {
+            "mean": 0.8575,
+            "std": 0.0836
+          },
+          "per_group_f1_std": {
+            "mean": 0.1202,
+            "std": 0.0014
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8508,
+            "std": 0.003
+          },
+          "auc_roc": {
+            "mean": 0.9272,
+            "std": 0.0017
+          },
+          "cfr": {
+            "mean": 0.0315,
+            "std": 0.0036
+          },
+          "ctfg": {
+            "mean": 0.028,
+            "std": 0.0011
+          },
+          "fped": {
+            "mean": 0.6247,
+            "std": 0.0876
+          },
+          "fned": {
+            "mean": 0.8309,
+            "std": 0.1549
+          },
+          "per_group_f1_std": {
+            "mean": 0.05,
+            "std": 0.0015
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9236,
+            "std": 0.0087
+          },
+          "auc_roc": {
+            "mean": 0.982,
+            "std": 0.0021
+          },
+          "cfr": {
+            "mean": 0.0235,
+            "std": 0.0046
+          },
+          "ctfg": {
+            "mean": 0.0271,
+            "std": 0.0036
+          },
+          "fped": {
+            "mean": 1.2763,
+            "std": 0.1134
+          },
+          "fned": {
+            "mean": 0.1596,
+            "std": 0.0472
+          },
+          "per_group_f1_std": {
+            "mean": 0.0734,
+            "std": 0.0024
+          },
+          "n_seeds": 3
+        }
+      }
+    }
+  },
+  "llm": {
+    "Vanilla": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7844,
+            "std": 0.0041
+          },
+          "auc_roc": {
+            "mean": 0.8783,
+            "std": 0.0024
+          },
+          "cfr": {
+            "mean": 0.1599,
+            "std": 0.0087
+          },
+          "ctfg": {
+            "mean": 0.1326,
+            "std": 0.0064
+          },
+          "fped": {
+            "mean": 2.4849,
+            "std": 0.1646
+          },
+          "fned": {
+            "mean": 1.3751,
+            "std": 0.1928
+          },
+          "per_group_f1_std": {
+            "mean": 0.1208,
+            "std": 0.0105
+          },
+          "n_seeds": 7
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8326,
+            "std": 0.0038
+          },
+          "auc_roc": {
+            "mean": 0.9128,
+            "std": 0.0025
+          },
+          "cfr": {
+            "mean": 0.0474,
+            "std": 0.0063
+          },
+          "ctfg": {
+            "mean": 0.0445,
+            "std": 0.0011
+          },
+          "fped": {
+            "mean": 0.6419,
+            "std": 0.1033
+          },
+          "fned": {
+            "mean": 0.7924,
+            "std": 0.096
+          },
+          "per_group_f1_std": {
+            "mean": 0.0574,
+            "std": 0.0061
+          },
+          "n_seeds": 6
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.906,
+            "std": 0.0086
+          },
+          "auc_roc": {
+            "mean": 0.9606,
+            "std": 0.0039
+          },
+          "cfr": {
+            "mean": 0.0512,
+            "std": 0.011
+          },
+          "ctfg": {
+            "mean": 0.0524,
+            "std": 0.0086
+          },
+          "fped": {
+            "mean": 1.4449,
+            "std": 0.1257
+          },
+          "fned": {
+            "mean": 0.3544,
+            "std": 0.1329
+          },
+          "per_group_f1_std": {
+            "mean": 0.074,
+            "std": 0.0035
+          },
+          "n_seeds": 6
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7984,
+            "std": 0.0066
+          },
+          "auc_roc": {
+            "mean": 0.8891,
+            "std": 0.0026
+          },
+          "cfr": {
+            "mean": 0.159,
+            "std": 0.002
+          },
+          "ctfg": {
+            "mean": 0.1356,
+            "std": 0.0031
+          },
+          "fped": {
+            "mean": 2.5598,
+            "std": 0.0628
+          },
+          "fned": {
+            "mean": 1.0899,
+            "std": 0.1144
+          },
+          "per_group_f1_std": {
+            "mean": 0.1342,
+            "std": 0.0023
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8476,
+            "std": 0.0007
+          },
+          "auc_roc": {
+            "mean": 0.9266,
+            "std": 0.0008
+          },
+          "cfr": {
+            "mean": 0.0502,
+            "std": 0.0068
+          },
+          "ctfg": {
+            "mean": 0.0502,
+            "std": 0.0012
+          },
+          "fped": {
+            "mean": 0.6439,
+            "std": 0.1074
+          },
+          "fned": {
+            "mean": 0.9031,
+            "std": 0.1698
+          },
+          "per_group_f1_std": {
+            "mean": 0.0539,
+            "std": 0.0045
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9169,
+            "std": 0.0014
+          },
+          "auc_roc": {
+            "mean": 0.9672,
+            "std": 0.0068
+          },
+          "cfr": {
+            "mean": 0.0448,
+            "std": 0.0098
+          },
+          "ctfg": {
+            "mean": 0.0458,
+            "std": 0.004
+          },
+          "fped": {
+            "mean": 1.404,
+            "std": 0.0513
+          },
+          "fned": {
+            "mean": 0.3423,
+            "std": 0.1112
+          },
+          "per_group_f1_std": {
+            "mean": 0.0833,
+            "std": 0.0025
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7962,
+            "std": 0.008
+          },
+          "auc_roc": {
+            "mean": 0.8837,
+            "std": 0.0018
+          },
+          "cfr": {
+            "mean": 0.1582,
+            "std": 0.0029
+          },
+          "ctfg": {
+            "mean": 0.1439,
+            "std": 0.0103
+          },
+          "fped": {
+            "mean": 2.3583,
+            "std": 0.3949
+          },
+          "fned": {
+            "mean": 1.08,
+            "std": 0.0917
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8582,
+            "std": 0.0063
+          },
+          "auc_roc": {
+            "mean": 0.9306,
+            "std": 0.0028
+          },
+          "cfr": {
+            "mean": 0.0356,
+            "std": 0.0065
+          },
+          "ctfg": {
+            "mean": 0.0397,
+            "std": 0.0037
+          },
+          "fped": {
+            "mean": 0.5733,
+            "std": 0.1218
+          },
+          "fned": {
+            "mean": 0.8765,
+            "std": 0.0185
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9352,
+            "std": 0.0019
+          },
+          "auc_roc": {
+            "mean": 0.9873,
+            "std": 0.0022
+          },
+          "cfr": {
+            "mean": 0.0376,
+            "std": 0.001
+          },
+          "ctfg": {
+            "mean": 0.0385,
+            "std": 0.0022
+          },
+          "fped": {
+            "mean": 1.1211,
+            "std": 0.1447
+          },
+          "fned": {
+            "mean": 0.1941,
+            "std": 0.0643
+          },
+          "n_seeds": 3
+        }
+      }
+    },
+    "EAR": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7861,
+            "std": 0.0077
+          },
+          "auc_roc": {
+            "mean": 0.8758,
+            "std": 0.0052
+          },
+          "cfr": {
+            "mean": 0.1596,
+            "std": 0.0082
+          },
+          "ctfg": {
+            "mean": 0.137,
+            "std": 0.01
+          },
+          "fped": {
+            "mean": 2.4143,
+            "std": 0.1814
+          },
+          "fned": {
+            "mean": 1.3097,
+            "std": 0.2129
+          },
+          "per_group_f1_std": {
+            "mean": 0.1163,
+            "std": 0.0059
+          },
+          "n_seeds": 6
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8334,
+            "std": 0.0034
+          },
+          "auc_roc": {
+            "mean": 0.9132,
+            "std": 0.0017
+          },
+          "cfr": {
+            "mean": 0.0468,
+            "std": 0.0051
+          },
+          "ctfg": {
+            "mean": 0.0445,
+            "std": 0.0031
+          },
+          "fped": {
+            "mean": 0.6405,
+            "std": 0.0948
+          },
+          "fned": {
+            "mean": 0.8299,
+            "std": 0.0683
+          },
+          "per_group_f1_std": {
+            "mean": 0.0538,
+            "std": 0.0037
+          },
+          "n_seeds": 6
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9006,
+            "std": 0.0084
+          },
+          "auc_roc": {
+            "mean": 0.9602,
+            "std": 0.0048
+          },
+          "cfr": {
+            "mean": 0.0582,
+            "std": 0.0101
+          },
+          "ctfg": {
+            "mean": 0.0576,
+            "std": 0.0073
+          },
+          "fped": {
+            "mean": 1.4921,
+            "std": 0.0838
+          },
+          "fned": {
+            "mean": 0.3732,
+            "std": 0.1151
+          },
+          "per_group_f1_std": {
+            "mean": 0.072,
+            "std": 0.0026
+          },
+          "n_seeds": 6
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7985,
+            "std": 0.0031
+          },
+          "auc_roc": {
+            "mean": 0.8881,
+            "std": 0.001
+          },
+          "cfr": {
+            "mean": 0.1566,
+            "std": 0.002
+          },
+          "ctfg": {
+            "mean": 0.135,
+            "std": 0.003
+          },
+          "fped": {
+            "mean": 2.438,
+            "std": 0.0709
+          },
+          "fned": {
+            "mean": 1.15,
+            "std": 0.0693
+          },
+          "per_group_f1_std": {
+            "mean": 0.1267,
+            "std": 0.0046
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8457,
+            "std": 0.0059
+          },
+          "auc_roc": {
+            "mean": 0.9258,
+            "std": 0.0015
+          },
+          "cfr": {
+            "mean": 0.0509,
+            "std": 0.0022
+          },
+          "ctfg": {
+            "mean": 0.0521,
+            "std": 0.0009
+          },
+          "fped": {
+            "mean": 0.5927,
+            "std": 0.0412
+          },
+          "fned": {
+            "mean": 0.9825,
+            "std": 0.1854
+          },
+          "per_group_f1_std": {
+            "mean": 0.0565,
+            "std": 0.007
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9063,
+            "std": 0.0094
+          },
+          "auc_roc": {
+            "mean": 0.9687,
+            "std": 0.0033
+          },
+          "cfr": {
+            "mean": 0.0387,
+            "std": 0.0108
+          },
+          "ctfg": {
+            "mean": 0.0427,
+            "std": 0.0074
+          },
+          "fped": {
+            "mean": 1.5166,
+            "std": 0.0311
+          },
+          "fned": {
+            "mean": 0.288,
+            "std": 0.1101
+          },
+          "per_group_f1_std": {
+            "mean": 0.0824,
+            "std": 0.0121
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.795,
+            "std": 0.0034
+          },
+          "auc_roc": {
+            "mean": 0.8839,
+            "std": 0.0026
+          },
+          "cfr": {
+            "mean": 0.1586,
+            "std": 0.0049
+          },
+          "ctfg": {
+            "mean": 0.1438,
+            "std": 0.0097
+          },
+          "fped": {
+            "mean": 2.0931,
+            "std": 0.3879
+          },
+          "fned": {
+            "mean": 1.1465,
+            "std": 0.1421
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8505,
+            "std": 0.0028
+          },
+          "auc_roc": {
+            "mean": 0.9292,
+            "std": 0.0018
+          },
+          "cfr": {
+            "mean": 0.0395,
+            "std": 0.0035
+          },
+          "ctfg": {
+            "mean": 0.0369,
+            "std": 0.0027
+          },
+          "fped": {
+            "mean": 0.5155,
+            "std": 0.0497
+          },
+          "fned": {
+            "mean": 0.874,
+            "std": 0.0929
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9242,
+            "std": 0.0134
+          },
+          "auc_roc": {
+            "mean": 0.983,
+            "std": 0.0039
+          },
+          "cfr": {
+            "mean": 0.0492,
+            "std": 0.0135
+          },
+          "ctfg": {
+            "mean": 0.0458,
+            "std": 0.0082
+          },
+          "fped": {
+            "mean": 1.1565,
+            "std": 0.1865
+          },
+          "fned": {
+            "mean": 0.2192,
+            "std": 0.0495
+          },
+          "n_seeds": 3
+        }
+      }
+    },
+    "GetFair": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7876,
+            "std": 0.0043
+          },
+          "auc_roc": {
+            "mean": 0.8796,
+            "std": 0.0026
+          },
+          "cfr": {
+            "mean": 0.162,
+            "std": 0.006
+          },
+          "ctfg": {
+            "mean": 0.1365,
+            "std": 0.0073
+          },
+          "fped": {
+            "mean": 2.5464,
+            "std": 0.11
+          },
+          "fned": {
+            "mean": 1.405,
+            "std": 0.192
+          },
+          "per_group_f1_std": {
+            "mean": 0.1157,
+            "std": 0.0037
+          },
+          "n_seeds": 4
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8365,
+            "std": 0.0041
+          },
+          "auc_roc": {
+            "mean": 0.9143,
+            "std": 0.0013
+          },
+          "cfr": {
+            "mean": 0.0491,
+            "std": 0.0031
+          },
+          "ctfg": {
+            "mean": 0.0458,
+            "std": 0.0002
+          },
+          "fped": {
+            "mean": 0.7606,
+            "std": 0.0783
+          },
+          "fned": {
+            "mean": 0.7689,
+            "std": 0.1197
+          },
+          "per_group_f1_std": {
+            "mean": 0.0559,
+            "std": 0.0044
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.8867,
+            "std": 0.0074
+          },
+          "auc_roc": {
+            "mean": 0.9569,
+            "std": 0.0014
+          },
+          "cfr": {
+            "mean": 0.0586,
+            "std": 0.0084
+          },
+          "ctfg": {
+            "mean": 0.0568,
+            "std": 0.0024
+          },
+          "fped": {
+            "mean": 1.4963,
+            "std": 0.0279
+          },
+          "fned": {
+            "mean": 0.4869,
+            "std": 0.0649
+          },
+          "per_group_f1_std": {
+            "mean": 0.0707,
+            "std": 0.0036
+          },
+          "n_seeds": 3
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7989,
+            "std": 0.0066
+          },
+          "auc_roc": {
+            "mean": 0.8884,
+            "std": 0.0019
+          },
+          "cfr": {
+            "mean": 0.1566,
+            "std": 0.0024
+          },
+          "ctfg": {
+            "mean": 0.1376,
+            "std": 0.0011
+          },
+          "fped": {
+            "mean": 2.2771,
+            "std": 0.2867
+          },
+          "fned": {
+            "mean": 1.3162,
+            "std": 0.0857
+          },
+          "per_group_f1_std": {
+            "mean": 0.1207,
+            "std": 0.0041
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8454,
+            "std": 0.0055
+          },
+          "auc_roc": {
+            "mean": 0.9265,
+            "std": 0.0018
+          },
+          "cfr": {
+            "mean": 0.0577,
+            "std": 0.0089
+          },
+          "ctfg": {
+            "mean": 0.0536,
+            "std": 0.0011
+          },
+          "fped": {
+            "mean": 0.5277,
+            "std": 0.1749
+          },
+          "fned": {
+            "mean": 0.8907,
+            "std": 0.0667
+          },
+          "per_group_f1_std": {
+            "mean": 0.0486,
+            "std": 0.005
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9158,
+            "std": 0.0033
+          },
+          "auc_roc": {
+            "mean": 0.9712,
+            "std": 0.0019
+          },
+          "cfr": {
+            "mean": 0.0373,
+            "std": 0.006
+          },
+          "ctfg": {
+            "mean": 0.046,
+            "std": 0.0024
+          },
+          "fped": {
+            "mean": 1.4183,
+            "std": 0.1143
+          },
+          "fned": {
+            "mean": 0.2764,
+            "std": 0.0967
+          },
+          "per_group_f1_std": {
+            "mean": 0.0875,
+            "std": 0.0105
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7985,
+            "std": 0.0071
+          },
+          "auc_roc": {
+            "mean": 0.8826,
+            "std": 0.0014
+          },
+          "cfr": {
+            "mean": 0.1562,
+            "std": 0.0081
+          },
+          "ctfg": {
+            "mean": 0.143,
+            "std": 0.013
+          },
+          "fped": {
+            "mean": 2.3442,
+            "std": 0.2618
+          },
+          "fned": {
+            "mean": 1.2108,
+            "std": 0.2294
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8565,
+            "std": 0.0055
+          },
+          "auc_roc": {
+            "mean": 0.9306,
+            "std": 0.0017
+          },
+          "cfr": {
+            "mean": 0.0313,
+            "std": 0.0042
+          },
+          "ctfg": {
+            "mean": 0.038,
+            "std": 0.0014
+          },
+          "fped": {
+            "mean": 0.6083,
+            "std": 0.0914
+          },
+          "fned": {
+            "mean": 0.9326,
+            "std": 0.1448
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9308,
+            "std": 0.0005
+          },
+          "auc_roc": {
+            "mean": 0.9864,
+            "std": 0.0014
+          },
+          "cfr": {
+            "mean": 0.0438,
+            "std": 0.005
+          },
+          "ctfg": {
+            "mean": 0.0449,
+            "std": 0.0054
+          },
+          "fped": {
+            "mean": 1.1278,
+            "std": 0.1609
+          },
+          "fned": {
+            "mean": 0.1806,
+            "std": 0.0567
+          },
+          "n_seeds": 3
+        }
+      }
+    },
+    "CCDF": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7912,
+            "std": 0.0023
+          },
+          "auc_roc": {
+            "mean": 0.8779,
+            "std": 0.0012
+          },
+          "cfr": {
+            "mean": 0.1682,
+            "std": 0.0027
+          },
+          "ctfg": {
+            "mean": 0.1433,
+            "std": 0.0029
+          },
+          "fped": {
+            "mean": 2.3721,
+            "std": 0.1007
+          },
+          "fned": {
+            "mean": 1.3095,
+            "std": 0.0323
+          },
+          "per_group_f1_std": {
+            "mean": 0.1105,
+            "std": 0.0082
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.823,
+            "std": 0.0049
+          },
+          "auc_roc": {
+            "mean": 0.9101,
+            "std": 0.0022
+          },
+          "cfr": {
+            "mean": 0.0438,
+            "std": 0.0032
+          },
+          "ctfg": {
+            "mean": 0.0459,
+            "std": 0.0003
+          },
+          "fped": {
+            "mean": 0.755,
+            "std": 0.0126
+          },
+          "fned": {
+            "mean": 0.7577,
+            "std": 0.1228
+          },
+          "per_group_f1_std": {
+            "mean": 0.0552,
+            "std": 0.0061
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.8184,
+            "std": 0.0115
+          },
+          "auc_roc": {
+            "mean": 0.9419,
+            "std": 0.0027
+          },
+          "cfr": {
+            "mean": 0.1186,
+            "std": 0.0174
+          },
+          "ctfg": {
+            "mean": 0.1017,
+            "std": 0.0123
+          },
+          "fped": {
+            "mean": 1.1106,
+            "std": 0.072
+          },
+          "fned": {
+            "mean": 1.2181,
+            "std": 0.3952
+          },
+          "per_group_f1_std": {
+            "mean": 0.133,
+            "std": 0.0295
+          },
+          "n_seeds": 3
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7925,
+            "std": 0.005
+          },
+          "auc_roc": {
+            "mean": 0.8845,
+            "std": 0.0012
+          },
+          "cfr": {
+            "mean": 0.1635,
+            "std": 0.0018
+          },
+          "ctfg": {
+            "mean": 0.1381,
+            "std": 0.0017
+          },
+          "fped": {
+            "mean": 2.1114,
+            "std": 0.3942
+          },
+          "fned": {
+            "mean": 1.2006,
+            "std": 0.0481
+          },
+          "per_group_f1_std": {
+            "mean": 0.1047,
+            "std": 0.0226
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8425,
+            "std": 0.0077
+          },
+          "auc_roc": {
+            "mean": 0.9257,
+            "std": 0.0014
+          },
+          "cfr": {
+            "mean": 0.0545,
+            "std": 0.0046
+          },
+          "ctfg": {
+            "mean": 0.0554,
+            "std": 0.0033
+          },
+          "fped": {
+            "mean": 0.5636,
+            "std": 0.0472
+          },
+          "fned": {
+            "mean": 0.7746,
+            "std": 0.0571
+          },
+          "per_group_f1_std": {
+            "mean": 0.0418,
+            "std": 0.0009
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.8521,
+            "std": 0.0124
+          },
+          "auc_roc": {
+            "mean": 0.9476,
+            "std": 0.0131
+          },
+          "cfr": {
+            "mean": 0.0904,
+            "std": 0.0171
+          },
+          "ctfg": {
+            "mean": 0.0889,
+            "std": 0.0109
+          },
+          "fped": {
+            "mean": 1.2227,
+            "std": 0.2897
+          },
+          "fned": {
+            "mean": 0.778,
+            "std": 0.1598
+          },
+          "per_group_f1_std": {
+            "mean": 0.1125,
+            "std": 0.0062
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.8022,
+            "std": 0.0047
+          },
+          "auc_roc": {
+            "mean": 0.8796,
+            "std": 0.0026
+          },
+          "cfr": {
+            "mean": 0.1604,
+            "std": 0.0068
+          },
+          "ctfg": {
+            "mean": 0.1511,
+            "std": 0.0023
+          },
+          "fped": {
+            "mean": 1.9903,
+            "std": 0.2875
+          },
+          "fned": {
+            "mean": 1.0227,
+            "std": 0.1269
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8577,
+            "std": 0.0076
+          },
+          "auc_roc": {
+            "mean": 0.9333,
+            "std": 0.0018
+          },
+          "cfr": {
+            "mean": 0.0377,
+            "std": 0.0087
+          },
+          "ctfg": {
+            "mean": 0.0409,
+            "std": 0.0046
+          },
+          "fped": {
+            "mean": 0.5467,
+            "std": 0.1151
+          },
+          "fned": {
+            "mean": 0.8466,
+            "std": 0.1008
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.885,
+            "std": 0.0134
+          },
+          "auc_roc": {
+            "mean": 0.9633,
+            "std": 0.0055
+          },
+          "cfr": {
+            "mean": 0.0719,
+            "std": 0.0031
+          },
+          "ctfg": {
+            "mean": 0.0708,
+            "std": 0.0096
+          },
+          "fped": {
+            "mean": 1.2238,
+            "std": 0.1328
+          },
+          "fned": {
+            "mean": 0.3648,
+            "std": 0.0967
+          },
+          "n_seeds": 3
+        }
+      }
+    },
+    "Davani": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7876,
+            "std": 0.0018
+          },
+          "auc_roc": {
+            "mean": 0.8789,
+            "std": 0.0016
+          },
+          "cfr": {
+            "mean": 0.1419,
+            "std": 0.0044
+          },
+          "ctfg": {
+            "mean": 0.1079,
+            "std": 0.0034
+          },
+          "fped": {
+            "mean": 2.6763,
+            "std": 0.0991
+          },
+          "fned": {
+            "mean": 1.6193,
+            "std": 0.0502
+          },
+          "per_group_f1_std": {
+            "mean": 0.1271,
+            "std": 0.0042
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8275,
+            "std": 0.0037
+          },
+          "auc_roc": {
+            "mean": 0.9115,
+            "std": 0.0016
+          },
+          "cfr": {
+            "mean": 0.0314,
+            "std": 0.0027
+          },
+          "ctfg": {
+            "mean": 0.027,
+            "std": 0.0006
+          },
+          "fped": {
+            "mean": 0.8109,
+            "std": 0.1176
+          },
+          "fned": {
+            "mean": 0.6713,
+            "std": 0.0769
+          },
+          "per_group_f1_std": {
+            "mean": 0.048,
+            "std": 0.0047
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9036,
+            "std": 0.002
+          },
+          "auc_roc": {
+            "mean": 0.9565,
+            "std": 0.0001
+          },
+          "cfr": {
+            "mean": 0.0235,
+            "std": 0.0022
+          },
+          "ctfg": {
+            "mean": 0.029,
+            "std": 0.0015
+          },
+          "fped": {
+            "mean": 1.3299,
+            "std": 0.0873
+          },
+          "fned": {
+            "mean": 0.3375,
+            "std": 0.0457
+          },
+          "per_group_f1_std": {
+            "mean": 0.0645,
+            "std": 0.0019
+          },
+          "n_seeds": 3
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7994,
+            "std": 0.0003
+          },
+          "auc_roc": {
+            "mean": 0.8853,
+            "std": 0.0003
+          },
+          "cfr": {
+            "mean": 0.1311,
+            "std": 0.0025
+          },
+          "ctfg": {
+            "mean": 0.1039,
+            "std": 0.0021
+          },
+          "fped": {
+            "mean": 2.5598,
+            "std": 0.0531
+          },
+          "fned": {
+            "mean": 1.4084,
+            "std": 0.0442
+          },
+          "per_group_f1_std": {
+            "mean": 0.1309,
+            "std": 0.0024
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8515,
+            "std": 0.0023
+          },
+          "auc_roc": {
+            "mean": 0.9283,
+            "std": 0.0008
+          },
+          "cfr": {
+            "mean": 0.0345,
+            "std": 0.007
+          },
+          "ctfg": {
+            "mean": 0.0284,
+            "std": 0.0004
+          },
+          "fped": {
+            "mean": 0.7292,
+            "std": 0.0461
+          },
+          "fned": {
+            "mean": 0.7989,
+            "std": 0.1059
+          },
+          "per_group_f1_std": {
+            "mean": 0.0531,
+            "std": 0.0038
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9053,
+            "std": 0.0083
+          },
+          "auc_roc": {
+            "mean": 0.9686,
+            "std": 0.002
+          },
+          "cfr": {
+            "mean": 0.0185,
+            "std": 0.0041
+          },
+          "ctfg": {
+            "mean": 0.0233,
+            "std": 0.0005
+          },
+          "fped": {
+            "mean": 1.3252,
+            "std": 0.0778
+          },
+          "fned": {
+            "mean": 0.3057,
+            "std": 0.0163
+          },
+          "per_group_f1_std": {
+            "mean": 0.0727,
+            "std": 0.0021
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.8025,
+            "std": 0.0022
+          },
+          "auc_roc": {
+            "mean": 0.8875,
+            "std": 0.0008
+          },
+          "cfr": {
+            "mean": 0.1293,
+            "std": 0.0011
+          },
+          "ctfg": {
+            "mean": 0.11,
+            "std": 0.0034
+          },
+          "fped": {
+            "mean": 2.2674,
+            "std": 0.3508
+          },
+          "fned": {
+            "mean": 1.3025,
+            "std": 0.1207
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8591,
+            "std": 0.0034
+          },
+          "auc_roc": {
+            "mean": 0.9337,
+            "std": 0.002
+          },
+          "cfr": {
+            "mean": 0.0271,
+            "std": 0.0028
+          },
+          "ctfg": {
+            "mean": 0.0236,
+            "std": 0.0019
+          },
+          "fped": {
+            "mean": 0.5493,
+            "std": 0.0702
+          },
+          "fned": {
+            "mean": 0.8777,
+            "std": 0.0995
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9329,
+            "std": 0.006
+          },
+          "auc_roc": {
+            "mean": 0.9807,
+            "std": 0.0007
+          },
+          "cfr": {
+            "mean": 0.0199,
+            "std": 0.001
+          },
+          "ctfg": {
+            "mean": 0.0221,
+            "std": 0.0022
+          },
+          "fped": {
+            "mean": 1.0562,
+            "std": 0.1498
+          },
+          "fned": {
+            "mean": 0.322,
+            "std": 0.0502
+          },
+          "n_seeds": 3
+        }
+      }
+    },
+    "Ramponi": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7829,
+            "std": 0.0026
+          },
+          "auc_roc": {
+            "mean": 0.8778,
+            "std": 0.0004
+          },
+          "cfr": {
+            "mean": 0.1571,
+            "std": 0.0045
+          },
+          "ctfg": {
+            "mean": 0.1334,
+            "std": 0.0044
+          },
+          "fped": {
+            "mean": 2.5796,
+            "std": 0.0804
+          },
+          "fned": {
+            "mean": 1.5851,
+            "std": 0.0178
+          },
+          "per_group_f1_std": {
+            "mean": 0.1223,
+            "std": 0.0027
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8381,
+            "std": 0.0016
+          },
+          "auc_roc": {
+            "mean": 0.9152,
+            "std": 0.0014
+          },
+          "cfr": {
+            "mean": 0.0442,
+            "std": 0.0053
+          },
+          "ctfg": {
+            "mean": 0.047,
+            "std": 0.0015
+          },
+          "fped": {
+            "mean": 0.8333,
+            "std": 0.0584
+          },
+          "fned": {
+            "mean": 0.8299,
+            "std": 0.073
+          },
+          "per_group_f1_std": {
+            "mean": 0.0597,
+            "std": 0.0027
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.8891,
+            "std": 0.0058
+          },
+          "auc_roc": {
+            "mean": 0.9588,
+            "std": 0.0015
+          },
+          "cfr": {
+            "mean": 0.0582,
+            "std": 0.0094
+          },
+          "ctfg": {
+            "mean": 0.0563,
+            "std": 0.005
+          },
+          "fped": {
+            "mean": 1.3857,
+            "std": 0.0217
+          },
+          "fned": {
+            "mean": 0.523,
+            "std": 0.0315
+          },
+          "per_group_f1_std": {
+            "mean": 0.0712,
+            "std": 0.0077
+          },
+          "n_seeds": 3
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7971,
+            "std": 0.004
+          },
+          "auc_roc": {
+            "mean": 0.8874,
+            "std": 0.0022
+          },
+          "cfr": {
+            "mean": 0.1577,
+            "std": 0.0027
+          },
+          "ctfg": {
+            "mean": 0.137,
+            "std": 0.0039
+          },
+          "fped": {
+            "mean": 2.4553,
+            "std": 0.0588
+          },
+          "fned": {
+            "mean": 1.2572,
+            "std": 0.0593
+          },
+          "per_group_f1_std": {
+            "mean": 0.1207,
+            "std": 0.0033
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8492,
+            "std": 0.0027
+          },
+          "auc_roc": {
+            "mean": 0.9263,
+            "std": 0.0005
+          },
+          "cfr": {
+            "mean": 0.0516,
+            "std": 0.0013
+          },
+          "ctfg": {
+            "mean": 0.0511,
+            "std": 0.0014
+          },
+          "fped": {
+            "mean": 0.658,
+            "std": 0.0477
+          },
+          "fned": {
+            "mean": 0.8545,
+            "std": 0.0605
+          },
+          "per_group_f1_std": {
+            "mean": 0.0466,
+            "std": 0.0013
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9193,
+            "std": 0.003
+          },
+          "auc_roc": {
+            "mean": 0.9676,
+            "std": 0.003
+          },
+          "cfr": {
+            "mean": 0.0293,
+            "std": 0.0023
+          },
+          "ctfg": {
+            "mean": 0.0405,
+            "std": 0.0033
+          },
+          "fped": {
+            "mean": 1.5001,
+            "std": 0.0929
+          },
+          "fned": {
+            "mean": 0.2654,
+            "std": 0.055
+          },
+          "per_group_f1_std": {
+            "mean": 0.091,
+            "std": 0.0144
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.8013,
+            "std": 0.0035
+          },
+          "auc_roc": {
+            "mean": 0.8843,
+            "std": 0.0035
+          },
+          "cfr": {
+            "mean": 0.1526,
+            "std": 0.0019
+          },
+          "ctfg": {
+            "mean": 0.1439,
+            "std": 0.0049
+          },
+          "fped": {
+            "mean": 2.2375,
+            "std": 0.3096
+          },
+          "fned": {
+            "mean": 1.0471,
+            "std": 0.105
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8575,
+            "std": 0.0019
+          },
+          "auc_roc": {
+            "mean": 0.9249,
+            "std": 0.004
+          },
+          "cfr": {
+            "mean": 0.0413,
+            "std": 0.0057
+          },
+          "ctfg": {
+            "mean": 0.0402,
+            "std": 0.0043
+          },
+          "fped": {
+            "mean": 0.5523,
+            "std": 0.0922
+          },
+          "fned": {
+            "mean": 0.9553,
+            "std": 0.0557
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9199,
+            "std": 0.0117
+          },
+          "auc_roc": {
+            "mean": 0.9681,
+            "std": 0.0036
+          },
+          "cfr": {
+            "mean": 0.0427,
+            "std": 0.0082
+          },
+          "ctfg": {
+            "mean": 0.0472,
+            "std": 0.0087
+          },
+          "fped": {
+            "mean": 1.296,
+            "std": 0.1709
+          },
+          "fned": {
+            "mean": 0.2565,
+            "std": 0.0407
+          },
+          "n_seeds": 3
+        }
+      }
+    },
+    "Ours": {
+      "bert": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7722,
+            "std": 0.0025
+          },
+          "auc_roc": {
+            "mean": 0.8648,
+            "std": 0.0007
+          },
+          "cfr": {
+            "mean": 0.0583,
+            "std": 0.0025
+          },
+          "ctfg": {
+            "mean": 0.0436,
+            "std": 0.0016
+          },
+          "fped": {
+            "mean": 2.4149,
+            "std": 0.0271
+          },
+          "fned": {
+            "mean": 1.1796,
+            "std": 0.0485
+          },
+          "per_group_f1_std": {
+            "mean": 0.1071,
+            "std": 0.0036
+          },
+          "n_seeds": 6
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8292,
+            "std": 0.0044
+          },
+          "auc_roc": {
+            "mean": 0.9108,
+            "std": 0.0011
+          },
+          "cfr": {
+            "mean": 0.0239,
+            "std": 0.0083
+          },
+          "ctfg": {
+            "mean": 0.0214,
+            "std": 0.0005
+          },
+          "fped": {
+            "mean": 0.7935,
+            "std": 0.0751
+          },
+          "fned": {
+            "mean": 0.7395,
+            "std": 0.0594
+          },
+          "per_group_f1_std": {
+            "mean": 0.0524,
+            "std": 0.002
+          },
+          "n_seeds": 6
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9078,
+            "std": 0.0031
+          },
+          "auc_roc": {
+            "mean": 0.9581,
+            "std": 0.0021
+          },
+          "cfr": {
+            "mean": 0.0199,
+            "std": 0.0085
+          },
+          "ctfg": {
+            "mean": 0.0223,
+            "std": 0.0015
+          },
+          "fped": {
+            "mean": 1.3325,
+            "std": 0.0559
+          },
+          "fned": {
+            "mean": 0.2754,
+            "std": 0.0074
+          },
+          "per_group_f1_std": {
+            "mean": 0.0676,
+            "std": 0.0031
+          },
+          "n_seeds": 6
+        }
+      },
+      "roberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.7772,
+            "std": 0.0015
+          },
+          "auc_roc": {
+            "mean": 0.8741,
+            "std": 0.0014
+          },
+          "cfr": {
+            "mean": 0.0641,
+            "std": 0.0042
+          },
+          "ctfg": {
+            "mean": 0.0445,
+            "std": 0.0003
+          },
+          "fped": {
+            "mean": 2.3775,
+            "std": 0.0401
+          },
+          "fned": {
+            "mean": 0.998,
+            "std": 0.0375
+          },
+          "per_group_f1_std": {
+            "mean": 0.1149,
+            "std": 0.0023
+          },
+          "n_seeds": 4
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8405,
+            "std": 0.0057
+          },
+          "auc_roc": {
+            "mean": 0.9229,
+            "std": 0.0018
+          },
+          "cfr": {
+            "mean": 0.0281,
+            "std": 0.0044
+          },
+          "ctfg": {
+            "mean": 0.0244,
+            "std": 0.0003
+          },
+          "fped": {
+            "mean": 0.6463,
+            "std": 0.0679
+          },
+          "fned": {
+            "mean": 0.9314,
+            "std": 0.0334
+          },
+          "per_group_f1_std": {
+            "mean": 0.0563,
+            "std": 0.0034
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9188,
+            "std": 0.0055
+          },
+          "auc_roc": {
+            "mean": 0.9702,
+            "std": 0.0069
+          },
+          "cfr": {
+            "mean": 0.0152,
+            "std": 0.0009
+          },
+          "ctfg": {
+            "mean": 0.018,
+            "std": 0.0007
+          },
+          "fped": {
+            "mean": 1.33,
+            "std": 0.0206
+          },
+          "fned": {
+            "mean": 0.1745,
+            "std": 0.0069
+          },
+          "per_group_f1_std": {
+            "mean": 0.072,
+            "std": 0.0014
+          },
+          "n_seeds": 3
+        }
+      },
+      "deberta": {
+        "hatexplain": {
+          "macro_f1": {
+            "mean": 0.781,
+            "std": 0.0003
+          },
+          "auc_roc": {
+            "mean": 0.868,
+            "std": 0.003
+          },
+          "cfr": {
+            "mean": 0.0523,
+            "std": 0.0031
+          },
+          "ctfg": {
+            "mean": 0.0416,
+            "std": 0.0008
+          },
+          "fped": {
+            "mean": 2.3299,
+            "std": 0.1751
+          },
+          "fned": {
+            "mean": 0.8575,
+            "std": 0.0836
+          },
+          "per_group_f1_std": {
+            "mean": 0.1202,
+            "std": 0.0014
+          },
+          "n_seeds": 3
+        },
+        "toxigen": {
+          "macro_f1": {
+            "mean": 0.8508,
+            "std": 0.003
+          },
+          "auc_roc": {
+            "mean": 0.9272,
+            "std": 0.0017
+          },
+          "cfr": {
+            "mean": 0.0168,
+            "std": 0.0013
+          },
+          "ctfg": {
+            "mean": 0.0163,
+            "std": 0.0005
+          },
+          "fped": {
+            "mean": 0.6247,
+            "std": 0.0876
+          },
+          "fned": {
+            "mean": 0.8309,
+            "std": 0.1549
+          },
+          "per_group_f1_std": {
+            "mean": 0.05,
+            "std": 0.0015
+          },
+          "n_seeds": 3
+        },
+        "dynahate": {
+          "macro_f1": {
+            "mean": 0.9236,
+            "std": 0.0087
+          },
+          "auc_roc": {
+            "mean": 0.982,
+            "std": 0.0021
+          },
+          "cfr": {
+            "mean": 0.017,
+            "std": 0.0013
+          },
+          "ctfg": {
+            "mean": 0.0163,
+            "std": 0.0018
+          },
+          "fped": {
+            "mean": 1.2763,
+            "std": 0.1134
+          },
+          "fned": {
+            "mean": 0.1596,
+            "std": 0.0472
+          },
+          "per_group_f1_std": {
+            "mean": 0.0734,
+            "std": 0.0024
+          },
+          "n_seeds": 3
+        }
+      }
+    }
+  }
+}

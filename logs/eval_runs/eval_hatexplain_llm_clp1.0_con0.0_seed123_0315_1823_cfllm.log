@@ -1,0 +1,38 @@
+/root/miniconda/lib/python3.8/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda/lib/python3.8/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+[Model] Loaded (ours): /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/hatexplain_llm_clp1.0_con0.0_seed123_0315_1823.pth
+[CF] 加载测试集反事实: 2640 条
+
+[A] 任务性能评估...
+  Macro-F1: 0.7811
+  AUC-ROC:  0.8707
+
+[B] 因果公平评估...
+  CFR (翻转率):  0.0489  (理想: 0.0)
+  CTFG (预测差): 0.0408  (理想: 0.0)
+  各群体 CFR:
+    black               : CFR=0.0684  CTFG=0.0565  (n=351)
+    gay                 : CFR=0.0667  CTFG=0.0555  (n=135)
+    asian               : CFR=0.0667  CTFG=0.0541  (n=45)
+    jewish              : CFR=0.0588  CTFG=0.0394  (n=119)
+    women               : CFR=0.0529  CTFG=0.0437  (n=378)
+    men                 : CFR=0.0512  CTFG=0.0393  (n=859)
+    white               : CFR=0.0405  CTFG=0.0283  (n=346)
+    christian           : CFR=0.0294  CTFG=0.0439  (n=34)
+    disabled            : CFR=0.0222  CTFG=0.0194  (n=90)
+    muslim              : CFR=0.0177  CTFG=0.0349  (n=283)
+
+[C] 群体公平评估 (by _primary_group)...
+  FPED (假阳性差异): 1.4128  (理想: 0.0)
+  FNED (假阴性差异): 0.2823  (理想: 0.0)
+  各群体 F1:
+    disability          : F1=0.3571
+    religion            : F1=0.6706
+    race                : F1=0.7061
+    none                : F1=0.7262
+    gender              : F1=0.7382
+    sexual_orientation  : F1=0.7692
+
+结果保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/hatexplain_llm_clp1.0_con0.0_seed123_0315_1823_fairness.json

@@ -1,0 +1,34 @@
+/root/miniconda/lib/python3.8/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda/lib/python3.8/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+[Model] Loaded (ours): /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/toxigen_llm_clp1.0_con0.0_seed123_0315_0444.pth
+[CF] 加载测试集反事实: 1577 条
+
+[A] 任务性能评估...
+  Macro-F1: 0.8544
+  AUC-ROC:  0.9343
+
+[B] 因果公平评估...
+  CFR (翻转率):  0.0317  (理想: 0.0)
+  CTFG (预测差): 0.0312  (理想: 0.0)
+
+[C] 群体公平评估 (by target_group)...
+  FPED (假阳性差异): 0.5160  (理想: 0.0)
+  FNED (假阴性差异): 1.0004  (理想: 0.0)
+  各群体 F1:
+    asian               : F1=0.7485
+    latino              : F1=0.7854
+    lgbtq               : F1=0.8268
+    mental_dis          : F1=0.8419
+    black               : F1=0.8446
+    mexican             : F1=0.8480
+    native_american     : F1=0.8493
+    women               : F1=0.8693
+    physical_dis        : F1=0.8755
+    jewish              : F1=0.8783
+    muslim              : F1=0.8821
+    chinese             : F1=0.9067
+    middle_east         : F1=0.9260
+
+结果保存至: /root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/eval/toxigen_llm_clp1.0_con0.0_seed123_0315_0444_fairness.json

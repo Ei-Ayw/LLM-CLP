@@ -1,0 +1,1360 @@
+{
+  "Vanilla": {
+    "hatexplain": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.8039,
+          "std": 0.0058
+        },
+        "macro_f1": {
+          "mean": 0.7962,
+          "std": 0.008
+        },
+        "auc_roc": {
+          "mean": 0.8837,
+          "std": 0.0018
+        },
+        "cfr": {
+          "mean": 0.0784,
+          "std": 0.0042
+        },
+        "ctfg": {
+          "mean": 0.0686,
+          "std": 0.0024
+        },
+        "fped": {
+          "mean": 2.3583,
+          "std": 0.3949
+        },
+        "fned": {
+          "mean": 1.08,
+          "std": 0.0917
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.8039,
+          "std": 0.0058
+        },
+        "macro_f1": {
+          "mean": 0.7962,
+          "std": 0.008
+        },
+        "auc_roc": {
+          "mean": 0.8837,
+          "std": 0.0018
+        },
+        "cfr": {
+          "mean": 0.1582,
+          "std": 0.0029
+        },
+        "ctfg": {
+          "mean": 0.1439,
+          "std": 0.0103
+        },
+        "fped": {
+          "mean": 2.3583,
+          "std": 0.3949
+        },
+        "fned": {
+          "mean": 1.08,
+          "std": 0.0917
+        },
+        "n_seeds": 3
+      }
+    },
+    "toxigen": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.8627,
+          "std": 0.0066
+        },
+        "macro_f1": {
+          "mean": 0.8582,
+          "std": 0.0063
+        },
+        "auc_roc": {
+          "mean": 0.9306,
+          "std": 0.0028
+        },
+        "cfr": {
+          "mean": 0.0406,
+          "std": 0.0078
+        },
+        "ctfg": {
+          "mean": 0.0463,
+          "std": 0.0043
+        },
+        "fped": {
+          "mean": 0.5733,
+          "std": 0.1218
+        },
+        "fned": {
+          "mean": 0.8765,
+          "std": 0.0185
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.8627,
+          "std": 0.0066
+        },
+        "macro_f1": {
+          "mean": 0.8582,
+          "std": 0.0063
+        },
+        "auc_roc": {
+          "mean": 0.9306,
+          "std": 0.0028
+        },
+        "cfr": {
+          "mean": 0.0356,
+          "std": 0.0065
+        },
+        "ctfg": {
+          "mean": 0.0397,
+          "std": 0.0037
+        },
+        "fped": {
+          "mean": 0.5733,
+          "std": 0.1218
+        },
+        "fned": {
+          "mean": 0.8765,
+          "std": 0.0185
+        },
+        "n_seeds": 3
+      }
+    },
+    "dynahate": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.9454,
+          "std": 0.0022
+        },
+        "macro_f1": {
+          "mean": 0.9352,
+          "std": 0.0019
+        },
+        "auc_roc": {
+          "mean": 0.9873,
+          "std": 0.0022
+        },
+        "cfr": {
+          "mean": 0.0498,
+          "std": 0.0052
+        },
+        "ctfg": {
+          "mean": 0.0501,
+          "std": 0.0065
+        },
+        "fped": {
+          "mean": 1.1211,
+          "std": 0.1447
+        },
+        "fned": {
+          "mean": 0.1941,
+          "std": 0.0643
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.9454,
+          "std": 0.0022
+        },
+        "macro_f1": {
+          "mean": 0.9352,
+          "std": 0.0019
+        },
+        "auc_roc": {
+          "mean": 0.9873,
+          "std": 0.0022
+        },
+        "cfr": {
+          "mean": 0.0376,
+          "std": 0.001
+        },
+        "ctfg": {
+          "mean": 0.0385,
+          "std": 0.0022
+        },
+        "fped": {
+          "mean": 1.1211,
+          "std": 0.1447
+        },
+        "fned": {
+          "mean": 0.1941,
+          "std": 0.0643
+        },
+        "n_seeds": 3
+      }
+    }
+  },
+  "EAR": {
+    "hatexplain": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.8014,
+          "std": 0.0034
+        },
+        "macro_f1": {
+          "mean": 0.795,
+          "std": 0.0034
+        },
+        "auc_roc": {
+          "mean": 0.8839,
+          "std": 0.0026
+        },
+        "cfr": {
+          "mean": 0.0712,
+          "std": 0.0053
+        },
+        "ctfg": {
+          "mean": 0.065,
+          "std": 0.0028
+        },
+        "fped": {
+          "mean": 2.0931,
+          "std": 0.3879
+        },
+        "fned": {
+          "mean": 1.1465,
+          "std": 0.1421
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.8014,
+          "std": 0.0034
+        },
+        "macro_f1": {
+          "mean": 0.795,
+          "std": 0.0034
+        },
+        "auc_roc": {
+          "mean": 0.8839,
+          "std": 0.0026
+        },
+        "cfr": {
+          "mean": 0.1586,
+          "std": 0.0049
+        },
+        "ctfg": {
+          "mean": 0.1438,
+          "std": 0.0097
+        },
+        "fped": {
+          "mean": 2.0931,
+          "std": 0.3879
+        },
+        "fned": {
+          "mean": 1.1465,
+          "std": 0.1421
+        },
+        "n_seeds": 3
+      }
+    },
+    "toxigen": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.8568,
+          "std": 0.0021
+        },
+        "macro_f1": {
+          "mean": 0.8505,
+          "std": 0.0028
+        },
+        "auc_roc": {
+          "mean": 0.9292,
+          "std": 0.0018
+        },
+        "cfr": {
+          "mean": 0.0482,
+          "std": 0.0072
+        },
+        "ctfg": {
+          "mean": 0.0446,
+          "std": 0.0045
+        },
+        "fped": {
+          "mean": 0.5155,
+          "std": 0.0497
+        },
+        "fned": {
+          "mean": 0.874,
+          "std": 0.0929
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.8568,
+          "std": 0.0021
+        },
+        "macro_f1": {
+          "mean": 0.8505,
+          "std": 0.0028
+        },
+        "auc_roc": {
+          "mean": 0.9292,
+          "std": 0.0018
+        },
+        "cfr": {
+          "mean": 0.0395,
+          "std": 0.0035
+        },
+        "ctfg": {
+          "mean": 0.0369,
+          "std": 0.0027
+        },
+        "fped": {
+          "mean": 0.5155,
+          "std": 0.0497
+        },
+        "fned": {
+          "mean": 0.874,
+          "std": 0.0929
+        },
+        "n_seeds": 3
+      }
+    },
+    "dynahate": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.9364,
+          "std": 0.0105
+        },
+        "macro_f1": {
+          "mean": 0.9242,
+          "std": 0.0134
+        },
+        "auc_roc": {
+          "mean": 0.983,
+          "std": 0.0039
+        },
+        "cfr": {
+          "mean": 0.0593,
+          "std": 0.0051
+        },
+        "ctfg": {
+          "mean": 0.0581,
+          "std": 0.0046
+        },
+        "fped": {
+          "mean": 1.1565,
+          "std": 0.1865
+        },
+        "fned": {
+          "mean": 0.2192,
+          "std": 0.0495
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.9364,
+          "std": 0.0105
+        },
+        "macro_f1": {
+          "mean": 0.9242,
+          "std": 0.0134
+        },
+        "auc_roc": {
+          "mean": 0.983,
+          "std": 0.0039
+        },
+        "cfr": {
+          "mean": 0.0492,
+          "std": 0.0135
+        },
+        "ctfg": {
+          "mean": 0.0458,
+          "std": 0.0082
+        },
+        "fped": {
+          "mean": 1.1565,
+          "std": 0.1865
+        },
+        "fned": {
+          "mean": 0.2192,
+          "std": 0.0495
+        },
+        "n_seeds": 3
+      }
+    }
+  },
+  "GetFair": {
+    "hatexplain": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.8048,
+          "std": 0.0043
+        },
+        "macro_f1": {
+          "mean": 0.7985,
+          "std": 0.0071
+        },
+        "auc_roc": {
+          "mean": 0.8826,
+          "std": 0.0014
+        },
+        "cfr": {
+          "mean": 0.0659,
+          "std": 0.0083
+        },
+        "ctfg": {
+          "mean": 0.0614,
+          "std": 0.0086
+        },
+        "fped": {
+          "mean": 2.3442,
+          "std": 0.2618
+        },
+        "fned": {
+          "mean": 1.2108,
+          "std": 0.2294
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.8048,
+          "std": 0.0043
+        },
+        "macro_f1": {
+          "mean": 0.7985,
+          "std": 0.0071
+        },
+        "auc_roc": {
+          "mean": 0.8826,
+          "std": 0.0014
+        },
+        "cfr": {
+          "mean": 0.1562,
+          "std": 0.0081
+        },
+        "ctfg": {
+          "mean": 0.143,
+          "std": 0.013
+        },
+        "fped": {
+          "mean": 2.3442,
+          "std": 0.2618
+        },
+        "fned": {
+          "mean": 1.2108,
+          "std": 0.2294
+        },
+        "n_seeds": 3
+      }
+    },
+    "toxigen": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.8609,
+          "std": 0.0053
+        },
+        "macro_f1": {
+          "mean": 0.8565,
+          "std": 0.0055
+        },
+        "auc_roc": {
+          "mean": 0.9306,
+          "std": 0.0017
+        },
+        "cfr": {
+          "mean": 0.0395,
+          "std": 0.0045
+        },
+        "ctfg": {
+          "mean": 0.0453,
+          "std": 0.0037
+        },
+        "fped": {
+          "mean": 0.6083,
+          "std": 0.0914
+        },
+        "fned": {
+          "mean": 0.9326,
+          "std": 0.1448
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.8609,
+          "std": 0.0053
+        },
+        "macro_f1": {
+          "mean": 0.8565,
+          "std": 0.0055
+        },
+        "auc_roc": {
+          "mean": 0.9306,
+          "std": 0.0017
+        },
+        "cfr": {
+          "mean": 0.0313,
+          "std": 0.0042
+        },
+        "ctfg": {
+          "mean": 0.038,
+          "std": 0.0014
+        },
+        "fped": {
+          "mean": 0.6083,
+          "std": 0.0914
+        },
+        "fned": {
+          "mean": 0.9326,
+          "std": 0.1448
+        },
+        "n_seeds": 3
+      }
+    },
+    "dynahate": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.9418,
+          "std": 0.0004
+        },
+        "macro_f1": {
+          "mean": 0.9308,
+          "std": 0.0005
+        },
+        "auc_roc": {
+          "mean": 0.9864,
+          "std": 0.0014
+        },
+        "cfr": {
+          "mean": 0.0556,
+          "std": 0.0142
+        },
+        "ctfg": {
+          "mean": 0.0552,
+          "std": 0.0118
+        },
+        "fped": {
+          "mean": 1.1278,
+          "std": 0.1609
+        },
+        "fned": {
+          "mean": 0.1806,
+          "std": 0.0567
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.9418,
+          "std": 0.0004
+        },
+        "macro_f1": {
+          "mean": 0.9308,
+          "std": 0.0005
+        },
+        "auc_roc": {
+          "mean": 0.9864,
+          "std": 0.0014
+        },
+        "cfr": {
+          "mean": 0.0438,
+          "std": 0.005
+        },
+        "ctfg": {
+          "mean": 0.0449,
+          "std": 0.0054
+        },
+        "fped": {
+          "mean": 1.1278,
+          "std": 0.1609
+        },
+        "fned": {
+          "mean": 0.1806,
+          "std": 0.0567
+        },
+        "n_seeds": 3
+      }
+    }
+  },
+  "CCDF": {
+    "hatexplain": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.8077,
+          "std": 0.0051
+        },
+        "macro_f1": {
+          "mean": 0.8022,
+          "std": 0.0047
+        },
+        "auc_roc": {
+          "mean": 0.8796,
+          "std": 0.0026
+        },
+        "cfr": {
+          "mean": 0.0765,
+          "std": 0.0096
+        },
+        "ctfg": {
+          "mean": 0.0741,
+          "std": 0.0048
+        },
+        "fped": {
+          "mean": 1.9903,
+          "std": 0.2875
+        },
+        "fned": {
+          "mean": 1.0227,
+          "std": 0.1269
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.8077,
+          "std": 0.0051
+        },
+        "macro_f1": {
+          "mean": 0.8022,
+          "std": 0.0047
+        },
+        "auc_roc": {
+          "mean": 0.8796,
+          "std": 0.0026
+        },
+        "cfr": {
+          "mean": 0.1604,
+          "std": 0.0068
+        },
+        "ctfg": {
+          "mean": 0.1511,
+          "std": 0.0023
+        },
+        "fped": {
+          "mean": 1.9903,
+          "std": 0.2875
+        },
+        "fned": {
+          "mean": 1.0227,
+          "std": 0.1269
+        },
+        "n_seeds": 3
+      }
+    },
+    "toxigen": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.8624,
+          "std": 0.0073
+        },
+        "macro_f1": {
+          "mean": 0.8577,
+          "std": 0.0076
+        },
+        "auc_roc": {
+          "mean": 0.9333,
+          "std": 0.0018
+        },
+        "cfr": {
+          "mean": 0.0474,
+          "std": 0.0085
+        },
+        "ctfg": {
+          "mean": 0.0465,
+          "std": 0.0035
+        },
+        "fped": {
+          "mean": 0.5467,
+          "std": 0.1151
+        },
+        "fned": {
+          "mean": 0.8466,
+          "std": 0.1008
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.8624,
+          "std": 0.0073
+        },
+        "macro_f1": {
+          "mean": 0.8577,
+          "std": 0.0076
+        },
+        "auc_roc": {
+          "mean": 0.9333,
+          "std": 0.0018
+        },
+        "cfr": {
+          "mean": 0.0377,
+          "std": 0.0087
+        },
+        "ctfg": {
+          "mean": 0.0409,
+          "std": 0.0046
+        },
+        "fped": {
+          "mean": 0.5467,
+          "std": 0.1151
+        },
+        "fned": {
+          "mean": 0.8466,
+          "std": 0.1008
+        },
+        "n_seeds": 3
+      }
+    },
+    "dynahate": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.9004,
+          "std": 0.0121
+        },
+        "macro_f1": {
+          "mean": 0.885,
+          "std": 0.0134
+        },
+        "auc_roc": {
+          "mean": 0.9633,
+          "std": 0.0055
+        },
+        "cfr": {
+          "mean": 0.0883,
+          "std": 0.0043
+        },
+        "ctfg": {
+          "mean": 0.0853,
+          "std": 0.0074
+        },
+        "fped": {
+          "mean": 1.2238,
+          "std": 0.1328
+        },
+        "fned": {
+          "mean": 0.3648,
+          "std": 0.0967
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.9004,
+          "std": 0.0121
+        },
+        "macro_f1": {
+          "mean": 0.885,
+          "std": 0.0134
+        },
+        "auc_roc": {
+          "mean": 0.9633,
+          "std": 0.0055
+        },
+        "cfr": {
+          "mean": 0.0719,
+          "std": 0.0031
+        },
+        "ctfg": {
+          "mean": 0.0708,
+          "std": 0.0096
+        },
+        "fped": {
+          "mean": 1.2238,
+          "std": 0.1328
+        },
+        "fned": {
+          "mean": 0.3648,
+          "std": 0.0967
+        },
+        "n_seeds": 3
+      }
+    }
+  },
+  "Davani": {
+    "hatexplain": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.808,
+          "std": 0.0022
+        },
+        "macro_f1": {
+          "mean": 0.8025,
+          "std": 0.0022
+        },
+        "auc_roc": {
+          "mean": 0.8875,
+          "std": 0.0008
+        },
+        "cfr": {
+          "mean": 0.0242,
+          "std": 0.0018
+        },
+        "ctfg": {
+          "mean": 0.019,
+          "std": 0.0013
+        },
+        "fped": {
+          "mean": 2.2674,
+          "std": 0.3508
+        },
+        "fned": {
+          "mean": 1.3025,
+          "std": 0.1207
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.808,
+          "std": 0.0022
+        },
+        "macro_f1": {
+          "mean": 0.8025,
+          "std": 0.0022
+        },
+        "auc_roc": {
+          "mean": 0.8875,
+          "std": 0.0008
+        },
+        "cfr": {
+          "mean": 0.1293,
+          "std": 0.0011
+        },
+        "ctfg": {
+          "mean": 0.11,
+          "std": 0.0034
+        },
+        "fped": {
+          "mean": 2.2674,
+          "std": 0.3508
+        },
+        "fned": {
+          "mean": 1.3025,
+          "std": 0.1207
+        },
+        "n_seeds": 3
+      }
+    },
+    "toxigen": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.8635,
+          "std": 0.0032
+        },
+        "macro_f1": {
+          "mean": 0.8591,
+          "std": 0.0034
+        },
+        "auc_roc": {
+          "mean": 0.9337,
+          "std": 0.002
+        },
+        "cfr": {
+          "mean": 0.0175,
+          "std": 0.0032
+        },
+        "ctfg": {
+          "mean": 0.0176,
+          "std": 0.0016
+        },
+        "fped": {
+          "mean": 0.5493,
+          "std": 0.0702
+        },
+        "fned": {
+          "mean": 0.8777,
+          "std": 0.0995
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.8635,
+          "std": 0.0032
+        },
+        "macro_f1": {
+          "mean": 0.8591,
+          "std": 0.0034
+        },
+        "auc_roc": {
+          "mean": 0.9337,
+          "std": 0.002
+        },
+        "cfr": {
+          "mean": 0.0271,
+          "std": 0.0028
+        },
+        "ctfg": {
+          "mean": 0.0236,
+          "std": 0.0019
+        },
+        "fped": {
+          "mean": 0.5493,
+          "std": 0.0702
+        },
+        "fned": {
+          "mean": 0.8777,
+          "std": 0.0995
+        },
+        "n_seeds": 3
+      }
+    },
+    "dynahate": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.9424,
+          "std": 0.0058
+        },
+        "macro_f1": {
+          "mean": 0.9329,
+          "std": 0.006
+        },
+        "auc_roc": {
+          "mean": 0.9807,
+          "std": 0.0007
+        },
+        "cfr": {
+          "mean": 0.0307,
+          "std": 0.005
+        },
+        "ctfg": {
+          "mean": 0.0283,
+          "std": 0.0017
+        },
+        "fped": {
+          "mean": 1.0562,
+          "std": 0.1498
+        },
+        "fned": {
+          "mean": 0.322,
+          "std": 0.0502
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.9424,
+          "std": 0.0058
+        },
+        "macro_f1": {
+          "mean": 0.9329,
+          "std": 0.006
+        },
+        "auc_roc": {
+          "mean": 0.9807,
+          "std": 0.0007
+        },
+        "cfr": {
+          "mean": 0.0199,
+          "std": 0.001
+        },
+        "ctfg": {
+          "mean": 0.0221,
+          "std": 0.0022
+        },
+        "fped": {
+          "mean": 1.0562,
+          "std": 0.1498
+        },
+        "fned": {
+          "mean": 0.322,
+          "std": 0.0502
+        },
+        "n_seeds": 3
+      }
+    }
+  },
+  "Ramponi": {
+    "hatexplain": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.8086,
+          "std": 0.0026
+        },
+        "macro_f1": {
+          "mean": 0.8013,
+          "std": 0.0035
+        },
+        "auc_roc": {
+          "mean": 0.8843,
+          "std": 0.0035
+        },
+        "cfr": {
+          "mean": 0.0758,
+          "std": 0.0027
+        },
+        "ctfg": {
+          "mean": 0.0699,
+          "std": 0.0053
+        },
+        "fped": {
+          "mean": 2.2375,
+          "std": 0.3096
+        },
+        "fned": {
+          "mean": 1.0471,
+          "std": 0.105
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.8086,
+          "std": 0.0026
+        },
+        "macro_f1": {
+          "mean": 0.8013,
+          "std": 0.0035
+        },
+        "auc_roc": {
+          "mean": 0.8843,
+          "std": 0.0035
+        },
+        "cfr": {
+          "mean": 0.1526,
+          "std": 0.0019
+        },
+        "ctfg": {
+          "mean": 0.1439,
+          "std": 0.0049
+        },
+        "fped": {
+          "mean": 2.2375,
+          "std": 0.3096
+        },
+        "fned": {
+          "mean": 1.0471,
+          "std": 0.105
+        },
+        "n_seeds": 3
+      }
+    },
+    "toxigen": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.862,
+          "std": 0.001
+        },
+        "macro_f1": {
+          "mean": 0.8575,
+          "std": 0.0019
+        },
+        "auc_roc": {
+          "mean": 0.9249,
+          "std": 0.004
+        },
+        "cfr": {
+          "mean": 0.0433,
+          "std": 0.0063
+        },
+        "ctfg": {
+          "mean": 0.0456,
+          "std": 0.0047
+        },
+        "fped": {
+          "mean": 0.5523,
+          "std": 0.0922
+        },
+        "fned": {
+          "mean": 0.9553,
+          "std": 0.0557
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.862,
+          "std": 0.001
+        },
+        "macro_f1": {
+          "mean": 0.8575,
+          "std": 0.0019
+        },
+        "auc_roc": {
+          "mean": 0.9249,
+          "std": 0.004
+        },
+        "cfr": {
+          "mean": 0.0413,
+          "std": 0.0057
+        },
+        "ctfg": {
+          "mean": 0.0402,
+          "std": 0.0043
+        },
+        "fped": {
+          "mean": 0.5523,
+          "std": 0.0922
+        },
+        "fned": {
+          "mean": 0.9553,
+          "std": 0.0557
+        },
+        "n_seeds": 3
+      }
+    },
+    "dynahate": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.9328,
+          "std": 0.0097
+        },
+        "macro_f1": {
+          "mean": 0.9199,
+          "std": 0.0117
+        },
+        "auc_roc": {
+          "mean": 0.9681,
+          "std": 0.0036
+        },
+        "cfr": {
+          "mean": 0.0494,
+          "std": 0.0099
+        },
+        "ctfg": {
+          "mean": 0.055,
+          "std": 0.0095
+        },
+        "fped": {
+          "mean": 1.296,
+          "std": 0.1709
+        },
+        "fned": {
+          "mean": 0.2565,
+          "std": 0.0407
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.9328,
+          "std": 0.0097
+        },
+        "macro_f1": {
+          "mean": 0.9199,
+          "std": 0.0117
+        },
+        "auc_roc": {
+          "mean": 0.9681,
+          "std": 0.0036
+        },
+        "cfr": {
+          "mean": 0.0427,
+          "std": 0.0082
+        },
+        "ctfg": {
+          "mean": 0.0472,
+          "std": 0.0087
+        },
+        "fped": {
+          "mean": 1.296,
+          "std": 0.1709
+        },
+        "fned": {
+          "mean": 0.2565,
+          "std": 0.0407
+        },
+        "n_seeds": 3
+      }
+    }
+  },
+  "Ours": {
+    "hatexplain": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.7888,
+          "std": 0.0021
+        },
+        "macro_f1": {
+          "mean": 0.781,
+          "std": 0.0003
+        },
+        "auc_roc": {
+          "mean": 0.868,
+          "std": 0.003
+        },
+        "cfr": {
+          "mean": 0.0445,
+          "std": 0.0014
+        },
+        "ctfg": {
+          "mean": 0.0379,
+          "std": 0.001
+        },
+        "fped": {
+          "mean": 2.3299,
+          "std": 0.1751
+        },
+        "fned": {
+          "mean": 0.8575,
+          "std": 0.0836
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.7888,
+          "std": 0.0021
+        },
+        "macro_f1": {
+          "mean": 0.781,
+          "std": 0.0003
+        },
+        "auc_roc": {
+          "mean": 0.868,
+          "std": 0.003
+        },
+        "cfr": {
+          "mean": 0.0523,
+          "std": 0.0031
+        },
+        "ctfg": {
+          "mean": 0.0416,
+          "std": 0.0008
+        },
+        "fped": {
+          "mean": 2.3299,
+          "std": 0.1751
+        },
+        "fned": {
+          "mean": 0.8575,
+          "std": 0.0836
+        },
+        "n_seeds": 3
+      }
+    },
+    "toxigen": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.8557,
+          "std": 0.0019
+        },
+        "macro_f1": {
+          "mean": 0.8508,
+          "std": 0.003
+        },
+        "auc_roc": {
+          "mean": 0.9272,
+          "std": 0.0017
+        },
+        "cfr": {
+          "mean": 0.0315,
+          "std": 0.0036
+        },
+        "ctfg": {
+          "mean": 0.028,
+          "std": 0.0011
+        },
+        "fped": {
+          "mean": 0.6247,
+          "std": 0.0876
+        },
+        "fned": {
+          "mean": 0.8309,
+          "std": 0.1549
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.8557,
+          "std": 0.0019
+        },
+        "macro_f1": {
+          "mean": 0.8508,
+          "std": 0.003
+        },
+        "auc_roc": {
+          "mean": 0.9272,
+          "std": 0.0017
+        },
+        "cfr": {
+          "mean": 0.0168,
+          "std": 0.0013
+        },
+        "ctfg": {
+          "mean": 0.0163,
+          "std": 0.0005
+        },
+        "fped": {
+          "mean": 0.6247,
+          "std": 0.0876
+        },
+        "fned": {
+          "mean": 0.8309,
+          "std": 0.1549
+        },
+        "n_seeds": 3
+      }
+    },
+    "dynahate": {
+      "swap": {
+        "accuracy": {
+          "mean": 0.9367,
+          "std": 0.0062
+        },
+        "macro_f1": {
+          "mean": 0.9236,
+          "std": 0.0087
+        },
+        "auc_roc": {
+          "mean": 0.982,
+          "std": 0.0021
+        },
+        "cfr": {
+          "mean": 0.0235,
+          "std": 0.0046
+        },
+        "ctfg": {
+          "mean": 0.0271,
+          "std": 0.0036
+        },
+        "fped": {
+          "mean": 1.2763,
+          "std": 0.1134
+        },
+        "fned": {
+          "mean": 0.1596,
+          "std": 0.0472
+        },
+        "n_seeds": 3
+      },
+      "llm": {
+        "accuracy": {
+          "mean": 0.9367,
+          "std": 0.0062
+        },
+        "macro_f1": {
+          "mean": 0.9236,
+          "std": 0.0087
+        },
+        "auc_roc": {
+          "mean": 0.982,
+          "std": 0.0021
+        },
+        "cfr": {
+          "mean": 0.017,
+          "std": 0.0013
+        },
+        "ctfg": {
+          "mean": 0.0163,
+          "std": 0.0018
+        },
+        "fped": {
+          "mean": 1.2763,
+          "std": 0.1134
+        },
+        "fned": {
+          "mean": 0.1596,
+          "std": 0.0472
+        },
+        "n_seeds": 3
+      }
+    }
+  }
+}

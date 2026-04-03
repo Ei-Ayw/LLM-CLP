@@ -1,0 +1,102 @@
+{
+  "macro_f1": 0.9147,
+  "auc_roc": 0.9688,
+  "accuracy": 0.928,
+  "binary_f1": 0.9484,
+  "cfr": 0.0347,
+  "ctfg": 0.0451,
+  "fped": 1.2857,
+  "fned": 0.2002,
+  "per_group_f1_std": 0.0752,
+  "group_details": {
+    "asian": {
+      "fpr": 0.6667,
+      "fnr": 0.0,
+      "fpr_gap": 0.5197,
+      "fnr_gap": 0.038,
+      "count": 24
+    },
+    "black": {
+      "fpr": 0.2083,
+      "fnr": 0.0274,
+      "fpr_gap": 0.0614,
+      "fnr_gap": 0.0106,
+      "count": 97
+    },
+    "christian": {
+      "fpr": 0.0,
+      "fnr": 0.0,
+      "fpr_gap": 0.147,
+      "fnr_gap": 0.038,
+      "count": 17
+    },
+    "disabled": {
+      "fpr": 0.0,
+      "fnr": 0.0714,
+      "fpr_gap": 0.147,
+      "fnr_gap": 0.0335,
+      "count": 20
+    },
+    "gay": {
+      "fpr": 0.1429,
+      "fnr": 0.0638,
+      "fpr_gap": 0.0041,
+      "fnr_gap": 0.0259,
+      "count": 54
+    },
+    "jewish": {
+      "fpr": 0.2,
+      "fnr": 0.0333,
+      "fpr_gap": 0.053,
+      "fnr_gap": 0.0046,
+      "count": 35
+    },
+    "men": {
+      "fpr": 0.1655,
+      "fnr": 0.0338,
+      "fpr_gap": 0.0185,
+      "fnr_gap": 0.0041,
+      "count": 346
+    },
+    "muslim": {
+      "fpr": 0.3333,
+      "fnr": 0.0222,
+      "fpr_gap": 0.1864,
+      "fnr_gap": 0.0157,
+      "count": 63
+    },
+    "none": {
+      "fpr": 0.0656,
+      "fnr": 0.0529,
+      "fpr_gap": 0.0814,
+      "fnr_gap": 0.0149,
+      "count": 349
+    },
+    "women": {
+      "fpr": 0.2143,
+      "fnr": 0.023,
+      "fpr_gap": 0.0673,
+      "fnr_gap": 0.015,
+      "count": 101
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.7,
+    "black": 0.8987,
+    "christian": 1.0,
+    "disabled": 0.943,
+    "gay": 0.8533,
+    "jewish": 0.8833,
+    "men": 0.9079,
+    "muslim": 0.8503,
+    "none": 0.9375,
+    "women": 0.8931
+  },
+  "_meta": {
+    "method": "getfair",
+    "backbone": "roberta",
+    "dataset": "dynahate",
+    "cf_method": "llm",
+    "checkpoint": "/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/GetFair_roberta_dynahate_seed42_0402_2237.pth"
+  }
+}

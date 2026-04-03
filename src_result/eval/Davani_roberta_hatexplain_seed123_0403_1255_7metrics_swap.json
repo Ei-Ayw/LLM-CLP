@@ -1,0 +1,110 @@
+{
+  "macro_f1": 0.799,
+  "auc_roc": 0.8853,
+  "accuracy": 0.8035,
+  "binary_f1": 0.8291,
+  "cfr": 0.0215,
+  "ctfg": 0.0182,
+  "fped": 2.5254,
+  "fned": 1.4545,
+  "per_group_f1_std": 0.1285,
+  "group_details": {
+    "asian": {
+      "fpr": 0.0833,
+      "fnr": 0.3333,
+      "fpr_gap": 0.1123,
+      "fnr_gap": 0.1363,
+      "count": 21
+    },
+    "black": {
+      "fpr": 0.3077,
+      "fnr": 0.0886,
+      "fpr_gap": 0.112,
+      "fnr_gap": 0.1084,
+      "count": 223
+    },
+    "christian": {
+      "fpr": 1.0,
+      "fnr": 0.0769,
+      "fpr_gap": 0.8043,
+      "fnr_gap": 0.1201,
+      "count": 14
+    },
+    "disabled": {
+      "fpr": 0.9286,
+      "fnr": 0.0208,
+      "fpr_gap": 0.7329,
+      "fnr_gap": 0.1762,
+      "count": 62
+    },
+    "gay": {
+      "fpr": 0.1471,
+      "fnr": 0.6129,
+      "fpr_gap": 0.0486,
+      "fnr_gap": 0.4159,
+      "count": 65
+    },
+    "jewish": {
+      "fpr": 0.6667,
+      "fnr": 0.1154,
+      "fpr_gap": 0.471,
+      "fnr_gap": 0.0816,
+      "count": 67
+    },
+    "men": {
+      "fpr": 0.1821,
+      "fnr": 0.1639,
+      "fpr_gap": 0.0135,
+      "fnr_gap": 0.0332,
+      "count": 728
+    },
+    "muslim": {
+      "fpr": 0.125,
+      "fnr": 0.32,
+      "fpr_gap": 0.0707,
+      "fnr_gap": 0.123,
+      "count": 123
+    },
+    "none": {
+      "fpr": 0.1392,
+      "fnr": 0.1694,
+      "fpr_gap": 0.0564,
+      "fnr_gap": 0.0277,
+      "count": 203
+    },
+    "white": {
+      "fpr": 0.1466,
+      "fnr": 0.31,
+      "fpr_gap": 0.0491,
+      "fnr_gap": 0.113,
+      "count": 216
+    },
+    "women": {
+      "fpr": 0.1412,
+      "fnr": 0.3162,
+      "fpr_gap": 0.0545,
+      "fnr_gap": 0.1192,
+      "count": 202
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.7981,
+    "black": 0.8101,
+    "christian": 0.4615,
+    "disabled": 0.4977,
+    "gay": 0.6037,
+    "jewish": 0.6182,
+    "men": 0.8256,
+    "muslim": 0.7548,
+    "none": 0.8375,
+    "white": 0.7734,
+    "women": 0.7571
+  },
+  "_meta": {
+    "method": "davani",
+    "backbone": "roberta",
+    "dataset": "hatexplain",
+    "cf_method": "swap",
+    "checkpoint": "/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/Davani_roberta_hatexplain_seed123_0403_1255.pth"
+  }
+}

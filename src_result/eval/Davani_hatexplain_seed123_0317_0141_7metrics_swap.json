@@ -1,0 +1,109 @@
+{
+  "macro_f1": 0.7994,
+  "auc_roc": 0.8882,
+  "accuracy": 0.8051,
+  "binary_f1": 0.8331,
+  "cfr": 0.0265,
+  "ctfg": 0.0198,
+  "fped": 1.9645,
+  "fned": 1.2182,
+  "per_group_f1_std": 0.1272,
+  "group_details": {
+    "asian": {
+      "fpr": 0.0,
+      "fnr": 0.3333,
+      "fpr_gap": 0.2161,
+      "fnr_gap": 0.1529,
+      "count": 21
+    },
+    "black": {
+      "fpr": 0.2308,
+      "fnr": 0.0823,
+      "fpr_gap": 0.0147,
+      "fnr_gap": 0.0981,
+      "count": 223
+    },
+    "christian": {
+      "fpr": 0.0,
+      "fnr": 0.0,
+      "fpr_gap": 0.2161,
+      "fnr_gap": 0.1804,
+      "count": 14
+    },
+    "disabled": {
+      "fpr": 0.8571,
+      "fnr": 0.0417,
+      "fpr_gap": 0.641,
+      "fnr_gap": 0.1387,
+      "count": 62
+    },
+    "gay": {
+      "fpr": 0.0588,
+      "fnr": 0.4839,
+      "fpr_gap": 0.1573,
+      "fnr_gap": 0.3035,
+      "count": 65
+    },
+    "jewish": {
+      "fpr": 0.8,
+      "fnr": 0.1346,
+      "fpr_gap": 0.5839,
+      "fnr_gap": 0.0458,
+      "count": 67
+    },
+    "men": {
+      "fpr": 0.2204,
+      "fnr": 0.1735,
+      "fpr_gap": 0.0043,
+      "fnr_gap": 0.0069,
+      "count": 728
+    },
+    "muslim": {
+      "fpr": 0.2083,
+      "fnr": 0.2533,
+      "fpr_gap": 0.0078,
+      "fnr_gap": 0.0729,
+      "count": 123
+    },
+    "none": {
+      "fpr": 0.2278,
+      "fnr": 0.1371,
+      "fpr_gap": 0.0117,
+      "fnr_gap": 0.0433,
+      "count": 203
+    },
+    "white": {
+      "fpr": 0.1207,
+      "fnr": 0.28,
+      "fpr_gap": 0.0954,
+      "fnr_gap": 0.0996,
+      "count": 216
+    },
+    "women": {
+      "fpr": 0.2,
+      "fnr": 0.2564,
+      "fpr_gap": 0.0161,
+      "fnr_gap": 0.076,
+      "count": 202
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.8444,
+    "black": 0.8466,
+    "christian": 1.0,
+    "disabled": 0.5451,
+    "gay": 0.7216,
+    "jewish": 0.5328,
+    "men": 0.8027,
+    "muslim": 0.7591,
+    "none": 0.8183,
+    "white": 0.8017,
+    "women": 0.7652
+  },
+  "_meta": {
+    "method": "davani",
+    "dataset": "hatexplain",
+    "cf_method": "swap",
+    "checkpoint": "src_result/models/Davani_hatexplain_seed123_0317_0141.pth"
+  }
+}

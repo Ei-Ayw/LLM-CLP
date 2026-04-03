@@ -1,0 +1,165 @@
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 6: set: -: invalid option
+set: usage: set [-abefhkmnptuvxBCHP] [-o option-name] [--] [arg ...]
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 8: cd: $'/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification\r': No such file or directory
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 11: $'\r': command not found
+========================================================
+ Phase 0: 生成 ToxiGen 反事实数据 (Swap + LLM)
+ Thu Mar 12 15:20:11 CST 2026
+========================================================
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 16: $'\r': command not found
+ToxiGen train swap: 12548 条
+ToxiGen test swap: 1577 条
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 33: $'\r': command not found
+--- ToxiGen train LLM 反事实 ---
+usage: cf_generator_llm.py [-h] [--dataset {hatexplain,toxigen}]
+                           [--split SPLIT] [--api {zhipu,openai}] --api_key
+                           API_KEY [--model MODEL] [--base_url BASE_URL]
+                           [--max_cf MAX_CF] [--max_workers MAX_WORKERS]
+                           [--data_dir DATA_DIR]
+cf_generator_llm.py: error: the following arguments are required: --api_key
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 37: --dataset: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 38: --api: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 39: --max_workers: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 40: $'\r': command not found
+--- ToxiGen test LLM 反事实 ---
+usage: cf_generator_llm.py [-h] [--dataset {hatexplain,toxigen}]
+                           [--split SPLIT] [--api {zhipu,openai}] --api_key
+                           API_KEY [--model MODEL] [--base_url BASE_URL]
+                           [--max_cf MAX_CF] [--max_workers MAX_WORKERS]
+                           [--data_dir DATA_DIR]
+cf_generator_llm.py: error: the following arguments are required: --api_key
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 44: --dataset: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 45: --api: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 46: --max_workers: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 47: $'\r': command not found
+>>> Phase 0 完成: Thu Mar 12 15:20:15 CST 2026
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 49: $'\r': command not found
+========================================================
+ Phase 1: E5 超参调优 (HateXplain, seed=42)
+ Thu Mar 12 15:20:15 CST 2026
+========================================================
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 54: $'\r': command not found
+--- E5a: clp=1.0, con=0.1 ---
+/root/miniconda/lib/python3.8/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda/lib/python3.8/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+usage: train_causal_fair.py [-h] [--dataset {hatexplain,toxigen}]
+                            [--cf_method {none,swap,llm}]
+                            [--model_name MODEL_NAME] [--max_len MAX_LEN]
+                            [--batch_size BATCH_SIZE]
+                            [--grad_accum GRAD_ACCUM] [--epochs EPOCHS]
+                            [--lr LR] [--warmup_ratio WARMUP_RATIO]
+                            [--weight_decay WEIGHT_DECAY] [--seed SEED]
+                            [--lambda_clp LAMBDA_CLP]
+                            [--lambda_con LAMBDA_CON]
+                            [--temperature TEMPERATURE] [--data_dir DATA_DIR]
+                            [--patience PATIENCE]
+train_causal_fair.py: error: unrecognized arguments: 
+[Hardware] TF32 acceleration enabled for Ampere+ GPUs.
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 58: --dataset: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 59: --model_name: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 60: --epochs: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 61: --lambda_clp: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 62: $'\r': command not found
+--- E5b: clp=1.0, con=0.2 ---
+/root/miniconda/lib/python3.8/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda/lib/python3.8/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+usage: train_causal_fair.py [-h] [--dataset {hatexplain,toxigen}]
+                            [--cf_method {none,swap,llm}]
+                            [--model_name MODEL_NAME] [--max_len MAX_LEN]
+                            [--batch_size BATCH_SIZE]
+                            [--grad_accum GRAD_ACCUM] [--epochs EPOCHS]
+                            [--lr LR] [--warmup_ratio WARMUP_RATIO]
+                            [--weight_decay WEIGHT_DECAY] [--seed SEED]
+                            [--lambda_clp LAMBDA_CLP]
+                            [--lambda_con LAMBDA_CON]
+                            [--temperature TEMPERATURE] [--data_dir DATA_DIR]
+                            [--patience PATIENCE]
+train_causal_fair.py: error: unrecognized arguments: 
+[Hardware] TF32 acceleration enabled for Ampere+ GPUs.
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 66: --dataset: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 67: --model_name: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 68: --epochs: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 69: --lambda_clp: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 70: $'\r': command not found
+--- E5c: clp=1.0, con=0.3 ---
+/root/miniconda/lib/python3.8/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda/lib/python3.8/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+usage: train_causal_fair.py [-h] [--dataset {hatexplain,toxigen}]
+                            [--cf_method {none,swap,llm}]
+                            [--model_name MODEL_NAME] [--max_len MAX_LEN]
+                            [--batch_size BATCH_SIZE]
+                            [--grad_accum GRAD_ACCUM] [--epochs EPOCHS]
+                            [--lr LR] [--warmup_ratio WARMUP_RATIO]
+                            [--weight_decay WEIGHT_DECAY] [--seed SEED]
+                            [--lambda_clp LAMBDA_CLP]
+                            [--lambda_con LAMBDA_CON]
+                            [--temperature TEMPERATURE] [--data_dir DATA_DIR]
+                            [--patience PATIENCE]
+train_causal_fair.py: error: unrecognized arguments: 
+[Hardware] TF32 acceleration enabled for Ampere+ GPUs.
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 74: --dataset: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 75: --model_name: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 76: --epochs: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 77: --lambda_clp: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 78: $'\r': command not found
+--- E5d: clp=0.5, con=0.2 ---
+/root/miniconda/lib/python3.8/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda/lib/python3.8/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+usage: train_causal_fair.py [-h] [--dataset {hatexplain,toxigen}]
+                            [--cf_method {none,swap,llm}]
+                            [--model_name MODEL_NAME] [--max_len MAX_LEN]
+                            [--batch_size BATCH_SIZE]
+                            [--grad_accum GRAD_ACCUM] [--epochs EPOCHS]
+                            [--lr LR] [--warmup_ratio WARMUP_RATIO]
+                            [--weight_decay WEIGHT_DECAY] [--seed SEED]
+                            [--lambda_clp LAMBDA_CLP]
+                            [--lambda_con LAMBDA_CON]
+                            [--temperature TEMPERATURE] [--data_dir DATA_DIR]
+                            [--patience PATIENCE]
+train_causal_fair.py: error: unrecognized arguments: 
+[Hardware] TF32 acceleration enabled for Ampere+ GPUs.
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 82: --dataset: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 83: --model_name: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 84: --epochs: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 85: --lambda_clp: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 86: $'\r': command not found
+--- E5e: clp=0.5, con=0.1 ---
+/root/miniconda/lib/python3.8/site-packages/torchvision/datapoints/__init__.py:12: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+/root/miniconda/lib/python3.8/site-packages/torchvision/transforms/v2/__init__.py:54: UserWarning: The torchvision.datapoints and torchvision.transforms.v2 namespaces are still Beta. While we do not expect major breaking changes, some APIs may still change according to user feedback. Please submit any feedback you may have in this issue: https://github.com/pytorch/vision/issues/6753, and you can also check out https://github.com/pytorch/vision/issues/7319 to learn more about the APIs that we suspect might involve future changes. You can silence this warning by calling torchvision.disable_beta_transforms_warning().
+  warnings.warn(_BETA_TRANSFORMS_WARNING)
+usage: train_causal_fair.py [-h] [--dataset {hatexplain,toxigen}]
+                            [--cf_method {none,swap,llm}]
+                            [--model_name MODEL_NAME] [--max_len MAX_LEN]
+                            [--batch_size BATCH_SIZE]
+                            [--grad_accum GRAD_ACCUM] [--epochs EPOCHS]
+                            [--lr LR] [--warmup_ratio WARMUP_RATIO]
+                            [--weight_decay WEIGHT_DECAY] [--seed SEED]
+                            [--lambda_clp LAMBDA_CLP]
+                            [--lambda_con LAMBDA_CON]
+                            [--temperature TEMPERATURE] [--data_dir DATA_DIR]
+                            [--patience PATIENCE]
+train_causal_fair.py: error: unrecognized arguments: 
+[Hardware] TF32 acceleration enabled for Ampere+ GPUs.
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 90: --dataset: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 91: --model_name: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 92: --epochs: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 93: --lambda_clp: command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 94: $'\r': command not found
+>>> Phase 1 完成: Thu Mar 12 15:20:45 CST 2026
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 96: $'\r': command not found
+========================================================
+ Phase 2: HateXplain 多 Seed (seed=123, 2024)
+ Thu Mar 12 15:20:45 CST 2026
+========================================================
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 101: $'\r': command not found
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 102: syntax error near unexpected token `$'do\r''
+/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/run_full_experiments.sh: line 102: `for SEED in 123 2024; do'

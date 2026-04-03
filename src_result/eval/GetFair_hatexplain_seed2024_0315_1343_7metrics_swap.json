@@ -1,0 +1,109 @@
+{
+  "macro_f1": 0.8021,
+  "auc_roc": 0.8844,
+  "accuracy": 0.8061,
+  "binary_f1": 0.8304,
+  "cfr": 0.0544,
+  "ctfg": 0.0514,
+  "fped": 2.3844,
+  "fned": 1.5013,
+  "per_group_f1_std": 0.1133,
+  "group_details": {
+    "asian": {
+      "fpr": 0.0,
+      "fnr": 0.4444,
+      "fpr_gap": 0.1841,
+      "fnr_gap": 0.2439,
+      "count": 21
+    },
+    "black": {
+      "fpr": 0.2615,
+      "fnr": 0.0886,
+      "fpr_gap": 0.0774,
+      "fnr_gap": 0.1119,
+      "count": 223
+    },
+    "christian": {
+      "fpr": 1.0,
+      "fnr": 0.0,
+      "fpr_gap": 0.8159,
+      "fnr_gap": 0.2005,
+      "count": 14
+    },
+    "disabled": {
+      "fpr": 0.8571,
+      "fnr": 0.0208,
+      "fpr_gap": 0.673,
+      "fnr_gap": 0.1797,
+      "count": 62
+    },
+    "gay": {
+      "fpr": 0.0294,
+      "fnr": 0.6452,
+      "fpr_gap": 0.1547,
+      "fnr_gap": 0.4446,
+      "count": 65
+    },
+    "jewish": {
+      "fpr": 0.5333,
+      "fnr": 0.1154,
+      "fpr_gap": 0.3492,
+      "fnr_gap": 0.0851,
+      "count": 67
+    },
+    "men": {
+      "fpr": 0.1821,
+      "fnr": 0.2,
+      "fpr_gap": 0.002,
+      "fnr_gap": 0.0005,
+      "count": 728
+    },
+    "muslim": {
+      "fpr": 0.1875,
+      "fnr": 0.2133,
+      "fpr_gap": 0.0034,
+      "fnr_gap": 0.0128,
+      "count": 123
+    },
+    "none": {
+      "fpr": 0.1392,
+      "fnr": 0.1694,
+      "fpr_gap": 0.0449,
+      "fnr_gap": 0.0312,
+      "count": 203
+    },
+    "white": {
+      "fpr": 0.1121,
+      "fnr": 0.31,
+      "fpr_gap": 0.0721,
+      "fnr_gap": 0.1095,
+      "count": 216
+    },
+    "women": {
+      "fpr": 0.1765,
+      "fnr": 0.2821,
+      "fpr_gap": 0.0077,
+      "fnr_gap": 0.0815,
+      "count": 202
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.7857,
+    "black": 0.8294,
+    "christian": 0.4815,
+    "disabled": 0.5569,
+    "gay": 0.6351,
+    "jewish": 0.684,
+    "men": 0.8056,
+    "muslim": 0.7912,
+    "none": 0.8375,
+    "white": 0.7911,
+    "women": 0.7612
+  },
+  "_meta": {
+    "method": "getfair",
+    "dataset": "hatexplain",
+    "cf_method": "swap",
+    "checkpoint": "src_result/models/GetFair_hatexplain_seed2024_0315_1343.pth"
+  }
+}

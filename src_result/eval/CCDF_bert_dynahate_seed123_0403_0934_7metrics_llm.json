@@ -1,0 +1,102 @@
+{
+  "macro_f1": 0.8317,
+  "auc_roc": 0.938,
+  "accuracy": 0.847,
+  "binary_f1": 0.8824,
+  "cfr": 0.0944,
+  "ctfg": 0.0843,
+  "fped": 1.2124,
+  "fned": 0.6977,
+  "per_group_f1_std": 0.092,
+  "group_details": {
+    "asian": {
+      "fpr": 0.5,
+      "fnr": 0.1667,
+      "fpr_gap": 0.3732,
+      "fnr_gap": 0.0017,
+      "count": 24
+    },
+    "black": {
+      "fpr": 0.1667,
+      "fnr": 0.0685,
+      "fpr_gap": 0.0399,
+      "fnr_gap": 0.0964,
+      "count": 97
+    },
+    "christian": {
+      "fpr": 0.2,
+      "fnr": 0.1667,
+      "fpr_gap": 0.0732,
+      "fnr_gap": 0.0017,
+      "count": 17
+    },
+    "disabled": {
+      "fpr": 0.0,
+      "fnr": 0.2857,
+      "fpr_gap": 0.1268,
+      "fnr_gap": 0.1208,
+      "count": 20
+    },
+    "gay": {
+      "fpr": 0.1429,
+      "fnr": 0.4043,
+      "fpr_gap": 0.0161,
+      "fnr_gap": 0.2393,
+      "count": 54
+    },
+    "jewish": {
+      "fpr": 0.4,
+      "fnr": 0.0667,
+      "fpr_gap": 0.2732,
+      "fnr_gap": 0.0983,
+      "count": 35
+    },
+    "men": {
+      "fpr": 0.1367,
+      "fnr": 0.1594,
+      "fpr_gap": 0.0099,
+      "fnr_gap": 0.0055,
+      "count": 346
+    },
+    "muslim": {
+      "fpr": 0.3333,
+      "fnr": 0.0667,
+      "fpr_gap": 0.2065,
+      "fnr_gap": 0.0983,
+      "count": 63
+    },
+    "none": {
+      "fpr": 0.0492,
+      "fnr": 0.185,
+      "fpr_gap": 0.0776,
+      "fnr_gap": 0.0201,
+      "count": 349
+    },
+    "women": {
+      "fpr": 0.1429,
+      "fnr": 0.1494,
+      "fpr_gap": 0.0161,
+      "fnr_gap": 0.0155,
+      "count": 101
+    }
+  },
+  "per_group_f1": {
+    "asian": 0.6667,
+    "black": 0.8771,
+    "christian": 0.7984,
+    "disabled": 0.7917,
+    "gay": 0.5559,
+    "jewish": 0.7667,
+    "men": 0.846,
+    "muslim": 0.8152,
+    "none": 0.8569,
+    "women": 0.7617
+  },
+  "_meta": {
+    "method": "ccdf",
+    "backbone": "bert",
+    "dataset": "dynahate",
+    "cf_method": "llm",
+    "checkpoint": "/root/lanyun-fs/01nlpchongou/01_nlp_toxicity_classification/src_result/models/CCDF_bert_dynahate_seed123_0403_0934.pth"
+  }
+}
