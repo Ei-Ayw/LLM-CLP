@@ -824,36 +824,37 @@ def main():
         if ema is not None:
             ema.apply_shadow(base_model)
 
-        val_loss, val_auc = evaluate(model, val_loader, device, args.w_id_toxic, args.aux_scale)
-        final_metrics = evaluate_with_final_metric(model, val_loader, device, val_df)
-        dist.barrier()
+        try:
+            val_loss, val_auc = evaluate(model, val_loader, device, args.w_id_toxic, args.aux_scale)
+            final_metrics = evaluate_with_final_metric(model, val_loader, device, val_df)
+            dist.barrier()
 
-        if is_main_process:
-            loss_history["phase_b_train"].append(train_loss)
-            loss_history["phase_b_val"].append(val_loss)
-            loss_history["phase_b_auc"].append(val_auc)
-            loss_history["phase_b_final"].append(final_metrics['final'])
-            loss_history["phase_b_l_adv"].append(l_adv_avg)
-            loss_history["phase_b_l_metric"].append(l_metric_avg)
-            loss_history["phase_b_lambda"].append(current_lambda)
+            if is_main_process:
+                loss_history["phase_b_train"].append(train_loss)
+                loss_history["phase_b_val"].append(val_loss)
+                loss_history["phase_b_auc"].append(val_auc)
+                loss_history["phase_b_final"].append(final_metrics['final'])
+                loss_history["phase_b_l_adv"].append(l_adv_avg)
+                loss_history["phase_b_l_metric"].append(l_metric_avg)
+                loss_history["phase_b_lambda"].append(current_lambda)
 
-            print(f"  Train Loss: {train_loss:.4f} | L_tox: {l_tox_avg:.4f} | L_adv: {l_adv_avg:.4f} | L_auc: {l_metric_avg:.4f}")
-            print(f"  [Final={final_metrics['final']:.4f}] Bias={final_metrics['bias_score']:.4f} | AUC={final_metrics['overall_auc']:.4f}")
-            print(f"  PM(Sub)={final_metrics['pm_sub']:.4f} | PM(BPSN)={final_metrics['pm_bpsn']:.4f} | PM(BNSP)={final_metrics['pm_bnsp']:.4f}")
+                print(f"  Train Loss: {train_loss:.4f} | L_tox: {l_tox_avg:.4f} | L_adv: {l_adv_avg:.4f} | L_auc: {l_metric_avg:.4f}")
+                print(f"  [Final={final_metrics['final']:.4f}] Bias={final_metrics['bias_score']:.4f} | AUC={final_metrics['overall_auc']:.4f}")
+                print(f"  PM(Sub)={final_metrics['pm_sub']:.4f} | PM(BPSN)={final_metrics['pm_bpsn']:.4f} | PM(BNSP)={final_metrics['pm_bnsp']:.4f}")
+                if ema is not None:
+                    print(f"  [EMA] decay={args.ema_decay}")
+
+                if final_metrics['final'] > best_final:
+                    best_final = final_metrics['final']
+                    torch.save(base_model.state_dict(), save_path)
+                    print(f"  [Save] Best Final={final_metrics['final']:.4f} -> {save_path}")
+
+                # 用 Final Metric 做早停（越高越好，取负值适配 EarlyStopping 的越低越好逻辑）
+                if early_stopping(-final_metrics['final']):
+                    print(f">>> [Early Stop] Best Final={best_final:.4f}")
+        finally:
             if ema is not None:
-                print(f"  [EMA] decay={args.ema_decay}")
-
-            if final_metrics['final'] > best_final:
-                best_final = final_metrics['final']
-                torch.save(base_model.state_dict(), save_path)
-                print(f"  [Save] Best Final={final_metrics['final']:.4f} -> {save_path}")
-
-            # 用 Final Metric 做早停（越高越好，取负值适配 EarlyStopping 的越低越好逻辑）
-            if early_stopping(-final_metrics['final']):
-                print(f">>> [Early Stop] Best Final={best_final:.4f}")
-
-        if ema is not None:
-            ema.restore(base_model)
+                ema.restore(base_model)
 
         stop_signal = torch.tensor(1 if (is_main_process and early_stopping.early_stop) else 0).to(device)
         dist.all_reduce(stop_signal, op=dist.ReduceOp.MAX)

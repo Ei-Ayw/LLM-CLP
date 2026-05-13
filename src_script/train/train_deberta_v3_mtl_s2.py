@@ -432,47 +432,48 @@ def main():
         # 评估: 如果有 EMA，用 EMA 权重评估
         if ema is not None:
             ema.apply_shadow(base_model)
-        val_loss, val_auc = evaluate(model, val_loader, device, args.w_id_toxic, args.no_reweight, aux_scale=args.aux_scale)
 
-        # Final Metric 评估 (如果启用)
-        final_metrics = None
-        if args.select_by_final:
-            final_metrics = evaluate_with_final_metric(model, val_loader, device, val_df)
+        try:
+            val_loss, val_auc = evaluate(model, val_loader, device, args.w_id_toxic, args.no_reweight, aux_scale=args.aux_scale)
 
-        dist.barrier()
+            # Final Metric 评估 (如果启用)
+            final_metrics = None
+            if args.select_by_final:
+                final_metrics = evaluate_with_final_metric(model, val_loader, device, val_df)
 
-        if is_main_process:
-            if isinstance(scheduler, ReduceLROnPlateau): scheduler.step(val_loss)
-            loss_history["train"].append(train_loss)
-            loss_history["val"].append(val_loss)
-            loss_history["val_auc"].append(val_auc)
-            loss_history["val_final"].append(final_metrics['final'] if final_metrics else 0.0)
+            dist.barrier()
 
-            print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val AUC: {val_auc:.4f}")
-            if final_metrics:
-                print(f"  [Final={final_metrics['final']:.4f}] BiasScore={final_metrics['bias_score']:.4f}")
-                print(f"  PM(Sub)={final_metrics['pm_sub']:.4f} | PM(BPSN)={final_metrics['pm_bpsn']:.4f} | PM(BNSP)={final_metrics['pm_bnsp']:.4f}")
-            if ema is not None:
-                print(f"  [EMA] decay={args.ema_decay}")
+            if is_main_process:
+                if isinstance(scheduler, ReduceLROnPlateau): scheduler.step(val_loss)
+                loss_history["train"].append(train_loss)
+                loss_history["val"].append(val_loss)
+                loss_history["val_auc"].append(val_auc)
+                loss_history["val_final"].append(final_metrics['final'] if final_metrics else 0.0)
 
-            # Checkpoint 选择
-            if args.select_by_final and final_metrics:
-                if final_metrics['final'] > best_final:
-                    best_final = final_metrics['final']
-                    torch.save(base_model.state_dict(), save_path)
-                    print(f"  [Save] Best Final={final_metrics['final']:.4f} -> {save_path}")
-            else:
-                if val_auc > best_val_auc:
-                    best_val_auc = val_auc
-                    torch.save(base_model.state_dict(), save_path)
-                    print(f"  [Save] Best AUC={val_auc:.4f} -> {save_path}")
+                print(f"  Result -> Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Val AUC: {val_auc:.4f}")
+                if final_metrics:
+                    print(f"  [Final={final_metrics['final']:.4f}] BiasScore={final_metrics['bias_score']:.4f}")
+                    print(f"  PM(Sub)={final_metrics['pm_sub']:.4f} | PM(BPSN)={final_metrics['pm_bpsn']:.4f} | PM(BNSP)={final_metrics['pm_bnsp']:.4f}")
+                if ema is not None:
+                    print(f"  [EMA] decay={args.ema_decay}")
 
-            if early_stopping(val_loss):
+                # Checkpoint 选择
+                if args.select_by_final and final_metrics:
+                    if final_metrics['final'] > best_final:
+                        best_final = final_metrics['final']
+                        torch.save(base_model.state_dict(), save_path)
+                        print(f"  [Save] Best Final={final_metrics['final']:.4f} -> {save_path}")
+                else:
+                    if val_auc > best_val_auc:
+                        best_val_auc = val_auc
+                        torch.save(base_model.state_dict(), save_path)
+                        print(f"  [Save] Best AUC={val_auc:.4f} -> {save_path}")
+
+            if is_main_process and early_stopping(val_loss):
                 print(f">>> [Early Stop] 提前结束。Best AUC={best_val_auc:.4f}")
-
-        # 恢复非EMA权重继续训练
-        if ema is not None:
-            ema.restore(base_model)
+        finally:
+            if ema is not None:
+                ema.restore(base_model)
 
         stop_signal = torch.tensor(1 if (is_main_process and early_stopping.early_stop) else 0).to(device)
         dist.all_reduce(stop_signal, op=dist.ReduceOp.MAX)

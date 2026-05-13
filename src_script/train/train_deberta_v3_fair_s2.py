@@ -457,27 +457,28 @@ def main():
         if ema is not None:
             ema.apply_shadow(base_model)
 
-        metrics = evaluate_with_final_metric(model, val_loader, device, val_df)
+        try:
+            metrics = evaluate_with_final_metric(model, val_loader, device, val_df)
 
-        dist.barrier()
+            dist.barrier()
 
-        if is_main:
-            loss_history["train"].append(total_loss / len(train_loader))
-            loss_history["val_final"].append(metrics['final'])
-            loss_history["val_auc"].append(metrics['overall_auc'])
-            loss_history["val_bias"].append(metrics['bias_score'])
+            if is_main:
+                loss_history["train"].append(total_loss / len(train_loader))
+                loss_history["val_final"].append(metrics['final'])
+                loss_history["val_auc"].append(metrics['overall_auc'])
+                loss_history["val_bias"].append(metrics['bias_score'])
 
-            print(f"  Epoch {epoch+1}: Train Loss={total_loss/len(train_loader):.4f}")
-            print(f"  [Final={metrics['final']:.4f}] BiasScore={metrics['bias_score']:.4f} | AUC={metrics['overall_auc']:.4f}")
-            print(f"  PM(Sub)={metrics['pm_sub']:.4f} | PM(BPSN)={metrics['pm_bpsn']:.4f} | PM(BNSP)={metrics['pm_bnsp']:.4f}")
+                print(f"  Epoch {epoch+1}: Train Loss={total_loss/len(train_loader):.4f}")
+                print(f"  [Final={metrics['final']:.4f}] BiasScore={metrics['bias_score']:.4f} | AUC={metrics['overall_auc']:.4f}")
+                print(f"  PM(Sub)={metrics['pm_sub']:.4f} | PM(BPSN)={metrics['pm_bpsn']:.4f} | PM(BNSP)={metrics['pm_bnsp']:.4f}")
 
-            if metrics['final'] > best_final:
-                best_final = metrics['final']
-                torch.save(base_model.state_dict(), save_path)
-                print(f"  [Save] Best Final={metrics['final']:.4f} -> {save_path}")
-
-        if ema is not None:
-            ema.restore(base_model)
+                if metrics['final'] > best_final:
+                    best_final = metrics['final']
+                    torch.save(base_model.state_dict(), save_path)
+                    print(f"  [Save] Best Final={metrics['final']:.4f} -> {save_path}")
+        finally:
+            if ema is not None:
+                ema.restore(base_model)
 
     # --- 收尾 ---
     if is_main:
