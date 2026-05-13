@@ -42,6 +42,10 @@ IDENTITY_COLS = [
     'homosexual_gay_or_lesbian', 'psychiatric_or_mental_illness'
 ]
 
+SUBTYPE_COLS = [
+    'severe_toxicity', 'obscene', 'threat', 'insult', 'identity_attack', 'sexual_explicit'
+]
+
 # 粗粒度分组映射: specific index → coarse index
 # 与 ToxicityDataset 的 identity_cols 顺序一致
 # 0:male→gender, 1:female→gender, 2:black→race, 3:white→race,
@@ -329,13 +333,17 @@ def lambda_schedule(step, total_steps, lambda_max, gamma):
 # 身份分组差异化权重
 # =============================================================================
 IDENTITY_GROUP_WEIGHTS = [1.2, 1.0, 2.3, 1.8, 1.9, 2.9, 1.3, 2.6, 3.4]
-_GROUP_WEIGHTS_TENSOR = None
 
 def get_group_weights_tensor(device):
-    global _GROUP_WEIGHTS_TENSOR
-    if _GROUP_WEIGHTS_TENSOR is None or _GROUP_WEIGHTS_TENSOR.device != device:
-        _GROUP_WEIGHTS_TENSOR = torch.tensor(IDENTITY_GROUP_WEIGHTS, dtype=torch.float, device=device)
-    return _GROUP_WEIGHTS_TENSOR
+    # Per-device cache to avoid DDP global state issues
+    if not hasattr(get_group_weights_tensor, "_cache"):
+        get_group_weights_tensor._cache = {}
+    cache_key = device
+    if cache_key not in get_group_weights_tensor._cache:
+        get_group_weights_tensor._cache[cache_key] = torch.tensor(
+            IDENTITY_GROUP_WEIGHTS, dtype=torch.float, device=device
+        )
+    return get_group_weights_tensor._cache[cache_key]
 
 
 def weighted_toxicity_loss(logits, targets, has_id, y_id, w_id_toxic=1.5, group_weights_tensor=None):
@@ -442,8 +450,9 @@ def train_one_epoch_adversarial(model, loader, optimizer, scheduler, scaler, dev
             l_coarse = criterion(out['logits_id_coarse'], y_coarse)
 
             # 4. Soft gate 对抗 (改进 1 + 改进 4)
-            # 提取 identity_attack 列 (index=4 in subtype: severe,obscene,threat,insult,identity_attack,sexual)
-            y_ia = y_sub[:, 4]  # identity_attack
+            # 提取 identity_attack 列 (index=4 in SUBTYPE_COLS: severe,obscene,threat,insult,identity_attack,sexual)
+            id_attack_idx = SUBTYPE_COLS.index('identity_attack')
+            y_ia = y_sub[:, id_attack_idx]  # identity_attack
             y_tox_flat = y_tox.squeeze(-1)
             gate = soft_gate(y_tox_flat, y_ia)  # (B,)
 

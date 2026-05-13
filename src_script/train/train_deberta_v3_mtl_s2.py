@@ -80,14 +80,16 @@ class ModelEMA:
 # =============================================================================
 IDENTITY_GROUP_WEIGHTS = [1.2, 1.0, 2.3, 1.8, 1.9, 2.9, 1.3, 2.6, 3.4]
 
-# 预创建为 tensor 避免每步重复分配 (P2 优化)
-_GROUP_WEIGHTS_TENSOR = None
-
 def get_group_weights_tensor(device):
-    global _GROUP_WEIGHTS_TENSOR
-    if _GROUP_WEIGHTS_TENSOR is None or _GROUP_WEIGHTS_TENSOR.device != device:
-        _GROUP_WEIGHTS_TENSOR = torch.tensor(IDENTITY_GROUP_WEIGHTS, dtype=torch.float, device=device)
-    return _GROUP_WEIGHTS_TENSOR
+    # Per-device cache to avoid DDP global state issues
+    if not hasattr(get_group_weights_tensor, "_cache"):
+        get_group_weights_tensor._cache = {}
+    cache_key = device
+    if cache_key not in get_group_weights_tensor._cache:
+        get_group_weights_tensor._cache[cache_key] = torch.tensor(
+            IDENTITY_GROUP_WEIGHTS, dtype=torch.float, device=device
+        )
+    return get_group_weights_tensor._cache[cache_key]
 
 def weighted_toxicity_loss(logits, targets, has_id, y_id, w_id_toxic=1.5, group_weights_tensor=None):
     """
