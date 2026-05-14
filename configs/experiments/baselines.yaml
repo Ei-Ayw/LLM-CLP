@@ -1,0 +1,72 @@
+# Baseline methods experiment configurations
+# Each method has recommended parameters from original papers
+
+vanilla:
+  method: vanilla
+  model:
+    name: microsoft/deberta-v3-base
+  training:
+    epochs: 5
+    batch_size: 16
+    learning_rate: 2e-5
+
+ear:
+  method: ear
+  description: Entropy-based Attention Regularization
+  model:
+    name: microsoft/deberta-v3-base
+  training:
+    epochs: 5
+    batch_size: 16
+    learning_rate: 2e-5
+  losses:
+    lambda_ear: 0.1  # from EAR paper
+
+getfair:
+  method: getfair
+  description: GetFair debiasing
+  model:
+    name: microsoft/deberta-v3-base
+  training:
+    epochs: 5
+    batch_size: 16
+    learning_rate: 2e-5
+  losses:
+    lambda_gf: 0.5  # from GetFair paper
+
+ccdf:
+  method: ccdf
+  description: Counterfactual-guided Debiasing Framework
+  model:
+    name: microsoft/deberta-v3-base
+  training:
+    epochs: 5
+    batch_size: 16
+    learning_rate: 2e-5
+  losses:
+    lambda_kl: 1.0
+    tde_alpha: 0.5
+
+advdebias:
+  method: advdebias
+  description: Adversarial Debiasing
+  model:
+    name: microsoft/deberta-v3-base
+  training:
+    epochs: 5
+    batch_size: 16
+    learning_rate: 2e-5
+  losses:
+    lambda_adv: 0.1
+
+davani:
+  method: davani
+  description: Davani LogitPairing (CLP without contrastive)
+  model:
+    name: microsoft/deberta-v3-base
+  training:
+    epochs: 5
+    batch_size: 16
+    learning_rate: 2e-5
+  losses:
+    lambda_lp: 1.0

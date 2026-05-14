@@ -1,0 +1,144 @@
+# LLM-CLP: Counterfactual Logit Pairing with LLM-Generated Counterfactuals
+
+**EMNLP 2026 Submission**
+
+A research library for identity-fair toxicity classification. We generate counterfactual texts by replacing identity references using a Large Language Model, then train classifiers with Counterfactual Logit Pairing (CLP) to achieve identity-invariant predictions.
+
+## What This Repository Contains
+
+- **Core method**: LLM-CLP — counterfactual data augmentation + logit pairing regularization
+- **Models**: DeBERTa-v3-base with CLP + supervised contrastive loss
+- **Datasets**: HateXplain, ToxiGen, DynaHate
+- **Metrics**: CFR (Counterfactual Flip Rate), CTFG, FPED, FNED
+- **Baselines**: Vanilla, EAR, GetFair, CCDF, AdvDebias, Davani LogitPairing
+
+## Installation
+
+```bash
+git clone https://github.com/Ei-Ayw/LLM-CLP.git
+cd LLM-CLP
+pip install -e .
+
+# Core dependencies
+pip install torch transformers pandas numpy scikit-learn tqdm
+# For counterfactual generation
+pip install zai-sdk  # or: pip install zhipuai
+# For local Qwen generation (optional)
+pip install transformers accelerate bitsandbytes
+```
+
+## Environment Variables
+
+Copy `.env.example` to `.env` and fill in your API keys:
+
+```bash
+cp .env.example .env
+```
+
+```
+ZHIPU_API_KEY=your_key_here
+OPENAI_API_KEY=your_key_here
+HF_TOKEN=your_token_here
+```
+
+## Data Preparation
+
+```bash
+# Download and prepare all three datasets
+python -m src.llm_clp.data.prepare_datasets --dataset hatexplain
+python -m src.llm_clp.data.prepare_datasets --dataset toxigen
+python -m src.llm_clp.data.prepare_datasets --dataset dynahate
+```
+
+Datasets will be saved to `data/causal_fair/{dataset}_{split}.parquet`.
+
+## Counterfactual Generation
+
+```bash
+# LLM-based counterfactual generation (requires API key)
+python -m src.llm_clp.counterfactual.generate \
+    --dataset hatexplain --split train --backend zhipu
+
+# Swap-based baseline (no API needed)
+python -m src.llm_clp.counterfactual.generate \
+    --dataset hatexplain --split train --backend swap
+
+# Local Qwen (no API needed)
+python -m src.llm_clp.counterfactual.generate \
+    --dataset hatexplain --split train --backend qwen \
+    --model_name Qwen/Qwen2.5-7B-Instruct
+```
+
+## Training
+
+```bash
+# LLM-CLP (main method)
+python -m src.llm_clp.training.train_causal_fair \
+    --dataset hatexplain \
+    --cf_path data/causal_fair/hatexplain_train_cf_llm.parquet \
+    --model_name microsoft/deberta-v3-base \
+    --epochs 5 --seed 42 --lambda_clp 1.0
+
+# Ablations
+python -m src.llm_clp.training.train_causal_fair \
+    --dataset hatexplain \
+    --cf_path data/causal_fair/hatexplain_train_cf_swap.parquet \
+    --cf_method swap --lambda_clp 1.0
+```
+
+## Evaluation
+
+```bash
+python -m src.llm_clp.evaluation.evaluate \
+    --checkpoint outputs/hatexplain_llmclp_s42.pth \
+    --dataset hatexplain
+```
+
+Outputs: Macro-F1, AUC-ROC, CFR, CTFG, FPED, FNED.
+
+## Reproducing Paper Tables
+
+All main results are in `EXPERIMENT_REPORT.md`. Evaluation JSON files are in `src_result/eval/`.
+
+## Repository Structure
+
+```
+src/llm_clp/
+├── data/            # Data loading (CausalFairDataset)
+├── counterfactual/   # CF generation (prompts, schema, validator)
+├── models/          # Model + losses (CLP, SupCon)
+├── training/        # Training script (train_causal_fair.py)
+├── evaluation/      # Metrics (CFR, CTFG, FPED, FNED)
+└── utils/           # seed, logging, I/O
+
+src_script/          # Legacy scripts (preserved for reproducibility)
+src_model/          # Original model definitions
+src_result/eval/    # Evaluation result JSON files
+tests/              # Unit tests (pytest)
+docs/               # Documentation
+configs/            # YAML experiment configs
+
+scripts/            # CLI entry points
+legacy/             # Legacy unported scripts
+```
+
+## Running Tests
+
+```bash
+pytest tests/ -v
+```
+
+## Notes on Safety
+
+This repository works with **toxic text** (hate speech datasets). Generated counterfactuals may also contain offensive content. Use only for research purposes.
+
+## Citation
+
+```bibtex
+@article{llm_clp,
+  title={LLM-CLP: Counterfactual Logit Pairing with LLM-Generated Counterfactuals},
+  author={},
+  journal={EMNLP 2026},
+  year={2026}
+}
+```

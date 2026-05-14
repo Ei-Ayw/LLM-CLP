@@ -306,8 +306,8 @@ def main():
     parser.add_argument("--api", type=str, default="zhipu",
                         choices=["zhipu", "openai"])
     parser.add_argument("--api_key", type=str,
-                        default="ad443e864e1046838e00b2072c798320.9k8PEtdmWiQV8Yw2,5f2e493b563348e28d9748fe0020f760.Y2yxIZICZPk1XQBn",
-                        help="API key, 多个用逗号分隔")
+                        default=os.environ.get("ZHIPU_API_KEY", ""),
+                        help="API key, 多个用逗号分隔 (建议从环境变量 ZHIPU_API_KEY 读取)")
     parser.add_argument("--model", type=str, default=None,
                         help="模型名称 (默认: zhipu=glm-4-flash, openai=gpt-4o-mini)")
     parser.add_argument("--base_url", type=str, default=None,
