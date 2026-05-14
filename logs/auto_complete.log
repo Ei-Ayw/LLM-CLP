@@ -1,9 +1,0 @@
-run_auto_complete.sh: line 3: set: -: invalid option
-set: usage: set [-abefhkmnptuvxBCHP] [-o option-name] [--] [arg ...]
-run_auto_complete.sh: line 4: $'\r': command not found
-==========================================
-自动化实验完成流程
-==========================================
-run_auto_complete.sh: line 8: $'\r': command not found
-[1/4] 等待 CDA fix 重跑完成...
-run_auto_complete.sh: line 49: syntax error: unexpected end of file
