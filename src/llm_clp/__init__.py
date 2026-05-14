@@ -22,13 +22,13 @@ __all__ = [
 def __getattr__(name):
     """Lazy import to avoid importing heavy dependencies at package load."""
     if name == "CounterfactualLogitPairing" or name == "CounterfactualSupConLoss":
-        from src.llm_clp.models.losses import (
+        from .models.losses import (
             CounterfactualLogitPairing,
             CounterfactualSupConLoss,
         )
         return CounterfactualLogitPairing if name == "CounterfactualLogitPairing" else CounterfactualSupConLoss
     if name in ("compute_cfr", "compute_ctfg", "compute_fped_fned"):
-        from src.llm_clp.evaluation.metrics import (
+        from .evaluation.metrics import (
             compute_cfr,
             compute_ctfg,
             compute_fped_fned,

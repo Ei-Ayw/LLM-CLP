@@ -45,9 +45,7 @@ HF_TOKEN=your_token_here
 
 ```bash
 # Download and prepare all three datasets
-python -m src.llm_clp.data.prepare_datasets --dataset hatexplain
-python -m src.llm_clp.data.prepare_datasets --dataset toxigen
-python -m src.llm_clp.data.prepare_datasets --dataset dynahate
+python src_script/data/download_datasets.py
 ```
 
 Datasets will be saved to `data/causal_fair/{dataset}_{split}.parquet`.

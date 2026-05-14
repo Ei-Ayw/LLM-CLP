@@ -248,7 +248,7 @@ def main():
     scheduler = get_cosine_schedule_with_warmup(
         optimizer, num_warmup_steps=warmup_steps, num_training_steps=total_steps
     )
-    early_stopping = EarlyStopping(patience=args.patience)
+    early_stopping = EarlyStopping(patience=args.patience, mode="max")
 
     # ============= 训练 =============
     best_f1 = 0
@@ -283,7 +283,7 @@ def main():
             print(f"  [Save] Best F1={best_f1:.4f} → {save_path}")
 
         # 早停
-        if early_stopping(-val_metrics['macro_f1']):
+        if early_stopping(val_metrics['macro_f1']):
             print(f">>> [Early Stop] Best F1={best_f1:.4f}")
             break
 

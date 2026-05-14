@@ -253,5 +253,5 @@ def _detect_group_column(df: pd.DataFrame) -> Optional[str]:
     if "target_group" in df.columns:
         return "target_group"
     if "coarse_groups" in df.columns:
-        return "_primary_group"
+        return "coarse_groups"
     return None
