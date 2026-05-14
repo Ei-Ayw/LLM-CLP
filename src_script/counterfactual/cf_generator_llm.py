@@ -181,6 +181,44 @@ class OpenAICompatGenerator:
 
 
 # =====================================================
+# API 调用: vLLM (支持 OpenAI 兼容接口)
+# =====================================================
+class VLLMGenerator:
+    """vLLM server 部署的模型生成器，支持 OpenAI 兼容接口"""
+
+    def __init__(self, base_url, model_name):
+        """
+        Args:
+            base_url: vLLM server 的地址，如 http://localhost:8000/v1
+            model_name: 模型名称，如 meta-llama/Llama-3.1-8B-Instruct
+        """
+        from openai import OpenAI
+        self.client = OpenAI(
+            api_key="EMPTY",  # vLLM server 通常不需要 API key
+            base_url=base_url,
+        )
+        self.model = model_name
+
+    def generate(self, text, source_group, target_group):
+        prompt = PROMPT_TEMPLATE_EN.format(
+            text=text, source_group=source_group, target_group=target_group
+        )
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.3,
+                max_tokens=512,
+            )
+            result = response.choices[0].message.content.strip()
+            result = result.strip('"').strip("'").strip()
+            return result
+        except Exception as e:
+            print(f"  [vLLM Error] {e}")
+            return None
+
+
+# =====================================================
 # 主流程: 并发批量生成反事实
 # =====================================================
 def generate_counterfactuals_for_dataset(
@@ -304,12 +342,12 @@ def main():
                         choices=["hatexplain", "toxigen"])
     parser.add_argument("--split", type=str, default="train")
     parser.add_argument("--api", type=str, default="zhipu",
-                        choices=["zhipu", "openai"])
+                        choices=["zhipu", "openai", "vllm"])
     parser.add_argument("--api_key", type=str,
                         default=os.environ.get("ZHIPU_API_KEY", ""),
                         help="API key, 多个用逗号分隔 (建议从环境变量 ZHIPU_API_KEY 读取)")
     parser.add_argument("--model", type=str, default=None,
-                        help="模型名称 (默认: zhipu=glm-4-flash, openai=gpt-4o-mini)")
+                        help="模型名称 (默认: zhipu=glm-4-flash, openai=gpt-4o-mini, vllm=必需指定)")
     parser.add_argument("--base_url", type=str, default=None,
                         help="OpenAI 兼容 API 的 base_url")
     parser.add_argument("--max_cf", type=int, default=2,
@@ -337,11 +375,19 @@ def main():
     if args.api == "zhipu":
         model = args.model or "glm-4-flash"
         generator = ZhipuGeneratorPool(api_keys=api_keys, model=model)
-    else:
+    elif args.api == "openai":
         model = args.model or "gpt-4o-mini"
         generator = OpenAICompatGenerator(
             api_key=api_keys[0], base_url=args.base_url, model=model
         )
+    else:  # vllm
+        if not args.base_url:
+            print("[Error] vLLM 模式需要指定 --base_url (如 http://localhost:8000/v1)")
+            return
+        if not args.model:
+            print("[Error] vLLM 模式需要指定 --model")
+            return
+        generator = VLLMGenerator(base_url=args.base_url, model_name=args.model)
 
     print(f"[API] {args.api} / {model} / {len(api_keys)} keys / {args.max_workers} workers")
 
