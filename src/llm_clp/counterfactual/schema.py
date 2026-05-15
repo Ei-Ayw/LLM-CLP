@@ -1,7 +1,7 @@
 """
-Counterfactual pair data schema.
+反事实对数据结构定义。
 
-Defines the canonical structure for counterfactual generation input/output.
+定义反事实生成输入/输出的标准结构。
 """
 from dataclasses import dataclass, field
 from typing import Optional, List
@@ -10,49 +10,49 @@ import json
 
 @dataclass
 class CounterfactualPair:
-    """A single original-counterfactual pair.
+    """单条原始-反事实配对。
 
     Attributes:
-        original_text: The original input text.
-        cf_text: The counterfactual version after identity substitution.
-        source_group: The identity group replaced (e.g. "muslim").
-        target_group: The identity group introduced (e.g. "christian").
-        method: Generation method ("llm", "swap", "qwen", "free").
-        post_id: Original data sample ID (optional).
-        quality_passed: Whether quality validation passed (optional).
-        toxicity_orig: Predicted P(toxic) for original (optional).
-        toxicity_cf: Predicted P(toxic) for counterfactual (optional).
-        has_identity_reference: Whether the original contains an identity reference.
-        source_identity: The specific identity term replaced.
-        source_identity_type: Type of the source identity (e.g., "religion", "gender").
-        source_span: The exact span of the source identity in original text.
-        implicit_identity: Whether the identity reference is implicit.
-        target_identity: The specific identity term introduced.
-        target_identity_type: Type of the target identity.
-        counterfactual: The counterfactual text (alias for cf_text).
-        changed_span_original: The span changed in original text.
-        changed_span_counterfactual: The span changed in counterfactual text.
-        generation_valid: Whether generation passed validity checks.
-        judge_valid: Whether judge passed validity checks.
-        toxicity_preserved: Whether toxicity is preserved after substitution.
-        sentiment_preserved: Whether sentiment is preserved.
-        minimal_edit: Whether the edit is minimal.
-        identity_changed: Whether the identity was successfully changed.
-        contextually_plausible: Whether the counterfactual is contextually plausible.
-        semantic_similarity: Similarity score between original and counterfactual.
-        toxicity_drift: Drift in toxicity score.
-        normalized_edit_distance: Normalized edit distance between texts.
-        identity_change_success: Whether identity change was successful.
-        delta_gen: Generation delta metric.
-        delta_sem: Semantic delta metric.
-        generator_backend: Backend used for generation (e.g., "anthropic").
-        generator_model: Model used for generation.
-        judge_backend: Backend used for judge.
-        judge_model: Model used for judge.
-        temperature: Temperature parameter for generation.
-        top_p: Top-p parameter for generation.
-        max_tokens: Max tokens for generation.
-        prompt_version: Version of the prompt used.
+        original_text: 原始输入文本。
+        cf_text: 身份替换后的反事实版本。
+        source_group: 被替换的身份群体（例如 "muslim"）。
+        target_group: 引入的目标身份群体（例如 "christian"）。
+        method: 生成方法（"llm"、"swap"、"qwen"、"free"）。
+        post_id: 原始数据样本 ID（可选）。
+        quality_passed: 是否通过质量验证（可选）。
+        toxicity_orig: 原始文本的 P(toxic) 预测值（可选）。
+        toxicity_cf: 反事实文本的 P(toxic) 预测值（可选）。
+        has_identity_reference: 原始文本是否包含身份引用。
+        source_identity: 被替换的具体身份词。
+        source_identity_type: 源身份的类型（例如 "religion"、"gender"）。
+        source_span: 源身份词在原始文本中的精确片段。
+        implicit_identity: 身份引用是否为隐式。
+        target_identity: 引入的具体目标身份词。
+        target_identity_type: 目标身份的类型。
+        counterfactual: 反事实文本（cf_text 的别名）。
+        changed_span_original: 原始文本中被修改的片段。
+        changed_span_counterfactual: 反事实文本中被修改的片段。
+        generation_valid: 是否通过生成有效性检查。
+        judge_valid: 是否通过判别有效性检查。
+        toxicity_preserved: 替换后毒性是否保留。
+        sentiment_preserved: 情感是否保留。
+        minimal_edit: 是否为最小化编辑。
+        identity_changed: 身份是否成功替换。
+        contextually_plausible: 反事实是否在语境上合理。
+        semantic_similarity: 原始与反事实文本的相似度分数。
+        toxicity_drift: 毒性分数的漂移量。
+        normalized_edit_distance: 文本间的归一化编辑距离。
+        identity_change_success: 身份替换是否成功。
+        delta_gen: 生成差异指标。
+        delta_sem: 语义差异指标。
+        generator_backend: 生成所用后端（例如 "anthropic"）。
+        generator_model: 生成所用模型。
+        judge_backend: 判别所用后端。
+        judge_model: 判别所用模型。
+        temperature: 生成的温度参数。
+        top_p: 生成的 top-p 参数。
+        max_tokens: 生成的最大 token 数。
+        prompt_version: 所用提示词版本。
     """
 
     original_text: str
@@ -161,13 +161,13 @@ class CounterfactualPair:
 
 
 def validate_cf_pair_schema(data: dict) -> List[str]:
-    """Validate a dict against CounterfactualPair schema.
+    """验证字典是否符合 CounterfactualPair 结构定义。
 
     Args:
-        data: Dictionary to validate.
+        data: 待验证的字典。
 
     Returns:
-        List of validation error messages. Empty list = valid.
+        验证错误信息列表。列表为空表示验证通过。
     """
     errors = []
     required = ["original_text", "cf_text"]

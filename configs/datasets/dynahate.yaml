@@ -1,9 +1,0 @@
-# DynaHate dataset configuration
-name: dynahate
-hf_path: institutions/DynaHate
-num_workers: 4
-splits:
-  train: train
-  val: dev
-  test: test
-coverage: 0.541  # 54.1% of training samples have valid counterfactuals

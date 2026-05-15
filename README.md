@@ -41,14 +41,15 @@ OPENAI_API_KEY=your_key_here
 HF_TOKEN=your_token_here
 ```
 
-## Data Preparation
+## Step1: Data Preparation
 
 ```bash
-# Download and prepare all three datasets
-python src_script/data/download_datasets.py
+python -m src.llm_clp.data.prepare \
+  --data data/causal_fair \
+  --dataset hatexplain
 ```
 
-Datasets will be saved to `data/causal_fair/{dataset}_{split}.parquet`.
+Datasets are expected at `data/causal_fair/{dataset}_{split}.parquet`.
 
 ## Counterfactual Generation
 
@@ -67,32 +68,37 @@ python -m src.llm_clp.counterfactual.generate \
     --model_name Qwen/Qwen2.5-7B-Instruct
 ```
 
-## Training
+## Step2: Training
 
 ```bash
-# LLM-CLP (main method)
-python -m src.llm_clp.training.train_causal_fair \
-    --dataset hatexplain \
-    --cf_path data/causal_fair/hatexplain_train_cf_llm.parquet \
-    --model_name microsoft/deberta-v3-base \
-    --epochs 5 --seed 42 --lambda_clp 1.0
-
-# Ablations
-python -m src.llm_clp.training.train_causal_fair \
-    --dataset hatexplain \
-    --cf_path data/causal_fair/hatexplain_train_cf_swap.parquet \
-    --cf_method swap --lambda_clp 1.0
+python -m src.llm_clp.train.run \
+  --data data/causal_fair \
+  --model microsoft/deberta-v3-base \
+  --method ours \
+  --dataset hatexplain \
+  --cf_path data/causal_fair/hatexplain_train_cf_llm.parquet \
+  --epochs 5 --seed 42
 ```
 
-## Evaluation
+## Step3: Evaluation
 
 ```bash
-python -m src.llm_clp.evaluation.evaluate \
-    --checkpoint outputs/hatexplain_llmclp_s42.pth \
-    --dataset hatexplain
+python -m src.llm_clp.eval.run \
+  --data data/causal_fair \
+  --model microsoft/deberta-v3-base \
+  --method ours \
+  --ckpt outputs/hatexplain_llmclp_s42.pth \
+  --dataset hatexplain
 ```
 
 Outputs: Macro-F1, AUC-ROC, CFR, CTFG, FPED, FNED.
+
+## Step4: Visualization
+
+```bash
+python -m src.llm_clp.viz.run --type performance
+python -m src.llm_clp.viz.run --type tsne --checkpoint outputs/model.pth
+```
 
 ## Reproducing Paper Tables
 
@@ -105,12 +111,10 @@ src/llm_clp/
 ├── data/            # Data loading (CausalFairDataset)
 ├── counterfactual/   # CF generation (prompts, schema, validator)
 ├── models/          # Model + losses (CLP, SupCon)
-├── training/        # Training script (train_causal_fair.py)
-├── evaluation/      # Metrics (CFR, CTFG, FPED, FNED)
+├── train/           # Training script (train_causal_fair.py)
+├── eval/            # Metrics (CFR, CTFG, FPED, FNED)
 └── utils/           # seed, logging, I/O
 
-src_script/          # Legacy scripts (preserved for reproducibility)
-src_model/          # Original model definitions
 src_result/eval/    # Evaluation result JSON files
 tests/              # Unit tests (pytest)
 docs/               # Documentation

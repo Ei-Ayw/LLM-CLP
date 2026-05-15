@@ -1,7 +1,7 @@
 """
-Unified random seed management.
+统一随机种子管理模块。
 
-Sets Python, NumPy, PyTorch, and CUDA seeds simultaneously.
+同时设置 Python、NumPy、PyTorch 和 CUDA 的随机种子。
 """
 import random
 
@@ -10,12 +10,12 @@ import torch
 
 
 def set_seed(seed: int, deterministic: bool = True) -> None:
-    """Set all random seeds for reproducibility.
+    """为可复现性设置所有随机种子。
 
     Args:
-        seed: Random seed (e.g. 42).
-        deterministic: If True, also enable CuDNN deterministic mode.
-                      This may slow down training but ensures exact reproducibility.
+        seed: 随机种子（如 42）。
+        deterministic: 若为 True，同时启用 CuDNN 确定性模式。
+                      该选项可能会降低训练速度，但能保证结果完全可复现。
     """
     random.seed(seed)
     np.random.seed(seed)
@@ -28,7 +28,7 @@ def set_seed(seed: int, deterministic: bool = True) -> None:
     if deterministic:
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
-        # Enable TF32 deterministic mode on Ampere+ GPUs
+        # 在 Ampere+ 架构 GPU 上启用 TF32 确定性模式
         if hasattr(torch, "backends") and hasattr(torch.backends, "cuda"):
             torch.backends.cuda.matmul.allow_tf32 = False
             torch.backends.cudnn.allow_tf32 = False

@@ -1,9 +1,0 @@
-# HateXplain dataset configuration
-name: hatexplain
-hf_path: and还有什么/hatexplain
-num_workers: 4
-splits:
-  train: train
-  val: val
-  test: test
-coverage: 0.766  # 76.6% of training samples have valid counterfactuals

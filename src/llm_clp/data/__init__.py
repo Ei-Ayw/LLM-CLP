@@ -1,9 +1,9 @@
 """
-Data loading utilities for LLM-CLP.
+LLM-CLP 数据加载工具集。
 
-Provides:
-- CausalFairDataset: pairs original texts with LLM-generated counterfactuals
-- get_causal_fair_loader: builds DataLoader with proper collate
+提供：
+- CausalFairDataset：将原始文本与 LLM 生成的反事实配对
+- get_causal_fair_loader：构建带正确 collate 函数的 DataLoader
 """
 from src.llm_clp.data.dataset import CausalFairDataset, get_causal_fair_loader
 

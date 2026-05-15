@@ -1,9 +1,0 @@
-# ToxiGen dataset configuration
-name: toxigen
-hf_path: orca-dataset/ToxiGen
-num_workers: 4
-splits:
-  train: train
-  val: filtered_tune
-  test: test
-coverage: 0.620  # 62.0% of training samples have valid counterfactuals

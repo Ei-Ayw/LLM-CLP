@@ -1,8 +1,8 @@
 """
-Data loading for counterfactual fairness training.
+反事实公平性训练的数据加载模块。
 
-CausalFairDataset pairs each original text with its LLM-generated counterfactual
-and exposes a unified training interface.
+CausalFairDataset 将每条原始文本与其 LLM 生成的反事实配对，
+并提供统一的训练接口。
 """
 from typing import Dict, List, Optional, Callable
 import random
@@ -14,20 +14,20 @@ from torch.utils.data import Dataset, DataLoader
 
 
 class CausalFairDataset(Dataset):
-    """Dataset with original texts and their counterfactual pairs.
+    """包含原始文本及其反事实配对的数据集。
 
-    For samples without counterfactuals, has_cf=0 and cf fields are zero-tensors.
-    This allows a single unified DataLoader for both CF and non-CF samples.
+    对于没有反事实的样本，has_cf=0，cf 字段为零张量。
+    这允许使用单一统一的 DataLoader 处理有/无反事实的样本。
 
-    Columns required in df:
-        - text: original text
-        - binary_label: 0/1 label
+    df 必须包含的列：
+        - text: 原始文本
+        - binary_label: 0/1 标签
 
-    Columns required in cf_df:
-        - original_text: must match df['text']
-        - cf_text: counterfactual version
-        - source_group: identity group replaced (optional)
-        - target_group: identity group substituted (optional)
+    cf_df 必须包含的列：
+        - original_text: 必须与 df['text'] 匹配
+        - cf_text: 反事实版本
+        - source_group: 被替换的身份群体（可选）
+        - target_group: 引入的身份群体（可选）
     """
 
     def __init__(
@@ -43,7 +43,7 @@ class CausalFairDataset(Dataset):
         self.texts = df["text"].values
         self.labels = df["binary_label"].values
 
-        # Build text → list of CF texts mapping
+        # 构建 文本 → 反事实文本列表 映射
         self.cf_map: Dict[str, List[str]] = {}
         if cf_df is not None and len(cf_df) > 0:
             for _, row in cf_df.iterrows():
@@ -52,7 +52,7 @@ class CausalFairDataset(Dataset):
                     self.cf_map[orig] = []
                 self.cf_map[orig].append(row["cf_text"])
 
-        # Filter to only samples with CF (for CLP training)
+        # 仅筛选有反事实的样本（用于 CLP 训练）
         self._cf_indices = [
             i for i, t in enumerate(self.texts) if t in self.cf_map
         ]
@@ -65,7 +65,7 @@ class CausalFairDataset(Dataset):
         text = str(self.texts[idx])
         label = self.labels[idx]
 
-        # Tokenize original
+        # 对原始文本进行分词
         orig_enc = self.tokenizer.encode_plus(
             text,
             add_special_tokens=True,
@@ -81,7 +81,7 @@ class CausalFairDataset(Dataset):
             "label": torch.tensor(label, dtype=torch.long),
         }
 
-        # Tokenize CF if available
+        # 如果有反事实文本，则进行分词
         if text in self.cf_map and len(self.cf_map[text]) > 0:
             cf_text = random.choice(self.cf_map[text])
             cf_enc = self.tokenizer.encode_plus(
@@ -96,7 +96,7 @@ class CausalFairDataset(Dataset):
             item["cf_attention_mask"] = torch.tensor(cf_enc["attention_mask"], dtype=torch.long)
             item["has_cf"] = torch.tensor(1, dtype=torch.long)
         else:
-            # Placeholder tensors (will be masked in training)
+            # 占位张量（训练时将被掩码屏蔽）
             item["cf_input_ids"] = torch.zeros(self.max_len, dtype=torch.long)
             item["cf_attention_mask"] = torch.zeros(self.max_len, dtype=torch.long)
             item["has_cf"] = torch.tensor(0, dtype=torch.long)
@@ -105,9 +105,9 @@ class CausalFairDataset(Dataset):
 
 
 def causal_fair_collate_fn(batch: List[Dict]) -> Dict[str, torch.Tensor]:
-    """Custom collate: stacks all fields, keeps CF fields separate.
+    """自定义 collate 函数：堆叠所有字段，cf 字段单独处理。
 
-    All original samples are stacked. CF fields only contain samples with has_cf=1.
+    所有原始样本均被堆叠。cf 字段仅包含 has_cf=1 的样本。
     """
     keys = [
         "orig_input_ids",
@@ -139,20 +139,20 @@ def get_causal_fair_loader(
     num_workers: int = 2,
     pin_memory: bool = True,
 ) -> DataLoader:
-    """Build a DataLoader for counterfactual fairness training.
+    """构建用于反事实公平性训练的 DataLoader。
 
     Args:
-        df: Original dataset DataFrame.
-        cf_df: Counterfactual pairs DataFrame (or None).
-        tokenizer: HuggingFace tokenizer.
-        batch_size: Batch size.
-        max_len: Max sequence length.
-        shuffle: Whether to shuffle.
-        num_workers: DataLoader workers.
-        pin_memory: Pin memory for GPU.
+        df: 原始数据集 DataFrame。
+        cf_df: 反事实对 DataFrame（或 None）。
+        tokenizer: HuggingFace 分词器。
+        batch_size: 批次大小。
+        max_len: 最大序列长度。
+        shuffle: 是否打乱数据。
+        num_workers: DataLoader 工作进程数。
+        pin_memory: 为 GPU 固定内存。
 
     Returns:
-        DataLoader with custom collate.
+        使用自定义 collate 函数的 DataLoader。
     """
     dataset = CausalFairDataset(df, cf_df, tokenizer, max_len=max_len)
     return DataLoader(

@@ -1,7 +1,7 @@
 """
-Unified file I/O utilities.
+统一文件 I/O 工具集。
 
-Provides consistent read/write for JSON, Parquet, and directory management.
+提供 JSON、Parquet 及目录管理的一致性读写接口。
 """
 import json
 import os
@@ -12,13 +12,13 @@ import pandas as pd
 
 
 def ensure_dir(path: Union[str, Path]) -> Path:
-    """Ensure a directory exists, creating it if necessary.
+    """确保目录存在，如不存在则自动创建。
 
     Args:
-        path: Directory path.
+        path: 目录路径。
 
     Returns:
-        Path object.
+        Path 对象。
     """
     p = Path(path)
     p.mkdir(parents=True, exist_ok=True)
@@ -26,25 +26,25 @@ def ensure_dir(path: Union[str, Path]) -> Path:
 
 
 def read_json(path: Union[str, Path]) -> Dict[str, Any]:
-    """Read a JSON file.
+    """读取 JSON 文件。
 
     Args:
-        path: Path to JSON file.
+        path: JSON 文件路径。
 
     Returns:
-        Parsed JSON dict.
+        解析后的 JSON 字典。
     """
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
 def write_json(data: Dict[str, Any], path: Union[str, Path], **kwargs) -> None:
-    """Write data to a JSON file.
+    """将数据写入 JSON 文件。
 
     Args:
-        data: Data to serialize.
-        path: Output path.
-        **kwargs: Extra arguments passed to json.dump.
+        data: 待序列化的数据。
+        path: 输出路径。
+        **kwargs: 传递给 json.dump 的额外参数。
     """
     ensure_dir(Path(path).parent)
     with open(path, "w", encoding="utf-8") as f:
@@ -52,38 +52,38 @@ def write_json(data: Dict[str, Any], path: Union[str, Path], **kwargs) -> None:
 
 
 def read_parquet(path: Union[str, Path], columns: Optional[List[str]] = None) -> pd.DataFrame:
-    """Read a Parquet file.
+    """读取 Parquet 文件。
 
     Args:
-        path: Path to Parquet file.
-        columns: Optional list of columns to read.
+        path: Parquet 文件路径。
+        columns: 可选，指定读取的列名列表。
 
     Returns:
-        DataFrame.
+        DataFrame。
     """
     return pd.read_parquet(path, columns=columns)
 
 
 def write_parquet(df: pd.DataFrame, path: Union[str, Path], **kwargs) -> None:
-    """Write a DataFrame to Parquet.
+    """将 DataFrame 写入 Parquet 文件。
 
     Args:
-        df: DataFrame to write.
-        path: Output path.
-        **kwargs: Extra arguments passed to df.to_parquet.
+        df: 待写入的 DataFrame。
+        path: 输出路径。
+        **kwargs: 传递给 df.to_parquet 的额外参数。
     """
     ensure_dir(Path(path).parent)
     df.to_parquet(path, index=False, **kwargs)
 
 
 def read_jsonl(path: Union[str, Path]) -> List[Dict[str, Any]]:
-    """Read a JSONL (JSON Lines) file.
+    """读取 JSONL（JSON Lines）文件。
 
     Args:
-        path: Path to JSONL file.
+        path: JSONL 文件路径。
 
     Returns:
-        List of dicts, one per line.
+        每行对应一个字典的列表。
     """
     records = []
     with open(path, encoding="utf-8") as f:
@@ -95,11 +95,11 @@ def read_jsonl(path: Union[str, Path]) -> List[Dict[str, Any]]:
 
 
 def write_jsonl(records: List[Dict[str, Any]], path: Union[str, Path]) -> None:
-    """Write records to a JSONL file.
+    """将记录列表写入 JSONL 文件。
 
     Args:
-        records: List of dicts to write.
-        path: Output path.
+        records: 待写入的字典列表。
+        path: 输出路径。
     """
     ensure_dir(Path(path).parent)
     with open(path, "w", encoding="utf-8") as f:

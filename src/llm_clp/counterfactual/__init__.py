@@ -1,5 +1,5 @@
 """
-Counterfactual generation and validation utilities.
+反事实生成与验证工具集。
 """
 from src.llm_clp.counterfactual.prompts import (
     PROMPT_FIXED_MAPPING,

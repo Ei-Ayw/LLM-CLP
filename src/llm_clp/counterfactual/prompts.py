@@ -1,10 +1,10 @@
 """
-Prompt templates and identity swap mappings for counterfactual generation.
+反事实生成的提示模板与身份替换映射表。
 """
 from typing import Dict, List, Tuple
 
 # =====================================================
-# Prompt Templates
+# 提示模板
 # =====================================================
 
 PROMPT_FIXED_MAPPING = """You are an expert NLP data augmentation specialist. Rewrite the following text by replacing references to {source_group} with {target_group}.
@@ -37,8 +37,8 @@ Original text: "{text}"
 Rewritten text:"""
 
 # =====================================================
-# 16 Bidirectional Identity Swap Pairs
-# Used in fixed mapping mode
+# 16 个双向身份替换对
+# 用于固定映射模式
 # =====================================================
 
 IDENTITY_SWAP_PAIRS: List[Tuple[str, str]] = [
@@ -61,8 +61,8 @@ IDENTITY_SWAP_PAIRS: List[Tuple[str, str]] = [
 ]
 
 # =====================================================
-# Identity Detection Keywords
-# Used for triggering counterfactual generation
+# 身份检测关键词
+# 用于触发反事实生成
 # =====================================================
 
 GROUP_KEYWORDS: Dict[str, List[str]] = {
@@ -80,13 +80,13 @@ GROUP_KEYWORDS: Dict[str, List[str]] = {
 
 
 def detect_groups(text: str) -> List[str]:
-    """Detect identity groups present in a text.
+    """检测文本中出现的身份群体。
 
     Args:
-        text: Input text.
+        text: 输入文本。
 
     Returns:
-        List of detected group names (e.g. ["muslim", "women"]).
+        检测到的群体名称列表（例如 ["muslim", "women"]）。
     """
     text_lower = text.lower()
     detected = []
@@ -97,14 +97,14 @@ def detect_groups(text: str) -> List[str]:
 
 
 def get_swap_targets(source_group: str, max_targets: int = 2) -> List[str]:
-    """Get available target groups for a given source group.
+    """获取给定源群体的可用目标群体。
 
     Args:
-        source_group: Source identity group name.
-        max_targets: Maximum number of targets to return.
+        source_group: 源身份群体名称。
+        max_targets: 返回的最大目标数量。
 
     Returns:
-        List of target group names.
+        目标群体名称列表。
     """
     targets = []
     for src, tgt in IDENTITY_SWAP_PAIRS:
@@ -114,5 +114,5 @@ def get_swap_targets(source_group: str, max_targets: int = 2) -> List[str]:
 
 
 def get_all_identity_groups() -> List[str]:
-    """Return all supported identity group names."""
+    """返回所有支持的身份群体名称。"""
     return list(GROUP_KEYWORDS.keys())
