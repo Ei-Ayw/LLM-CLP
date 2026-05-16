@@ -44,7 +44,7 @@ HF_TOKEN=your_token_here
 ## Step1: Data Preparation
 
 ```bash
-python -m src.llm_clp.data.prepare \
+python -m src.data.prepare \
   --data data/causal_fair \
   --dataset hatexplain
 ```
@@ -55,15 +55,15 @@ Datasets are expected at `data/causal_fair/{dataset}_{split}.parquet`.
 
 ```bash
 # LLM-based counterfactual generation (requires API key)
-python -m src.llm_clp.counterfactual.generate \
+python -m src.counterfactual.generate \
     --dataset hatexplain --split train --backend zhipu
 
 # Swap-based baseline (no API needed)
-python -m src.llm_clp.counterfactual.generate \
+python -m src.counterfactual.generate \
     --dataset hatexplain --split train --backend swap
 
 # Local Qwen (no API needed)
-python -m src.llm_clp.counterfactual.generate \
+python -m src.counterfactual.generate \
     --dataset hatexplain --split train --backend qwen \
     --model_name Qwen/Qwen2.5-7B-Instruct
 ```
@@ -71,7 +71,7 @@ python -m src.llm_clp.counterfactual.generate \
 ## Step2: Training
 
 ```bash
-python -m src.llm_clp.train.run \
+python -m src.train.run \
   --data data/causal_fair \
   --model microsoft/deberta-v3-base \
   --method ours \
@@ -83,7 +83,7 @@ python -m src.llm_clp.train.run \
 ## Step3: Evaluation
 
 ```bash
-python -m src.llm_clp.eval.run \
+python -m src.eval.run \
   --data data/causal_fair \
   --model microsoft/deberta-v3-base \
   --method ours \
@@ -96,8 +96,8 @@ Outputs: Macro-F1, AUC-ROC, CFR, CTFG, FPED, FNED.
 ## Step4: Visualization
 
 ```bash
-python -m src.llm_clp.viz.run --type performance
-python -m src.llm_clp.viz.run --type tsne --checkpoint outputs/model.pth
+python -m src.viz.run --type performance
+python -m src.viz.run --type tsne --checkpoint outputs/model.pth
 ```
 
 ## Reproducing Paper Tables
@@ -107,7 +107,7 @@ All main results are in `EXPERIMENT_REPORT.md`. Evaluation JSON files are in `sr
 ## Repository Structure
 
 ```
-src/llm_clp/
+src/
 ├── data/            # Data loading (CausalFairDataset)
 ├── counterfactual/   # CF generation (prompts, schema, validator)
 ├── models/          # Model + losses (CLP, SupCon)
